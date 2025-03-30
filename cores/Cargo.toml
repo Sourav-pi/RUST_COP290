@@ -1,0 +1,10 @@
+[package]
+name = "cores"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[lib]
+name = "cores"
+path = "src/lib.rs"
