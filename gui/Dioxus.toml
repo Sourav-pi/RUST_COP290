@@ -1,4 +1,21 @@
-[desktop]
-title = "Spreadsheet GUI"
-width = 800
-height = 600
+[application]
+
+[web.app]
+
+# HTML title tag content
+title = "gui"
+
+# include `assets` in web platform
+[web.resource]
+
+# Additional CSS style files
+style = []
+
+# Additional JavaScript files
+script = []
+
+[web.resource.dev]
+
+# Javascript code file
+# serve: [dev-server] only
+script = []
