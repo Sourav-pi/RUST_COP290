@@ -2,14 +2,9 @@ use dioxus::prelude::*;
 use super::formula_bar::*;
 use super::toolbar::*;
 
-
+const SPREADSHEET_ICON: Asset = asset!( "assets/spreadsheet.png");
 const HEAD_STYLE: &str = "
-   width: 100%;
-    height: 50px;
-    background-color:rgb(159, 150, 150);
-    display: flex;
-    flex-direction: column;
-    gap: 0px;
+   width: 100vw;
     padding: 0px;
     margin: 0px;
    ";
@@ -24,11 +19,22 @@ const HEAD_STYLE: &str = "
 pub fn Header(props : HeaderProps) -> Element {
     rsx! {
         div {style : HEAD_STYLE,
-        h1 {
-            style: "margin: 0; padding-top: 20px; padding-left : 20px; padding-right : 20px ; font-size: 24px;",
-            "Spreadsheet - {props.filename}"
+        div {  style: "height: 50px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;margin: 10px 15px;",
+
+            div {
+                style: "display: flex; gap: 20px; flex-direction: row; align-items: center; justify-content: start; ",
+                img {
+                    src: "{SPREADSHEET_ICON}",
+                    alt: "Logo",
+                    style: "width: 50px; height: 50px;"
+                }
+                h1 {
+                    style: "margin: 0; font-family: Arial, Helvetica, sans-serif",
+                    "{props.filename}"
+                }
+            }
+            Toolbar {}
         }
-        Toolbar {}
         FormulaBar {cur_cell: props.cur_cell.clone() }
 
         }
