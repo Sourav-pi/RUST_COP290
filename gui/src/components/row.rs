@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_elements::tr;
 use super::cell::Cell;
 
 const ROW_STYLE: &str ="
@@ -14,14 +15,15 @@ const CELL_HEADER_STYLE : &str = "
     width: 80px;
     height: 30px;
     border: 1px solid #ccc;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     background-color: #f3f3f3;
     font-weight: bold;
     position: sticky;
+    top: 90px;
     left: 0px;
-    z-index: 20;
+    z-index: 10;
+    outline: none;
+    text-align: center;
+    font-size: 16px;
 ";
 
 #[derive(Props, PartialEq, Clone)]
@@ -48,21 +50,22 @@ pub fn Row(props: RowProps) -> Element {
             class: "spreadsheet-row",
             // Add column header (A, B, C...) cell if this is the first column
             if props.is_header {
-                div {
+                input {
                     style: CELL_HEADER_STYLE,
+                    readonly: true,
                     ""  // Empty corner cell
                 }
             } else {
-                div {
+                input {
                     style: CELL_HEADER_STYLE,
-                    "{props.row}"  // Row header (1, 2, 3...)
+                    readonly: true,
+                    value: props.row.to_string(),  // Row header (1, 2, 3...)
                 }
             }
             
             // Generate cells for this row
             for col in 1..=props.num_cols {
                 Cell {
-                    value: 0,
                     row: props.row,
                     col: col,
                     is_header: props.is_header,
