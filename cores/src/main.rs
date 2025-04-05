@@ -6,7 +6,8 @@ use parse::{parse_formula, CommandCall};
 
 fn main() {
     let formula_examples = vec![
-        "42",
+        "-42++3",
+        "-4",
         "C1",
         "A1+B2",
         "E5*F6",

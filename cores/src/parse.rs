@@ -74,9 +74,9 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
     }
 }
 
-pub fn Arithmatic(input: &str, container: &mut CommandCall){
+pub fn Arithmatic(input: &str, container: &mut CommandCall) {
     container.flag.set_type_(1);
-    let re = Regex::new(r"([A-Z]*\d+)([+\-*/])([A-Z]*\d+)").unwrap();
+    let re = Regex::new(r"^([-+]?[A-Z]*\d+)([-+*/])([-+]?[A-Z]*\d+)$").unwrap();
     if let Some(caps) = re.captures(input) {
         let left = caps.get(1).unwrap().as_str();
         if Regex::new(r"[A-Z]").unwrap().is_match(left) {
@@ -88,6 +88,7 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall){
         } else {
             container.flag.set_error(1);
         }
+
         let operator = caps.get(2).unwrap().as_str().chars().next().unwrap();
         let temp = match operator {
             '+' => 0,
@@ -97,12 +98,14 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall){
             _ => {
                 container.flag.set_error(1);
                 return;
-            }};
-        if (container.flag.error() == 0) {
-            container.flag.set_cmd(temp);
+            }
         };
-        let right = caps.get(3).unwrap().as_str().to_string();
-        if Regex::new(r"[A-Z]").unwrap().is_match(&right) {
+        if container.flag.error() == 0 {
+            container.flag.set_cmd(temp);
+        }
+
+        let right = caps.get(3).unwrap().as_str();
+        if Regex::new(r"[A-Z]").unwrap().is_match(right) {
             container.param2 = encode_cell(right.to_string());
             container.flag.set_type2(1);
         } else if let Ok(value) = right.parse::<i32>() {
@@ -111,8 +114,7 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall){
         } else {
             container.flag.set_error(1);
         }
-    }
-    else {
+    } else {
         container.flag.set_error(1);
     }
 }
@@ -148,18 +150,23 @@ pub fn rangeoper(input: &str, container: &mut CommandCall){
 }
 
 pub fn parse_expression(input: &str, container: &mut CommandCall){
-    if input.starts_with("SLEEP") {
+    if Regex::new(r"^[-+]?\d+$").unwrap().is_match(input) {
+        if let Ok(value) = input.parse::<i32>() {
+            container.param1 = value;
+            container.param2 = 0;
+            container.flag.set_type_(0);
+            container.flag.set_cmd(0);
+            container.flag.set_type1(0);
+        } else {
+            container.flag.set_error(1);
+        }
+    }
+    else if input.starts_with("SLEEP") {
         parse_sleep(input,container)
     } else if input.contains('+') || input.contains('-') || input.contains('*') || input.contains('/') {
         Arithmatic(input,container)
     } else if input.contains(':') {
         rangeoper(input,container)
-    } else if let Ok(value) = input.parse::<i32>() {
-        container.param1 = value;
-        container.param2 = 0;
-        container.flag.set_type_(0);
-        container.flag.set_cmd(0);
-        container.flag.set_type1(0);
     } else {
         container.param1= encode_cell(input.to_string());
         container.flag.set_type_(0);
@@ -168,7 +175,6 @@ pub fn parse_expression(input: &str, container: &mut CommandCall){
 
     }
 }
-
 pub fn convert_to_index(cell:String) -> (usize, usize) {
     let re = Regex::new(r"([A-Z]+)(\d+)").unwrap();
     if let Some(caps) = re.captures(&cell) {
