@@ -1,0 +1,14 @@
+[package]
+name = "cores"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+modular-bitfield = "0.11"
+regex = "1.11.1"
+
+
+
+[lib]
+name = "cores"
+path = "src/lib.rs"
