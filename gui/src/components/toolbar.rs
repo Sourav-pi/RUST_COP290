@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use super::spreadsheet::{CurrentFileContext};
 
 
 const OPEN_ICON : Asset = asset!( "assets/open.png");
@@ -35,9 +36,23 @@ const TOOLBAR_STYLE: &str = "
 
 #[component]
 pub fn Toolbar() -> Element {
+    let mut cur_file = use_context::<CurrentFileContext>();
     rsx! {
         div {style : TOOLBAR_STYLE,
         button { style: BUTTON_STYLE,
+            onclick: move |_| {
+                let path = std::env::current_dir().unwrap();
+
+                let res = rfd::FileDialog::new()
+                    .add_filter("spreadsheet", &["csv", "xlsx"])
+                    .set_directory(&path)
+                    .pick_file();
+            
+                if let Some(file) = &res {
+                    cur_file.set(Some(file.clone()));
+                } 
+                // println!("The user choose: {:#?}", res);
+            },
             img {
                 src: "{OPEN_ICON}",
                 alt: "Open",
@@ -45,6 +60,15 @@ pub fn Toolbar() -> Element {
             }
         },
         button { style: BUTTON_STYLE,
+            onclick: move |_| {
+                let path = std::env::current_dir().unwrap();
+                let res = rfd::FileDialog::new()
+                .set_file_name("new_sheet.txt")
+                .set_directory(&path)
+                .save_file();
+                // println!("The user choose: {:#?}", res);
+
+            },
             img {
                 src: "{SAVE_ICON}",
                 alt: "Save",
@@ -52,6 +76,7 @@ pub fn Toolbar() -> Element {
             }
         },
         button { style: BUTTON_STYLE,
+            
             img {
                 src: "{VISUALIZE_ICON}",
                 alt: "Visualize",
