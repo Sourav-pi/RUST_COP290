@@ -11,13 +11,14 @@ use modular_bitfield::prelude::*;
 
 #[bitfield]
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
+#[derive(Clone)]
 pub struct CommandFlag{
-    type_: B2,           // 2 bits
-    cmd: B3,             // 3 bits
-    type1: B1,           // 1 bit
-    type2: B1,           // 1 bit
-    error: B2,           // 2 bits
-    is_div_by_zero: B1,  // 1 bit
+    pub type_: B2,           // 2 bits
+    pub cmd: B3,             // 3 bits
+    pub type1: B1,           // 1 bit
+    pub type2: B1,           // 1 bit
+    pub error: B2,           // 2 bits
+    pub is_div_by_zero: B1,  // 1 bit
     #[skip]              // Skip the remaining bits to round up to 16 bits
     __: B6,              // 6 bits
 }
@@ -28,10 +29,11 @@ impl CommandFlag {
 
     }
 }
+#[derive(Clone)]
 pub struct CommandCall {
-    flag: CommandFlag, // 16 bits
-    param1: i32,         // 4 bytes
-    param2: i32,         // 4 bytes
+    pub flag: CommandFlag, // 16 bits
+    pub param1: i32,         // 4 bytes
+    pub param2: i32,         // 4 bytes
 }
 
 impl CommandCall {
@@ -181,9 +183,8 @@ pub fn convert_to_index(cell:String) -> (usize, usize) {
         let col_str = caps.get(1).unwrap().as_str();
         let row_str = caps.get(2).unwrap().as_str();
         
-        let col = col_str.chars().map(|c| c as usize - 'A' as usize + 1).sum::<usize>();
+        let col = col_str.chars().map(|c| c as usize - 'A' as usize+ 1 as usize ).sum::<usize>();
         let row = row_str.parse::<usize>().unwrap();
-        
         return (col, row);
     }
     (0, 0)
@@ -191,15 +192,20 @@ pub fn convert_to_index(cell:String) -> (usize, usize) {
 
 pub fn encode_cell(cell:String) -> i32{
     let (col, row) = convert_to_index(cell);
-    let mut encoded = 0;
-    encoded |= (col as i32) << 16; // Store column in the upper 16 bits
-    encoded |= (row as i32);       // Store row in the lower 16 bits
-    encoded
+    let encoded= col*(100000)+row;
+    encoded as i32
 }
 
 pub fn decode_cell(encoded:i32) -> String{
-    let col = (encoded >> 16) as usize;
-    let row = (encoded & 0xFFFF) as usize;
-    let col_str = (col + 'A' as usize - 1) as u8 as char;
-    format!("{}{}", col_str, row)
+    let col = (encoded%100000) as usize;
+    let row = (encoded/100000) as usize;
+    let mut cell=String::new();
+    cell.push((row as u8 - 1 as u8 + 'A' as u8) as char);
+    cell.push_str(&col.to_string());
+    cell
+}
+
+pub fn convert_to_index_int(encode:i32) -> (usize,usize){
+    let inp= decode_cell(encode);
+    convert_to_index(inp)
 }
