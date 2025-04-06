@@ -39,8 +39,7 @@ pub struct CommandCall {
 impl CommandCall {
     pub fn pr(&self) -> String {
         format!("flag: {}, param1: {}, param2: {}", self.flag.pr(), self.param1, self.param2)
-    }
-    
+    }   
 }
 
 pub fn parse_formula(input: &str) -> CommandCall {
