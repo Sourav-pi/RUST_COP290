@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use super::spreadsheet::{CurrentFileContext};
+use super::spreadsheet::{CurrentFileContext,GraphPopupContext};
 
 
 const OPEN_ICON : Asset = asset!( "assets/open.png");
@@ -37,6 +37,7 @@ const TOOLBAR_STYLE: &str = "
 #[component]
 pub fn Toolbar() -> Element {
     let mut cur_file = use_context::<CurrentFileContext>();
+    let mut is_open = use_context::<GraphPopupContext>();
     rsx! {
         div {style : TOOLBAR_STYLE,
         button { style: BUTTON_STYLE,
@@ -78,6 +79,9 @@ pub fn Toolbar() -> Element {
         button { style: BUTTON_STYLE,
             
             img {
+                onclick: move |_| {
+                    is_open.set(true);
+                },
                 src: "{VISUALIZE_ICON}",
                 alt: "Visualize",
                 style: "width: 30px; height: 30px;"

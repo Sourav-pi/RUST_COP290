@@ -7,3 +7,4 @@ mod row;
 mod formula_bar;
 mod toolbar;
 mod grid;
+mod graph_popup;
