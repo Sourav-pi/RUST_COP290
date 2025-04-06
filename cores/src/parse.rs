@@ -120,32 +120,30 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
     }
 }
 
-pub fn rangeoper(input: &str, container: &mut CommandCall){
+pub fn rangeoper(input: &str, container: &mut CommandCall) {
     container.flag.set_type_(2);
-    let re = Regex::new(r"([A-Z]+[0-9]+):([A-Z]+[0-9]+)").unwrap();
-    if re.is_match(input) {
-        let caps = re.captures(input).unwrap();
-        let start = caps.get(1).unwrap().as_str().to_string();
+    let re = Regex::new(r"^(MIN|MAX|AVG|STDEV|SUM)\(([A-Z]+\d+):([A-Z]+\d+)\)$").unwrap();
+    if let Some(caps) = re.captures(input) {
+        let start = caps.get(2).unwrap().as_str().to_string();
         container.param1 = encode_cell(start.clone());
-        container.param2 = encode_cell(caps.get(2).unwrap().as_str().to_string());
+        container.param2 = encode_cell(caps.get(3).unwrap().as_str().to_string());
         container.flag.set_type1(1);
         container.flag.set_type2(1);
-        let temp = match input.split('(').next().unwrap() {
-            "MIN" => 0.into(),
-            "MAX" => 1.into(),
-            "SUM" => 2.into(),
-            "AVG" => 3.into(),
-            "STDEV" => 4.into(),
+        let temp = match caps.get(1).unwrap().as_str() {
+            "MIN" => 0,
+            "MAX" => 1,
+            "SUM" => 2,
+            "AVG" => 3,
+            "STDEV" => 4,
             _ => {
                 container.flag.set_error(1);
                 return;
             }
         };
-        if (container.flag.error() == 0) {
+        if container.flag.error() == 0 {
             container.flag.set_cmd(temp);
-        };
-    }
-    else{
+        }
+    } else {
         container.flag.set_error(1);
     }
 }
