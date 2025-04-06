@@ -8,8 +8,8 @@ use sheet::{Sheet, Cell};
 
 fn main(){
     let mut test_sheet = Sheet::create_sheet(6, 6); 
-    test_sheet.update_cell_data(1,1, String::from("A2+A3"));
+    test_sheet.update_cell_data(1,1, String::from("MAX(A1:B5)"));
     test_sheet.update_cell_data(1,2, String::from("3"));
-    println!("A1: {}", test_sheet.get_value(1, 1));
+    println!("{}", test_sheet.get_value(1, 1));
     
 }

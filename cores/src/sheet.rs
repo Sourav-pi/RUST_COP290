@@ -9,7 +9,7 @@ use std::collections::HashSet;
         pub struct Cell{
             pub value:i32,
             pub formula:CommandCall,
-            pub depend:Vec<i32>,
+            pub depend:Vec<usize>,
             
             
         }
@@ -40,7 +40,8 @@ use std::collections::HashSet;
                 if command.flag.type1()==0 {
                     self.grid[row][col].value=command.param1;
                 }else if command.flag.type1()==1 {
-                    self.grid[row][col].depend.push(command.param1);
+                    let (param1_row,param1_col)=convert_to_index_int(command.param1);
+                    self.grid[param1_row][param1_col].depend.push(row*100000+col);
                    
                 }
             }else if command.flag.type_()==1 {
@@ -57,28 +58,36 @@ use std::collections::HashSet;
                             self.grid[row][col].value=command.param1/command.param2;
                         }
                     }else{
-                        self.grid[row][col].depend.push(command.param2);
+                        let (param2_row,param2_col)=convert_to_index_int(command.param2);
+                        self.grid[param2_row][param2_col].depend.push(row*100000+col);
                     }
                 }else if command.flag.type1()==1 {
-                    self.grid[row][col].depend.push(command.param1);
+                    let (param1_row,param1_col)=convert_to_index_int(command.param1);
+                    self.grid[param1_row][param1_col].depend.push(row*100000+col);
                     if command.flag.type2()==0 {
                         
                     }else if command.flag.type2()==1 {
-                        self.grid[row][col].depend.push(command.param2);
+                        let (param2_row,param2_col)=convert_to_index_int(command.param2);
+                        self.grid[param2_row][param2_col].depend.push(row*100000+col);
                     }
                 }   
         }else{
-            self.grid[row][col].depend.push(command.param1);
-            self.grid[row][col].depend.push(command.param2);
+            // self.grid[row][col].depend.push(command.param1);
+            // self.grid[row][col].depend.push(command.param2);
+            let (param1_row,param1_col)=convert_to_index_int(command.param1);
+            self.grid[param1_row][param1_col].depend.push(row*100000+col);
+            let (param2_row,param2_col)=convert_to_index_int(command.param2);
+            self.grid[param2_row][param2_col].depend.push(row*100000+col);
+
         }
 
             self.grid[row][col].formula=command;
             }
 
-            pub fn toposort(& self, target_cell :i32) -> Vec<i32> {
-                let mut visited = HashSet::new();
-                let mut stack = HashSet::new();
-                let mut result = vec![];
+            pub fn toposort(& self, target_cell :usize) -> Vec<usize> {
+                let mut visited:HashSet<usize> = HashSet::new();
+                let mut stack:HashSet<usize> = HashSet::new();
+                let mut result:Vec<usize> = vec![];
                 let is_cycle=self.dfs(target_cell, &mut visited, &mut stack,&mut result);
                 
                 if is_cycle {
@@ -91,7 +100,7 @@ use std::collections::HashSet;
 
                 // result.reverse();
                 result}
-            pub fn dfs(&self, cell: i32, visited: &mut HashSet<i32>, stack: &mut  HashSet<i32>,result :&mut Vec<i32>)-> bool  {
+            pub fn dfs(&self, cell: usize, visited: &mut HashSet<usize>, stack: &mut  HashSet<usize>,result :&mut Vec<usize>)-> bool  {
                 if stack.contains(&cell) {
                     return true;
                 }
@@ -176,7 +185,7 @@ use std::collections::HashSet;
                 ((sum as f64 / count as f64).sqrt()) as i32
             }
 
-            pub fn update_cell (&mut self, list_fpr_update:Vec<i32>){
+            pub fn update_cell (&mut self, list_fpr_update:Vec<usize>){
 
                 for i in list_fpr_update{
                     let col = (i as usize) % 100000;
@@ -298,7 +307,6 @@ use std::collections::HashSet;
                         self.grid[row][col].value= self.maximum(param1_row ,param2_row, param1_col, param2_col) ;
                     }
                     else if self.grid[row][col].formula.flag.cmd()==2 {
-                        print!("here");
                         self.grid[row][col].value= self.sum(param1_row ,param2_row, param1_col, param2_col) ;
                     }
                     else if self.grid[row][col].formula.flag.cmd()==3 {
@@ -312,15 +320,17 @@ use std::collections::HashSet;
 
         }
         
-        pub fn update_cell_data(&mut self, row : i32, col : i32, new_formula: String ) {
-            let command = parse_formula(&new_formula);
-            self.set_dependicies_cell(row as usize, col as usize, command);
-            let topo_vec = self.toposort(row*100000+col);   
-            println!("{:?}", topo_vec);
-            self.update_cell(topo_vec);
-    }
-    pub fn get_value(&self, row : i32, col : i32) -> i32{
-        self.grid[row as usize][col as usize].value
- }
-    
-    }
+            pub fn update_cell_data(&mut self, row :usize , col :usize, new_formula: String ) {
+                let mut command = parse_formula(&new_formula);
+                self.set_dependicies_cell(row as usize, col as usize, command.clone());
+                let topo_vec = self.toposort(row*100000+col);   
+                if (topo_vec==vec![]){
+                    command.flag.set_error(1);
+                }
+                else{
+                self.update_cell(topo_vec);}
+            }
+            pub fn get_value(&self, row : i32, col : i32) -> i32{
+                self.grid[row as usize][col as usize].value
+            }  
+}
