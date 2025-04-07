@@ -43,6 +43,8 @@ pub struct CellProps {
     pub is_selected: bool,
     #[props(default = 80)]
     pub min_width: i32,
+    #[props(into)]
+    pub oncontextmenu: Callback<dioxus::prelude::Event<dioxus::events::MouseData>>,
 }
 
 // Dummy function to simulate formula evaluation
@@ -162,6 +164,7 @@ pub fn Cell(props: CellProps) -> Element {
                 onkeydown: on_keydown,
                 oninput: on_input,
                 onclick: on_click,
+                oncontextmenu: props.oncontextmenu,
                 // Show the formula when editing, otherwise show the result
                 value: if *is_editing.read() {
                     formula_local.cloned()
