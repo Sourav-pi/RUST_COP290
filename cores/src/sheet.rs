@@ -18,7 +18,7 @@ use std::collections::HashSet;
             pub grid:Vec<Vec<Cell>>,
         }
         impl Sheet {
-            pub fn create_sheet(row:usize, col:usize) -> Sheet {
+            pub fn new(row:usize, col:usize) -> Self {
                 let grid:Vec<Vec<Cell>>= vec![vec![Cell{
                     value:0,
                     formula:CommandCall{
@@ -29,7 +29,7 @@ use std::collections::HashSet;
                     depend:Vec::new(),
                     
                 };col];row];
-                let sheet=Sheet{
+                let sheet=Self {
                     grid,
                 };
                 sheet
@@ -324,7 +324,7 @@ use std::collections::HashSet;
                 let mut command = parse_formula(&new_formula);
                 self.set_dependicies_cell(row as usize, col as usize, command.clone());
                 let topo_vec = self.toposort(row*100000+col);   
-                if (topo_vec==vec![]){
+                if topo_vec==vec![] {
                     command.flag.set_error(1);
                 }
                 else{
