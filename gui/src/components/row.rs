@@ -1,5 +1,6 @@
 use super::cell::Cell;
-use super::spreadsheet::{ContextMenuContext, MenuType};
+use super::spreadsheet::ContextMenuContext;
+use super::context_menu::MenuType;
 use dioxus::prelude::*;
 
 const ROW_STYLE: &str = "

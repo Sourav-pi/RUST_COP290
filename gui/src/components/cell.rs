@@ -62,12 +62,34 @@ pub fn Cell(props: CellProps) -> Element {
     let mut formula_local = use_signal(|| String::new());
     let mut displayed_local = use_signal(|| String::new());
     
+    // Track previous selection state
+    let mut was_selected_before = use_signal(|| false);
+
     // Check if this cell is selected based on context
     let is_this_cell_selected = {
         let (sel_row, sel_col) = *selected_cell.read();
         props.row == sel_row && props.col == sel_col
     };
-    
+
+    // Outside of the use_effect, directly in the component
+    if is_this_cell_selected && !*was_selected_before.read() {
+        was_selected_before.set(true);
+        
+        // Focus this cell
+        let script = format!(
+            "setTimeout(function() {{
+                const el = document.getElementById('row-{}-col-{}');
+                if (el) {{
+                    el.focus();
+                }}
+            }}, 10);",
+            props.row, props.col
+        );
+        document::eval(&script);
+    } else if !is_this_cell_selected && *was_selected_before.read() {
+        was_selected_before.set(false);
+    }
+
     // Handler for when user starts editing
     let on_focus = {
         let row = props.row; 
@@ -142,6 +164,17 @@ pub fn Cell(props: CellProps) -> Element {
             
             // Update formula context with this cell's formula
             formula.set(formula_local.cloned());
+            
+            // Directly focus this cell
+            let script = format!(
+                "setTimeout(function() {{
+                    const el = document.getElementById('row-{}-col-{}');
+                    console.log('Focusing on cell: row-{}-col-{}');
+                    if (el) {{ el.focus(); }}
+                }}, 10);",
+                row, col,row,col
+            );
+            document::eval(&script);
         }
     };
     
