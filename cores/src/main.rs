@@ -3,8 +3,7 @@
 
 mod parse;
 mod sheet;
-use parse::{parse_formula, CommandCall};
-use sheet::{Sheet, Cell};
+use sheet::Sheet;
 
 fn main(){
     let mut test_sheet = Sheet::create_sheet(6, 6); 
