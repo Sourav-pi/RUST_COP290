@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use dioxus::events::Key;
 use cores::Sheet;
 use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use std::vec::Vec;
 
 use dioxus::prelude::*;
 use super::header::Header;
@@ -19,6 +21,8 @@ pub type GraphTypeContext = Signal<GraphType>;
 pub type ContextMenuContext = Signal<Option<(f64, f64, i32, i32, MenuType)>>;
 pub type SheetContext = Signal<Arc<Mutex<Sheet>>>;
 pub type SheetVersionContext = Signal<i32>;
+// Change FormulasMapContext to use Vec<Vec<String>> instead of HashMap
+pub type FormulasContext = Signal<Arc<Mutex<Vec<Vec<String>>>>>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
@@ -30,8 +34,8 @@ pub enum GraphType {
 
 #[component]
 pub fn Spreadsheet() -> Element {
-    let mut num_rows = 30;
-    let mut num_cols = 30;
+    let num_rows = 30;
+    let num_cols = 30;
 
     // Create the signals for context
     let mut selected_cell : SelectedCellContext = use_signal(|| (0, 0));
@@ -46,6 +50,19 @@ pub fn Spreadsheet() -> Element {
     });
     let sheet_version: SheetVersionContext = use_signal(|| 0);
     
+    // Initialize 2D vector for formulas
+    let formulas: FormulasContext = use_signal(|| {
+        // Create a 2D vector with empty strings
+        let mut formulas_grid = Vec::with_capacity(num_rows);
+        for _ in 0..num_rows {
+            let mut row = Vec::with_capacity(num_cols);
+            for _ in 0..num_cols {
+                row.push(String::new());
+            }
+            formulas_grid.push(row);
+        }
+        Arc::new(Mutex::new(formulas_grid))
+    });
     
     let mut filename = "new_file.xlsx".to_string();
     if let Some(file) = current_file.cloned() {
@@ -109,6 +126,7 @@ pub fn Spreadsheet() -> Element {
     provide_context(context_menu);
     provide_context(sheet);
     provide_context(sheet_version);
+    provide_context(formulas); // Provide formulas context
 
     rsx! {
         div {

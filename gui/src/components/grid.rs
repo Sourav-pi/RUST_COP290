@@ -162,7 +162,7 @@ pub fn Grid(props: GridProps) -> Element {
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_down,
-                    disabled: row_offset.cloned() >= max_row_offset,
+                    disabled: row_offset.cloned() >= max_row_offset-1,
                     "↓"
                 }
                 button {
@@ -174,7 +174,7 @@ pub fn Grid(props: GridProps) -> Element {
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_right,
-                    disabled: col_offset.cloned() >= max_col_offset,
+                    disabled: col_offset.cloned() >= max_col_offset-1,
                     "→"
                 }
             }

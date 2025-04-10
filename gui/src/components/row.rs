@@ -25,7 +25,7 @@ const CELL_HEADER_STYLE: &str = "
 ";
 
 // Helper function to convert column number to letter
-fn column_to_letter(col: i32) -> String {
+pub fn column_to_letter(col: i32) -> String {
     if col <= 0 {
         return String::new();
     }

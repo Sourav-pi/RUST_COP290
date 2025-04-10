@@ -47,17 +47,13 @@ pub struct CellProps {
     pub oncontextmenu: Callback<dioxus::prelude::Event<dioxus::events::MouseData>>,
 }
 
-// Dummy function to simulate formula evaluation
-fn evaluate_formula(formula: &str, row: i32, col: i32) -> String {
-   return format!("{} hi", formula);
-}
 
 #[component]
 pub fn Cell(props: CellProps) -> Element {
     // Consume the contexts
     let mut selected_cell = use_context::<SelectedCellContext>();
     let mut formula = use_context::<FormulaContext>();
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     
     let mut is_editing = use_signal(|| false);
     let mut formula_local = use_signal(|| String::new());
@@ -74,6 +70,10 @@ pub fn Cell(props: CellProps) -> Element {
 
     // Move the selection handling to a use_effect to avoid infinite loops
     use_effect(move || {
+
+        if is_this_cell_selected {
+            formula_local.set(formula.cloned());
+        }
         if is_this_cell_selected && !*was_selected_before.read() {
             was_selected_before.set(true);
             
@@ -124,7 +124,6 @@ pub fn Cell(props: CellProps) -> Element {
                     // Update the cell value in the Sheet object
                     sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
                     // Update the displayed value
-                    displayed_local.set(sheet_locked.get_value(row, col).to_string());
                     println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
                 }
             }
@@ -147,9 +146,6 @@ pub fn Cell(props: CellProps) -> Element {
                 if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                     // Update the cell value in the Sheet object
                     sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
-                    // Update the displayed value
-                    displayed_local.set(sheet_locked.get_value(row, col).to_string());
-                    
                     println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
                 }
             }
@@ -160,9 +156,6 @@ pub fn Cell(props: CellProps) -> Element {
     // Handler for input changes
     let on_input = move |e: Event<FormData>| {
         let new_value = e.value().clone();
-        formula_local.set(new_value.clone());
-        
-        // Also update the global formula context
         formula.set(new_value);
     };
     
@@ -189,6 +182,12 @@ pub fn Cell(props: CellProps) -> Element {
             document::eval(&script);
         }
     };
+
+    if let Ok(sheet_locked) = sheet.cloned().lock() {
+        // Update the cell value in the Sheet object
+        displayed_local.set(sheet_locked.get_value(props.row, props.col).to_string());
+    }
+    
     
     if props.is_header {
         rsx!{
