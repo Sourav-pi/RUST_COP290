@@ -39,6 +39,11 @@ impl Sheet {
         let sheet = Self { grid };
         sheet
     }
+
+    pub fn get_formula(&self, row: usize, col: usize) -> String {
+        return unparse(self.grid[row][col].clone());
+    }
+
     fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {
         if command.flag.type_() == 0 {
             if command.flag.type1() == 0 {
