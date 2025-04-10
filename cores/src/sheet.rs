@@ -36,7 +36,7 @@ use std::collections::HashSet;
                     self.grid[row][col].value=command.param1;
                 }else if command.flag.type1()==1 {
                     let (param1_row,param1_col)=convert_to_index_int(command.param1);
-                    self.grid[param1_row][param1_col].depend.push(row*100000+col);
+                    self.grid[param1_row][param1_col].depend.push(row*ENCODE_SHIFT+col);
                    
                 }
             }else if command.flag.type_()==1 {
@@ -54,20 +54,20 @@ use std::collections::HashSet;
                         }
                     }else{
                         let (param2_row,param2_col)=convert_to_index_int(command.param2);
-                        self.grid[param2_row][param2_col].depend.push(row*100000+col);
+                        self.grid[param2_row][param2_col].depend.push(row*ENCODE_SHIFT+col);
                     }
                 }else if command.flag.type1()==1 {
                     let (param1_row,param1_col)=convert_to_index_int(command.param1);
-                    self.grid[param1_row][param1_col].depend.push(row*100000+col);
+                    self.grid[param1_row][param1_col].depend.push(row*ENCODE_SHIFT+col);
                     if command.flag.type2()==0 {
                         
                     }else if command.flag.type2()==1 {
                         let (param2_row,param2_col)=convert_to_index_int(command.param2);
-                        self.grid[param2_row][param2_col].depend.push(row*100000+col);
+                        self.grid[param2_row][param2_col].depend.push(row*ENCODE_SHIFT+col);
                     }
                 }   
         }else{
-            let t=row*100000+col;
+            let t=row*ENCODE_SHIFT+col;
             let (param1_row,param1_col)=convert_to_index_int(command.param1);
             let (param2_row,param2_col)=convert_to_index_int(command.param2);
             for i in param1_row..(param2_row+1){
@@ -107,8 +107,8 @@ use std::collections::HashSet;
 
                 visited.insert(cell);
 
-                let col = (cell as usize) % 100000;
-                let row = (cell as usize) / 100000;
+                let col = (cell as usize) % ENCODE_SHIFT;
+                let row = (cell as usize) / ENCODE_SHIFT;
                 let mut is_cycle = false;
                 stack.insert(cell);
                 for &dep in & self.grid[row][col].depend {
@@ -186,8 +186,8 @@ use std::collections::HashSet;
              fn update_cell (&mut self, list_fpr_update:Vec<usize>){
 
                 for i in list_fpr_update{
-                    let col = (i as usize) % 100000;
-                let row = (i as usize) / 100000;
+                    let col = (i as usize) % ENCODE_SHIFT;
+                let row = (i as usize) / ENCODE_SHIFT;
                     if self.grid[row][col].formula.flag.type_() == 0 { // value
                         
                         if self.grid[row][col].formula.flag.type1() ==0 {
@@ -321,7 +321,7 @@ use std::collections::HashSet;
             pub fn update_cell_data(&mut self, row :usize , col :usize, new_formula: String ) {
                 let mut command = parse_formula(&new_formula);
                 self.set_dependicies_cell(row as usize, col as usize, command.clone());
-                let topo_vec = self.toposort(row*100000+col); 
+                let topo_vec = self.toposort(row*ENCODE_SHIFT+col);   
                 if topo_vec==vec![] {
                     command.flag.set_error(1);
                 }
