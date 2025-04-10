@@ -50,6 +50,11 @@ pub struct RowProps {
     pub is_header: bool,
     #[props(default = 80)]
     pub min_width: i32,
+    #[props(default = 0)]
+    pub start_col: i32,
+    #[props(default = 0)]
+    pub end_col: i32,
+
 }
 
 #[component]
@@ -122,7 +127,7 @@ pub fn Row(props: RowProps) -> Element {
             // Add column header (A, B, C...) cell if this is the first column
             if props.is_header {
                 input { style: CELL_HEADER_STYLE, readonly: true, "" }
-                for col in 1..=props.num_cols {
+                for col in (props.start_col +1)..=props.end_col {
                     {
                         let col_letter = column_to_letter(col);
                         rsx! {
@@ -144,7 +149,7 @@ pub fn Row(props: RowProps) -> Element {
                 }
 
                 // Generate cells for this row
-                for col in 1..=props.num_cols {
+                for col in (props.start_col +1)..=props.end_col {
                     Cell {
                         row: props.row,
                         col,
