@@ -9,12 +9,12 @@ pub struct Cell {
 }
 
 pub enum Error {
-    NoError,
     DivByZero,
+    InvalidInput,
     CycleDetected,
 }
 pub enum CallResult {
-    Value(i32),
+    Time(i32),
     Error(Error),
 }
 pub struct Sheet {
@@ -389,11 +389,11 @@ impl Sheet {
                     self.grid[row][col].value = self.grid[param1_row][param1_col].value;
                 }
             }
-            
         }
     }
 
-    pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) {
+    pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
+        let start = time::Instant::now();
         let mut command = parse_formula(&new_formula);
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
@@ -401,6 +401,21 @@ impl Sheet {
             command.flag.set_error(1);
         } else {
             self.update_cell(topo_vec);
+        }
+        let end= start.elapsed();
+        if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
+            let ans=CallResult::Error(Error::DivByZero);
+            return ans;
+        } else if self.grid[row][col].formula.flag.error()==1 {
+            let ans=CallResult::Error(Error::InvalidInput);
+            return ans;
+        } else if self.grid[row][col].formula.flag.error()==2 {
+            let ans=CallResult::Error(Error::CycleDetected);
+            return ans;
+        } 
+        else {
+            let ans=CallResult::Time(end.as_millis() as i32);
+            return ans;
         }
     }
     pub fn get_value(&self, row: i32, col: i32) -> i32 {
