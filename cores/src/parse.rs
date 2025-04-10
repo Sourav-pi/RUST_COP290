@@ -4,6 +4,8 @@
 use regex::Regex;
 use modular_bitfield::prelude::*;
 
+use crate::sheet::Cell;
+
 //type_ :0 for conatant, 1 for arithmetic expression, 2 for function 
 //cmd : if type==1 then 0 for +, 1 for -, 2 for *, 3 for /
 // if type==2 then 0 for MIN, 1 for MAX, 2 for SUM, 3 for AVG, 4 for STDEV , 5 for sleep
@@ -214,6 +216,67 @@ pub fn decode_cell(encoded:i32) -> String{
 pub fn convert_to_index_int(encode:i32) -> (usize,usize){
     let inp= decode_cell(encode);
     convert_to_index(inp)
+}
+
+pub fn unparse(cell: Cell) -> String {
+    match cell.formula.flag.type_(){
+        0 =>{ // Constant
+            if cell.formula.flag.type1() == 0 {
+                return cell.formula.param1.to_string();
+            } else {
+                return decode_cell(cell.formula.param1);
+            }
+        }
+        1 =>{
+            let sym;
+            match cell.formula.flag.cmd(){
+                0 => sym = "+",
+                1 => sym = "-",
+                2 => sym = "*",
+                3 => sym = "/",
+                _ => sym = "",
+            }
+            let left;
+            if cell.formula.flag.type1() == 0 {
+                left = cell.formula.param1.to_string();
+            } else {
+                left = decode_cell(cell.formula.param1);
+            }
+            let right;
+            if cell.formula.flag.type2() == 0 {
+                right = cell.formula.param2.to_string();
+            } else {
+                right = decode_cell(cell.formula.param2);
+            }
+            return format!("{}{}{}", left, sym, right);
+        }
+        2 =>{
+            let func;
+            match cell.formula.flag.cmd(){
+                0 => func = "MIN",
+                1 => func = "MAX",
+                2 => func = "SUM",
+                3 => func = "AVG",
+                4 => func = "STDEV",
+                5 => func = "SLEEP",
+                _ => func = "",
+            }
+            let start;
+            if cell.formula.flag.type1() == 0 {
+                start = cell.formula.param1.to_string();
+            } else {
+                start = decode_cell(cell.formula.param1);
+            }
+            let end;
+            if cell.formula.flag.type2() == 0 {
+                end = cell.formula.param2.to_string();
+            } else {
+                end = decode_cell(cell.formula.param2);
+            }
+            return format!("{}({}:{})", func, start, end);
+        }
+        _ => return "".to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -528,6 +591,39 @@ mod tests {
         assert_eq!(decoded, "E7");
     }
 
+    #[test]
+    fn test_unparse_constant() {
+        let cell = Cell {
+            formula: CommandCall {
+                flag: CommandFlag::new(),
+                param1: 5,
+                param2: 0,
+            },
+            value: 5,
+            depend: vec![],
+        };
+        let result = unparse(cell);
+        assert_eq!(result, "5");
+    }
+
+    #[test]
+    fn test_unparse_sum_range(){
+        let mut cell = Cell {
+            formula: CommandCall {
+                flag: CommandFlag::new(),
+                param1: 100001,
+                param2: 99918278,
+            },
+            value: 0,
+            depend: vec![],
+        };
+        cell.formula.flag.set_type_(2);
+        cell.formula.flag.set_cmd(2);
+        cell.formula.flag.set_type1(1);
+        cell.formula.flag.set_type2(1);
+        let result = unparse(cell);
+        assert_eq!(result, "SUM(A1:ZZZ999)");
+    }
 
 
 

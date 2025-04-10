@@ -1,26 +1,11 @@
-use serde::Serialize;
-
 use crate::parse::*;
 use std::collections::HashSet;
 use std::{thread, time};
-use serde::{ Serializer, ser::SerializeStruct};
 #[derive(Clone)]
 pub struct Cell {
     pub value: i32,
     pub formula: CommandCall,
     pub depend: Vec<usize>,
-}
-impl Serialize for Cell {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut state = serializer.serialize_struct("Cell", 3)?;
-        state.serialize_field("value", &self.value)?;
-        state.serialize_field("formula", &self.formula)?;
-        state.serialize_field("depend", &self.depend)?;
-        state.end()
-    }
 }
 pub enum Error {
     DivByZero,
