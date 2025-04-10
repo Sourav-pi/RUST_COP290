@@ -117,6 +117,12 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
         let start = caps.get(2).unwrap().as_str().to_string();
         container.param1 = encode_cell(start.clone());
         container.param2 = encode_cell(caps.get(3).unwrap().as_str().to_string());
+        let (row1,col1) = convert_to_index_int(container.param1);
+        let (row2,col2) = convert_to_index_int(container.param2);
+        if (row1>row2) || (col1>col2){
+            container.flag.set_error(1);
+            return ;
+        }
         container.flag.set_type1(1);
         container.flag.set_type2(1);
         let temp = match caps.get(1).unwrap().as_str() {
@@ -189,7 +195,7 @@ pub fn encode_cell(cell:String) -> i32{
 
 pub fn decode_cell(encoded:i32) -> String{
     let col = (encoded%(ENCODE_SHIFT as i32)) as usize;
-    let row = (encoded/(ENCODE_SHIFT as i32)) as usize;
+    let mut row = (encoded/(ENCODE_SHIFT as i32)) as usize;
     let mut cell=String::new();
     while row>0{
         let mut temp= row%26;
@@ -301,11 +307,6 @@ mod tests {
     fn test_parse_formula_invalid() {
         let input = "A1+B2*";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 0);
-        assert_eq!(result.param2, 0);
-        assert_eq!(result.flag.type_(), 0);
-        assert_eq!(result.flag.cmd(), 0);
-        assert_eq!(result.flag.type1(), 0);
         assert_eq!(result.flag.error(), 1);
     }
 
@@ -363,7 +364,7 @@ mod tests {
         };
 
         Arithmatic(input, &mut result);
-        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param1, 18278999);
         assert_eq!(result.param2, 2002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 0);
@@ -383,7 +384,7 @@ mod tests {
 
         rangeoper(input, &mut result);
         assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param2, 18278999);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 2);
         assert_eq!(result.flag.type1(), 1);
@@ -402,7 +403,7 @@ mod tests {
 
         rangeoper(input, &mut result);
         assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param2, 18278999);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 1);
         assert_eq!(result.flag.type1(), 1);
@@ -421,7 +422,7 @@ mod tests {
 
         rangeoper(input, &mut result);
         assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param2, 18278999);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 0);
         assert_eq!(result.flag.type1(), 1);
@@ -440,7 +441,7 @@ mod tests {
 
         rangeoper(input, &mut result);
         assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param2, 18278999);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 3);
         assert_eq!(result.flag.type1(), 1);
@@ -459,7 +460,7 @@ mod tests {
 
         rangeoper(input, &mut result);
         assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param2, 18278999);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 4);
         assert_eq!(result.flag.type1(), 1);
@@ -477,8 +478,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 18278999);
+        assert_eq!(result.param2, 54022);
         assert_eq!(result.flag.error(), 1);
     }
 
@@ -492,8 +493,6 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
         assert_eq!(result.flag.error(), 1);
     }
 

@@ -77,7 +77,7 @@ fn test_divide(){
 }
 
 #[test]
-fn test_cell(){
+fn test_large_cell(){
     let mut test_sheet = Sheet::new(703, 703);
     test_sheet.update_cell_data(1,1, String::from("ZZ29"));
     test_sheet.update_cell_data(702,29, String::from("29"));
