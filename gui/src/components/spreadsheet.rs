@@ -1,5 +1,8 @@
+use core::num;
 use std::path::PathBuf;
 use dioxus::events::Key;
+use cores::Sheet;
+use std::sync::{Arc, Mutex};
 
 use dioxus::prelude::*;
 use super::header::Header;
@@ -14,6 +17,8 @@ pub type CurrentFileContext = Signal<Option<PathBuf>>;
 pub type GraphPopupContext = Signal<bool>;
 pub type GraphTypeContext = Signal<GraphType>;
 pub type ContextMenuContext = Signal<Option<(f64, f64, i32, i32, MenuType)>>;
+pub type SheetContext = Signal<Arc<Mutex<Sheet>>>;
+pub type SheetVersionContext = Signal<i32>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
@@ -25,6 +30,9 @@ pub enum GraphType {
 
 #[component]
 pub fn Spreadsheet() -> Element {
+    let mut num_rows = 30;
+    let mut num_cols = 30;
+
     // Create the signals for context
     let mut selected_cell : SelectedCellContext = use_signal(|| (0, 0));
     let formula : FormulaContext = use_signal(|| String::new());
@@ -32,6 +40,12 @@ pub fn Spreadsheet() -> Element {
     let graph_popup : GraphPopupContext = use_signal(|| false);
     let graph_type : GraphTypeContext = use_signal(|| GraphType::Line);
     let context_menu : ContextMenuContext = use_signal(|| None);
+    let sheet: SheetContext = use_signal(|| {
+        let new_sheet = Sheet::new(num_rows,num_cols); // Create a new Sheet instance
+        Arc::new(Mutex::new(new_sheet))
+    });
+    let sheet_version: SheetVersionContext = use_signal(|| 0);
+    
     
     let mut filename = "new_file.xlsx".to_string();
     if let Some(file) = current_file.cloned() {
@@ -48,8 +62,7 @@ pub fn Spreadsheet() -> Element {
 
         let (cur_row, cur_col) = selected_cell.cloned();
         
-        let max_rows = 30;
-        let max_cols = 20;
+        let max_rows = num_rows as i32;
         
         // Calculate the new cell based on arrow key pressed
         let new_cell = match event.key() {
@@ -94,6 +107,8 @@ pub fn Spreadsheet() -> Element {
     provide_context(graph_popup);
     provide_context(graph_type);
     provide_context(context_menu);
+    provide_context(sheet);
+    provide_context(sheet_version);
 
     rsx! {
         div {
@@ -106,8 +121,8 @@ pub fn Spreadsheet() -> Element {
                 filename: filename.clone(),
             }
             Grid {
-                num_rows: 30,
-                num_cols: 20,
+                num_rows: num_rows as i32,
+                num_cols: num_cols as i32,
             }
             GraphPopup {},
             ContextMenu {}

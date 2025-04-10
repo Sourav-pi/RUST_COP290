@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use crate::components::spreadsheet::SheetVersionContext;
 use super::row::Row;
 
 const GRID_STYLE: &str = "
@@ -60,6 +61,11 @@ pub struct GridProps {
 
 #[component]
 pub fn Grid(props: GridProps) -> Element {
+    let sheet_version = use_context::<SheetVersionContext>();
+    
+    // Just read the version to subscribe to changes
+    let _ = *sheet_version.read();
+
     let min_cell_width = 80; // Minimum width per cell in pixels
     
     // Visible rows per page

@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use dioxus::events::Key;
 // Import context types from spreadsheet module
-use super::spreadsheet::{SelectedCellContext, FormulaContext};
+use super::spreadsheet::{SelectedCellContext, FormulaContext, SheetContext};
 
 const CELL_STYLE: &str = "
     width: 80px;
@@ -57,6 +57,7 @@ pub fn Cell(props: CellProps) -> Element {
     // Consume the contexts
     let mut selected_cell = use_context::<SelectedCellContext>();
     let mut formula = use_context::<FormulaContext>();
+    let mut sheet = use_context::<SheetContext>();
     
     let mut is_editing = use_signal(|| false);
     let mut formula_local = use_signal(|| String::new());
@@ -71,24 +72,26 @@ pub fn Cell(props: CellProps) -> Element {
         props.row == sel_row && props.col == sel_col
     };
 
-    // Outside of the use_effect, directly in the component
-    if is_this_cell_selected && !*was_selected_before.read() {
-        was_selected_before.set(true);
-        
-        // Focus this cell
-        let script = format!(
-            "setTimeout(function() {{
-                const el = document.getElementById('row-{}-col-{}');
-                if (el) {{
-                    el.focus();
-                }}
-            }}, 10);",
-            props.row, props.col
-        );
-        document::eval(&script);
-    } else if !is_this_cell_selected && *was_selected_before.read() {
-        was_selected_before.set(false);
-    }
+    // Move the selection handling to a use_effect to avoid infinite loops
+    use_effect(move || {
+        if is_this_cell_selected && !*was_selected_before.read() {
+            was_selected_before.set(true);
+            
+            // Focus this cell
+            let script = format!(
+                "setTimeout(function() {{
+                    const el = document.getElementById('row-{}-col-{}');
+                    if (el) {{
+                        el.focus();
+                    }}
+                }}, 10);",
+                props.row, props.col
+            );
+            document::eval(&script);
+        } else if !is_this_cell_selected && *was_selected_before.read() {
+            was_selected_before.set(false);
+        }
+    });
 
     // Handler for when user starts editing
     let on_focus = {
@@ -117,9 +120,13 @@ pub fn Cell(props: CellProps) -> Element {
             
             // Evaluate the formula and update the displayed value
             if !formula_text.is_empty() {
-                let result = evaluate_formula(&formula_text, row, col); 
-                displayed_local.set(result);
-                formula_local.set(formula_text);
+                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                    // Update the cell value in the Sheet object
+                    sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
+                    // Update the displayed value
+                    displayed_local.set(sheet_locked.get_value(row, col).to_string());
+                    println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
+                }
             }
         }
     };
@@ -131,16 +138,21 @@ pub fn Cell(props: CellProps) -> Element {
         move |e: Event<KeyboardData>| {
             if e.key() == Key::Enter {
                 is_editing.set(false);
-                
-                // Get the formula from context in case it was updated elsewhere
-                let formula_text = formula.read().clone();
-                
-                // Evaluate the formula and update the displayed value
-                if !formula_text.is_empty() {
-                    let result = evaluate_formula(&formula_text, row, col);
-                    displayed_local.set(result);
-                    formula_local.set(formula_text);
+            
+            // Get the formula from context in case it was updated elsewhere
+            let formula_text = formula.read().clone();
+            
+            // Evaluate the formula and update the displayed value
+            if !formula_text.is_empty() {
+                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                    // Update the cell value in the Sheet object
+                    sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
+                    // Update the displayed value
+                    displayed_local.set(sheet_locked.get_value(row, col).to_string());
+                    
+                    println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
                 }
+            }
             }
         }
     };
