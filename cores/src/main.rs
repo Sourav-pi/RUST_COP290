@@ -5,7 +5,7 @@ mod parse;
 mod sheet;
 use sheet::Sheet;
 mod write_csv;
-use write_csv::write_csv;
+// use write_csv::write_csv;
 
 fn main(){
     let mut test_sheet = Sheet::new(6, 6); 

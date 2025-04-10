@@ -1,3 +1,3 @@
 fn main(){
-    
+    gui::run();
 }
