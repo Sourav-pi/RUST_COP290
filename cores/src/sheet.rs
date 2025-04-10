@@ -1,9 +1,4 @@
-
-use crate::parse;
-use crate::parse::parse_formula;
-use crate::parse::CommandCall;
-use crate::parse::CommandFlag;
-use crate:: parse::convert_to_index_int;
+use crate::parse::*;
 use std::collections::HashSet;
 #[derive(Clone)]
         pub struct Cell{
@@ -18,7 +13,7 @@ use std::collections::HashSet;
             pub grid:Vec<Vec<Cell>>,
         }
         impl Sheet {
-            pub fn new(row:usize, col:usize) -> Self {
+             pub fn new(row:usize, col:usize) -> Self {
                 let grid:Vec<Vec<Cell>>= vec![vec![Cell{
                     value:0,
                     formula:CommandCall{
@@ -34,7 +29,7 @@ use std::collections::HashSet;
                 };
                 sheet
             }
-            pub fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {
+            fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {
 
             if command.flag.type_()==0 {
                 if command.flag.type1()==0 {
@@ -86,7 +81,7 @@ use std::collections::HashSet;
             self.grid[row][col].formula=command;
             }
 
-            pub fn toposort(& self, target_cell :usize) -> Vec<usize> {
+             fn toposort(& self, target_cell :usize) -> Vec<usize> {
                 let mut visited:HashSet<usize> = HashSet::new();
                 let mut stack:HashSet<usize> = HashSet::new();
                 let mut result:Vec<usize> = vec![];
@@ -100,9 +95,9 @@ use std::collections::HashSet;
                 //     result.push(cell);
                 // }
 
-                // result.reverse();
+                result.reverse();
                 result}
-            pub fn dfs(&self, cell: usize, visited: &mut HashSet<usize>, stack: &mut  HashSet<usize>,result :&mut Vec<usize>)-> bool  {
+             fn dfs(&self, cell: usize, visited: &mut HashSet<usize>, stack: &mut  HashSet<usize>,result :&mut Vec<usize>)-> bool  {
                 if stack.contains(&cell) {
                     return true;
                 }
@@ -124,7 +119,7 @@ use std::collections::HashSet;
                 return is_cycle;
             }
 
-            pub fn minimum(&self,row1: usize ,row2: usize      ,col1 : usize , col2 : usize) -> i32 {
+             fn minimum(&self,row1: usize ,row2: usize      ,col1 : usize , col2 : usize) -> i32 {
                 let mut min = i32::MAX;
                 for i in row1..(row2+1) {
                     for j in col1..(col2+1) {
@@ -136,7 +131,7 @@ use std::collections::HashSet;
                 }
                 min
             }
-            pub fn maximum(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
+             fn maximum(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
                 let mut max = i32::MIN;
                 for i in row1..(row2+1) {
                     for j in col1..(col2+1) {
@@ -148,7 +143,7 @@ use std::collections::HashSet;
                 }
                 max
             }
-            pub fn average(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
+             fn average(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
                 let mut sum = 0;
                 let mut count = 0;
                 for i in row1..(row2+1) {
@@ -162,7 +157,7 @@ use std::collections::HashSet;
                 }
                 (sum as f32 / count as f32) as i32
             }
-            pub fn sum(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
+             fn sum(&self,row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
                 let mut sum = 0;
                 for i in row1..(row2+1){
                     for j in col1..(col2+1) {
@@ -171,7 +166,7 @@ use std::collections::HashSet;
                 }
                 sum
             }
-            pub fn stddev(&self, row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
+             fn stddev(&self, row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
                 let mean = self.average(row1, row2, col1, col2);
                 let mut sum = 0;
                 let mut count = 0;
@@ -188,7 +183,7 @@ use std::collections::HashSet;
                 ((sum as f64 / count as f64).sqrt()) as i32
             }
 
-            pub fn update_cell (&mut self, list_fpr_update:Vec<usize>){
+             fn update_cell (&mut self, list_fpr_update:Vec<usize>){
 
                 for i in list_fpr_update{
                     let col = (i as usize) % 100000;
@@ -326,7 +321,7 @@ use std::collections::HashSet;
             pub fn update_cell_data(&mut self, row :usize , col :usize, new_formula: String ) {
                 let mut command = parse_formula(&new_formula);
                 self.set_dependicies_cell(row as usize, col as usize, command.clone());
-                let topo_vec = self.toposort(row*100000+col);   
+                let topo_vec = self.toposort(row*100000+col); 
                 if topo_vec==vec![] {
                     command.flag.set_error(1);
                 }

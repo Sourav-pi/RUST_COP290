@@ -1,4 +1,6 @@
-use std::fmt::Display;
+#![allow(non_snake_case)]
+#![allow(unused_braces)]
+
 use regex::Regex;
 use modular_bitfield::prelude::*;
 
@@ -22,13 +24,6 @@ pub struct CommandFlag{
     #[skip]              // Skip the remaining bits to round up to 16 bits
     __: B6,              // 6 bits
 }
-impl CommandFlag {
-    pub fn pr(&self) -> String {
-        format!("type_: {}, cmd: {}, type1: {}, type2: {}, error: {}, is_div_by_zero: {}",
-            self.type_(), self.cmd(), self.type1(), self.type2(), self.error(), self.is_div_by_zero())
-
-    }
-}
 #[derive(Clone)]
 pub struct CommandCall {
     pub flag: CommandFlag, // 16 bits
@@ -36,11 +31,6 @@ pub struct CommandCall {
     pub param2: i32,         // 4 bytes
 }
 
-impl CommandCall {
-    pub fn pr(&self) -> String {
-        format!("flag: {}, param1: {}, param2: {}", self.flag.pr(), self.param1, self.param2)
-    }   
-}
 
 pub fn parse_formula(input: &str) -> CommandCall {
     
@@ -179,8 +169,10 @@ pub fn convert_to_index(cell:String) -> (usize, usize) {
     if let Some(caps) = re.captures(&cell) {
         let col_str = caps.get(1).unwrap().as_str();
         let row_str = caps.get(2).unwrap().as_str();
-        
-        let col = col_str.chars().map(|c| c as usize - 'A' as usize+ 1 as usize ).sum::<usize>();
+        let mut col = 0;
+        for i in col_str.chars() {
+            col = col * 26 + (i as usize - 'A' as usize + 1);
+        }
         let row = row_str.parse::<usize>().unwrap();
         return (col, row);
     }
@@ -195,9 +187,16 @@ pub fn encode_cell(cell:String) -> i32{
 
 pub fn decode_cell(encoded:i32) -> String{
     let col = (encoded%100000) as usize;
-    let row = (encoded/100000) as usize;
+    let mut row = (encoded/100000) as usize;
     let mut cell=String::new();
-    cell.push((row as u8 - 1 as u8 + 'A' as u8) as char);
+    while row>0{
+        let mut temp= row%26;
+        if temp==0{
+            temp=26;
+        }
+        cell.insert(0,(temp as u8 + 'A' as u8 -1) as char);
+        row=(row-temp)/26;
+    }
     cell.push_str(&col.to_string());
     cell
 }
@@ -206,3 +205,4 @@ pub fn convert_to_index_int(encode:i32) -> (usize,usize){
     let inp= decode_cell(encode);
     convert_to_index(inp)
 }
+
