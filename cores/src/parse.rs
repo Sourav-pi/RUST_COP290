@@ -14,6 +14,7 @@ use modular_bitfield::prelude::*;
 #[bitfield]
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
 #[derive(Clone)]
+#[derive(serde::Serialize)]
 pub struct CommandFlag{
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits
@@ -25,6 +26,7 @@ pub struct CommandFlag{
     __: B6,              // 6 bits
 }
 #[derive(Clone)]
+#[derive(serde::Serialize)]
 pub struct CommandCall {
     pub flag: CommandFlag, // 16 bits
     pub param1: i32,         // 4 bytes
@@ -180,32 +182,32 @@ pub fn convert_to_index(cell:String) -> (usize, usize) {
             col = col * 26 + (i as usize - 'A' as usize + 1);
         }
         let row = row_str.parse::<usize>().unwrap();
-        return (col, row);
+        return (row,col);
     }
     (0, 0)
 }
 
-pub const ENCODE_SHIFT: usize = 1000;
+pub const ENCODE_SHIFT: usize = 100000;
 
 pub fn encode_cell(cell:String) -> i32{
-    let (col, row) = convert_to_index(cell);
-    let encoded= col*(ENCODE_SHIFT as usize)+row;
+    let (row, col) = convert_to_index(cell);
+    let encoded= row*(ENCODE_SHIFT as usize)+col;
     encoded as i32
 }
 
 pub fn decode_cell(encoded:i32) -> String{
-    let col = (encoded%(ENCODE_SHIFT as i32)) as usize;
-    let mut row = (encoded/(ENCODE_SHIFT as i32)) as usize;
+    let mut col = (encoded%(ENCODE_SHIFT as i32)) as usize;
+    let row = (encoded/(ENCODE_SHIFT as i32)) as usize;
     let mut cell=String::new();
-    while row>0{
-        let mut temp= row%26;
+    while col>0{
+        let mut temp= col%26;
         if temp==0{
             temp=26;
         }
         cell.insert(0,(temp as u8 + 'A' as u8 -1) as char);
-        row=(row-temp)/26;
+        col=(col-temp)/26;
     }
-    cell.push_str(&col.to_string());
+    cell.push_str(&row.to_string());
     cell
 }
 
@@ -222,8 +224,8 @@ mod tests {
     fn test_parse_formula_add() {
         let input = "A1+B2";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 200002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 0);
         assert_eq!(result.flag.type1(), 1);
@@ -234,8 +236,8 @@ mod tests {
     fn test_parse_formula_subtract() {
         let input = "A1-B2";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 200002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 1);
         assert_eq!(result.flag.type1(), 1);
@@ -246,8 +248,8 @@ mod tests {
     fn test_parse_formula_multiply() {
         let input = "A1*B2";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 200002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 2);
         assert_eq!(result.flag.type1(), 1);
@@ -258,8 +260,8 @@ mod tests {
     fn test_parse_formula_divide() {
         let input = "A1/B2";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 200002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 3);
         assert_eq!(result.flag.type1(), 1);
@@ -292,7 +294,7 @@ mod tests {
     fn test_parse_formula_cell() {
         let input = "ZZZ999";
         let result = parse_formula(input);
-        assert_eq!(result.param1, 18278999);
+        assert_eq!(result.param1, 99918278);
         assert_eq!(result.param2, 0);
         assert_eq!(result.flag.type_(), 0);
         assert_eq!(result.flag.cmd(), 0);
@@ -343,7 +345,7 @@ mod tests {
         };
 
         parse_sleep(input, &mut result);
-        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param1, 100001);
         assert_eq!(result.param2, 0);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 5);
@@ -364,8 +366,8 @@ mod tests {
         };
 
         Arithmatic(input, &mut result);
-        assert_eq!(result.param1, 18278999);
-        assert_eq!(result.param2, 2002);
+        assert_eq!(result.param1, 99918278);
+        assert_eq!(result.param2, 200002);
         assert_eq!(result.flag.type_(), 1);
         assert_eq!(result.flag.cmd(), 0);
         assert_eq!(result.flag.type1(), 1);
@@ -383,8 +385,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 18278999);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 99918278);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 2);
         assert_eq!(result.flag.type1(), 1);
@@ -402,8 +404,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 18278999);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 99918278);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 1);
         assert_eq!(result.flag.type1(), 1);
@@ -421,8 +423,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 18278999);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 99918278);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 0);
         assert_eq!(result.flag.type1(), 1);
@@ -440,8 +442,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 18278999);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 99918278);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 3);
         assert_eq!(result.flag.type1(), 1);
@@ -459,8 +461,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 1001);
-        assert_eq!(result.param2, 18278999);
+        assert_eq!(result.param1, 100001);
+        assert_eq!(result.param2, 99918278);
         assert_eq!(result.flag.type_(), 2);
         assert_eq!(result.flag.cmd(), 4);
         assert_eq!(result.flag.type1(), 1);
@@ -478,8 +480,8 @@ mod tests {
         };
 
         rangeoper(input, &mut result);
-        assert_eq!(result.param1, 18278999);
-        assert_eq!(result.param2, 54022);
+        assert_eq!(result.param1, 99918278);
+        assert_eq!(result.param2, 2200054);
         assert_eq!(result.flag.error(), 1);
     }
 
@@ -500,28 +502,28 @@ mod tests {
     fn test_convert_to_index() {
         let input = "ZZ29";
         let (col, row) = convert_to_index(input.to_string());
-        assert_eq!(col, 702);
-        assert_eq!(row, 29);
+        assert_eq!(col, 29);
+        assert_eq!(row, 702);
     }
 
     #[test]
     fn test_encode_cell() {
         let input = "ZZ29";
         let encoded = encode_cell(input.to_string());
-        assert_eq!(encoded, 702029);
+        assert_eq!(encoded, 2900702);
 
         let input = "C7";
         let encoded = encode_cell(input.to_string());
-        assert_eq!(encoded, 3007);
+        assert_eq!(encoded, 700003);
     }
 
     #[test]
     fn test_decode_cell() {
-        let input = 702029;
+        let input = 2900702;
         let decoded = decode_cell(input);
         assert_eq!(decoded, "ZZ29");
 
-        let input = 5007;
+        let input = 700005;
         let decoded = decode_cell(input);
         assert_eq!(decoded, "E7");
     }
