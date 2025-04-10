@@ -5,8 +5,11 @@ authors = ["Sourav Kumar Patel <116533955+Sourav-pi@users.noreply.github.com>"]
 edition = "2021"
 
 [dependencies]
-dioxus = { version = "0.6.0", features = ["router"] }
+dioxus = {version = "0.6.0"}
+stylist = "0.13.0"
 cores ={ path = "../cores" } 
+rfd = { version = "0.15"}
+
 
 [features]
 default = ["desktop"]
