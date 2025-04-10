@@ -187,15 +187,17 @@ pub fn convert_to_index(cell:String) -> (usize, usize) {
     (0, 0)
 }
 
+pub const ENCODE_SHIFT: usize = 1000;
+
 pub fn encode_cell(cell:String) -> i32{
     let (col, row) = convert_to_index(cell);
-    let encoded= col*(100000)+row;
+    let encoded= col*(ENCODE_SHIFT as usize)+row;
     encoded as i32
 }
 
 pub fn decode_cell(encoded:i32) -> String{
-    let col = (encoded%100000) as usize;
-    let row = (encoded/100000) as usize;
+    let col = (encoded%(ENCODE_SHIFT as i32)) as usize;
+    let row = (encoded/(ENCODE_SHIFT as i32)) as usize;
     let mut cell=String::new();
     cell.push((row as u8 - 1 as u8 + 'A' as u8) as char);
     cell.push_str(&col.to_string());
@@ -205,4 +207,329 @@ pub fn decode_cell(encoded:i32) -> String{
 pub fn convert_to_index_int(encode:i32) -> (usize,usize){
     let inp= decode_cell(encode);
     convert_to_index(inp)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_formula_add() {
+        let input = "A1+B2";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+    }
+
+    #[test]
+    fn test_parse_formula_subtract() {
+        let input = "A1-B2";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 1);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+    }
+
+    #[test]
+    fn test_parse_formula_multiply() {
+        let input = "A1*B2";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 2);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+    }
+
+    #[test]
+    fn test_parse_formula_divide() {
+        let input = "A1/B2";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 3);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+    }
+
+    #[test]
+    fn test_parse_formula_constant() {
+        let input = "5";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 5);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 0);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 0);
+    }
+
+    #[test]
+    fn test_parse_formula_neg_constant(){
+        let input = "-5";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, -5);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 0);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 0);
+    }
+
+    #[test]
+    fn test_parse_formula_cell() {
+        let input = "ZZZ999";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 18278999);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 0);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 0);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+
+
+    #[test]
+    fn test_parse_formula_invalid() {
+        let input = "A1+B2*";
+        let result = parse_formula(input);
+        assert_eq!(result.param1, 0);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 0);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 0);
+        assert_eq!(result.flag.error(), 1);
+    }
+
+
+
+    #[test]
+    fn test_parse_sleep_val() {
+        let input = "SLEEP(5)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        parse_sleep(input, &mut result);
+        assert_eq!(result.param1, 5);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 5);
+        assert_eq!(result.flag.type1(), 0);
+        assert_eq!(result.flag.type2(), 0);
+        assert_eq!(result.flag.error(), 0);
+        assert_eq!(result.flag.is_div_by_zero(), 0);
+
+    }
+
+    #[test]
+    fn test_parse_sleep_cell() {
+        let input = "SLEEP(A1)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        parse_sleep(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 0);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 5);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 0);
+        assert_eq!(result.flag.error(), 0);
+        assert_eq!(result.flag.is_div_by_zero(), 0);
+
+    }
+
+    #[test]
+    fn test_parse_arithmetic() {
+        let input = "ZZZ999+B2";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        Arithmatic(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn test_parse_range_sum() {
+        let input = "SUM(A1:ZZZ999)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 2);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn test_parse_range_max() {
+        let input = "MAX(A1:ZZZ999)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 1);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn tets_parse_range_min() {
+        let input = "MIN(A1:ZZZ999)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn test_parse_range_avg() {
+        let input = "AVG(A1:ZZZ999)";
+        let mut result = CommandCall {  
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 3);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn test_parse_range_stdev() {
+        let input = "STDEV(A1:ZZZ999)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.type_(), 2);
+        assert_eq!(result.flag.cmd(), 4);
+        assert_eq!(result.flag.type1(), 1);
+        assert_eq!(result.flag.type2(), 1);
+        assert_eq!(result.flag.error(), 0);
+    }
+
+    #[test]
+    fn test_parse_valid_func_with_invalid_range(){
+        let input = "SUM(ZZZ999:BB22)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_parse_invalid_func_with_valid_range(){
+        let input = "INVALID(A1:ZZZ999)";
+        let mut result = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+
+        rangeoper(input, &mut result);
+        assert_eq!(result.param1, 1001);
+        assert_eq!(result.param2, 2002);
+        assert_eq!(result.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_convert_to_index() {
+        let input = "ZZ29";
+        let (col, row) = convert_to_index(input.to_string());
+        assert_eq!(col, 702);
+        assert_eq!(row, 29);
+    }
+
+    #[test]
+    fn test_encode_cell() {
+        let input = "ZZ29";
+        let encoded = encode_cell(input.to_string());
+        assert_eq!(encoded, 702029);
+
+        let input = "C7";
+        let encoded = encode_cell(input.to_string());
+        assert_eq!(encoded, 3007);
+    }
+
+    #[test]
+    fn test_decode_cell() {
+        let input = 702029;
+        let decoded = decode_cell(input);
+        assert_eq!(decoded, "ZZ29");
+
+        let input = 5007;
+        let decoded = decode_cell(input);
+        assert_eq!(decoded, "E7");
+    }
+
+
+
+
+
 }
