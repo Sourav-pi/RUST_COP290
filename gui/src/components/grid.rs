@@ -1,6 +1,8 @@
 use dioxus::prelude::*;
-use crate::components::spreadsheet::SheetVersionContext;
+use dioxus_elements::{ol::start, option::selected};
+use crate::components::spreadsheet::{SheetVersionContext, StartRowContext, StartColContext,SelectedCellContext};
 use super::row::Row;
+use std::rc::Rc;
 
 const GRID_STYLE: &str = "
     overflow: hidden;
@@ -61,10 +63,9 @@ pub struct GridProps {
 
 #[component]
 pub fn Grid(props: GridProps) -> Element {
-    let sheet_version = use_context::<SheetVersionContext>();
-    
-    // Just read the version to subscribe to changes
-    let _ = *sheet_version.read();
+    let start_row_ctx = use_context::<StartRowContext>();
+    let start_col_ctx = use_context::<StartColContext>();
+    let selected_cell = use_context::<SelectedCellContext>();
 
     let min_cell_width = 80; // Minimum width per cell in pixels
     
@@ -73,44 +74,44 @@ pub fn Grid(props: GridProps) -> Element {
     let cols_per_page = 18;
     
     // State for current page
-    let mut row_offset = use_signal(|| 0);
-    let mut col_offset = use_signal(|| 0);
+    let mut start_row_ctx = use_signal(|| 0);
+    let mut start_col_ctx = use_signal(|| 0);
     
     // Calculate max pages
-    let max_row_offset = (props.num_rows - rows_per_page).max(0);
-    let max_col_offset = (props.num_cols - cols_per_page).max(0);
+    let max_start_row = (props.num_rows - rows_per_page).max(0);
+    let max_start_col = (props.num_cols - cols_per_page).max(0);
     
     // Navigation handlers
     let move_up = move |_| {
-        if row_offset.cloned() > 0 {
-            row_offset.set(row_offset.cloned() - 1);
+        if start_row_ctx.cloned() > 0 {
+            start_row_ctx.set(start_row_ctx.cloned() - 1);
         }
     };
     
     let move_down = move |_| {
-        if row_offset.cloned() < max_row_offset {
-            row_offset.set(row_offset.cloned() + 1);
+        if start_row_ctx.cloned() < max_start_row {
+            start_row_ctx.set(start_row_ctx.cloned() + 1);
         }
     };
     
     let move_left = move |_| {
-        if col_offset.cloned() > 0 {
-            col_offset.set(col_offset.cloned() - 1);
+        if start_col_ctx.cloned() > 0 {
+            start_col_ctx.set(start_col_ctx.cloned() - 1);
         }
     };
     
     let move_right = move |_| {
-        if col_offset.cloned() < max_col_offset {
-            col_offset.set(col_offset.cloned() + 1);
+        if start_col_ctx.cloned() < max_start_col {
+            start_col_ctx.set(start_col_ctx.cloned() + 1);
         }
     };
     
     // Calculate visible range
-    let start_row = row_offset.cloned();
-    let end_row = (start_row + rows_per_page).min(props.num_rows);
+
+    let end_row = (start_row_ctx.cloned() + rows_per_page).min(props.num_rows);
     
-    let start_col = col_offset.cloned();
-    let end_col = (start_col + cols_per_page).min(props.num_cols);
+
+    let end_col = (start_col_ctx.cloned() + cols_per_page).min(props.num_cols);
     
     rsx! {
         div {
@@ -125,18 +126,18 @@ pub fn Grid(props: GridProps) -> Element {
                     num_cols: cols_per_page,
                     is_header: true,
                     min_width: min_cell_width,
-                    start_col: start_col,
+                    start_col: start_col_ctx.cloned(),
                     end_col: end_col,
                 }
                 
                 // Visible rows
-                for i in (start_row + 1)..=end_row {
+                for i in (start_row_ctx + 1)..=end_row {
                     Row {
                         row: i,
                         num_cols: cols_per_page,
                         is_header: false,
                         min_width: min_cell_width,
-                        start_col: start_col,
+                        start_col: start_col_ctx.cloned(),
                         end_col: end_col,
                     }
                 }
@@ -149,32 +150,36 @@ pub fn Grid(props: GridProps) -> Element {
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
-                    "Rows: {start_row}-{end_row} / {props.num_rows}, Cols: {start_col}-{end_col} / {props.num_cols}"
+                    "Rows: {start_row_ctx}-{end_row} / {props.num_rows}, Cols: {start_col_ctx}-{end_col} / {props.num_cols}"
                 }
                 
                 // Navigation buttons
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_up,
-                    disabled: row_offset.cloned() == 0,
+                    disabled: start_row_ctx.cloned() == 0,
+                    id: "up-button",
                     "↑"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_down,
-                    disabled: row_offset.cloned() >= max_row_offset-1,
+                    disabled: start_row_ctx.cloned() >= max_start_row-1,
+                    id: "down-button",
                     "↓"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_left,
-                    disabled: col_offset.cloned() == 0,
+                    disabled: start_col_ctx.cloned() == 0,
+                    id: "left-button",
                     "←"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_right,
-                    disabled: col_offset.cloned() >= max_col_offset-1,
+                    disabled: start_col_ctx.cloned() >= max_start_col-1,
+                    id: "right-button",
                     "→"
                 }
             }

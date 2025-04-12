@@ -1,9 +1,6 @@
-use core::num;
 use std::path::PathBuf;
-use dioxus::events::Key;
 use cores::Sheet;
 use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
 use std::vec::Vec;
 
 use dioxus::prelude::*;
@@ -23,6 +20,10 @@ pub type SheetContext = Signal<Arc<Mutex<Sheet>>>;
 pub type SheetVersionContext = Signal<i32>;
 // Change FormulasMapContext to use Vec<Vec<String>> instead of HashMap
 pub type FormulasContext = Signal<Arc<Mutex<Vec<Vec<String>>>>>;
+pub type StartRowContext = Signal<i32>;
+pub type StartColContext = Signal<i32>;
+pub type MaxStartRowContext = Signal<i32>;
+pub type MaxStartColContext = Signal<i32>;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
@@ -38,7 +39,7 @@ pub fn Spreadsheet() -> Element {
     let num_cols = 30;
 
     // Create the signals for context
-    let mut selected_cell : SelectedCellContext = use_signal(|| (0, 0));
+    let selected_cell : SelectedCellContext = use_signal(|| (1, 1));
     let formula : FormulaContext = use_signal(|| String::new());
     let current_file : CurrentFileContext = use_signal(|| None);
     let graph_popup : GraphPopupContext = use_signal(|| false);
@@ -48,6 +49,10 @@ pub fn Spreadsheet() -> Element {
         let new_sheet = Sheet::new(num_rows,num_cols); // Create a new Sheet instance
         Arc::new(Mutex::new(new_sheet))
     });
+    let start_row: StartRowContext = use_signal(|| 0);
+    let start_col: StartColContext = use_signal(|| 0);
+    let max_start_row: MaxStartRowContext = use_signal(|| 0);
+    let max_start_col: MaxStartColContext = use_signal(|| 0);
     let sheet_version: SheetVersionContext = use_signal(|| 0);
     
     // Initialize 2D vector for formulas
@@ -69,54 +74,6 @@ pub fn Spreadsheet() -> Element {
         filename = file.file_name().unwrap().to_str().unwrap().to_string();
     }
 
-    // Handler for arrow key navigation
-    let keydown_handler = move |event: Event<KeyboardData>| {
-
-        // Don't process if modifier keys are held down (for shortcuts)
-        if event.modifiers().meta() || event.modifiers().ctrl() || event.modifiers().alt() {
-            return;
-        }
-
-        let (cur_row, cur_col) = selected_cell.cloned();
-        
-        let max_rows = num_rows as i32;
-        
-        // Calculate the new cell based on arrow key pressed
-        let new_cell = match event.key() {
-            Key::ArrowUp => {
-                event.prevent_default();
-                if cur_row > 0 {
-                    (cur_row - 1, cur_col)
-                } else {
-                    (cur_row, cur_col) // Stay at current cell if at top edge
-                }
-            },
-            Key::ArrowDown=> {
-                event.prevent_default();
-                if cur_row < max_rows - 1 {
-                    (cur_row + 1, cur_col)
-                } else {
-                    (cur_row, cur_col) // Stay at current cell if at bottom edge
-                }
-            },
-            Key::Enter => {
-                event.prevent_default();
-                if cur_row < max_rows - 1 {
-                    (cur_row + 1, cur_col) // Move down
-                } else {
-                    (cur_row, cur_col) // Stay at current cell if at bottom edge
-                }
-            },
-            _ => (cur_row, cur_col) // No change for other keys
-        };
-        
-        // Update selected cell if it changed
-        if new_cell != (cur_row, cur_col) {
-            selected_cell.set(new_cell);
-            println!("Selected cell changed to: ({}, {})", new_cell.0, new_cell.1);
-        }
-    };
-
     // Provide the contexts to the components
     provide_context(selected_cell);
     provide_context(formula);
@@ -126,14 +83,24 @@ pub fn Spreadsheet() -> Element {
     provide_context(context_menu);
     provide_context(sheet);
     provide_context(sheet_version);
-    provide_context(formulas); // Provide formulas context
+    provide_context(formulas);
+    provide_context(start_row);
+    provide_context(start_col);
+    provide_context(max_start_row);
+    provide_context(max_start_col);
+
+    use_effect(move||{
+        let _ = document::eval("
+            document.getElementById('row-1-col-1').focus();
+        
+        ");
+    });
 
     rsx! {
         div {
             // Global keyboard event listener
             tabindex: 0, // Makes the div focusable
-            onkeydown: keydown_handler,
-            style: "outline: none; width: 100%; height: 100%;",
+            style: "outline: none; width: 100%; height: 100%; overflow: hidden;",
             
             Header { 
                 filename: filename.clone(),

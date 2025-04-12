@@ -1,5 +1,4 @@
 use dioxus::prelude::*;
-use dioxus_elements::form;
 use super::formula_bar::*;
 use super::toolbar::*;
 
@@ -19,8 +18,6 @@ const HEAD_STYLE: &str = "
 
 #[component]
 pub fn Header(props : HeaderProps) -> Element {
-    let mut cur_cell = use_signal(|| "A1".to_string());
-    let mut formula = use_signal(|| "".to_string());
     rsx! {   
         div {style : HEAD_STYLE,
         div {  style: "height: 50px; display: flex; flex-direction: row; align-items: center; justify-content: space-between;margin: 10px 15px;",
@@ -39,7 +36,7 @@ pub fn Header(props : HeaderProps) -> Element {
             }
             Toolbar {}
         }
-        FormulaBar {cur_cell: cur_cell.cloned(), formula: formula.cloned()}
+        FormulaBar {}
 
         }
 
