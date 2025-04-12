@@ -54,21 +54,6 @@ pub fn Spreadsheet() -> Element {
     let max_start_row: MaxStartRowContext = use_signal(|| 0);
     let max_start_col: MaxStartColContext = use_signal(|| 0);
     let sheet_version: SheetVersionContext = use_signal(|| 0);
-    
-    // Initialize 2D vector for formulas
-    let formulas: FormulasContext = use_signal(|| {
-        // Create a 2D vector with empty strings
-        let mut formulas_grid = Vec::with_capacity(num_rows);
-        for _ in 0..num_rows {
-            let mut row = Vec::with_capacity(num_cols);
-            for _ in 0..num_cols {
-                row.push(String::new());
-            }
-            formulas_grid.push(row);
-        }
-        Arc::new(Mutex::new(formulas_grid))
-    });
-    
     let mut filename = "new_file.xlsx".to_string();
     if let Some(file) = current_file.cloned() {
         filename = file.file_name().unwrap().to_str().unwrap().to_string();
@@ -83,7 +68,6 @@ pub fn Spreadsheet() -> Element {
     provide_context(context_menu);
     provide_context(sheet);
     provide_context(sheet_version);
-    provide_context(formulas);
     provide_context(start_row);
     provide_context(start_col);
     provide_context(max_start_row);

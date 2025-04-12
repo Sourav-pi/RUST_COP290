@@ -101,46 +101,6 @@ pub fn Cell(props: CellProps) -> Element {
         }
     };
     
-    // Handler for keyboard events
-    let on_keydown = {
-        let row = props.row;
-        let col = props.col;
-        move |e: Event<KeyboardData>| {
-            let key = e.key();
-            if key == Key::Enter || key == Key::ArrowDown || key == Key::ArrowUp || key == Key::Tab || key == Key::ArrowLeft || key == Key::ArrowRight {
-                e.prevent_default();
-                is_editing.set(false);
-
-                let to_row = if e.key() == Key::ArrowDown || e.key() == Key::Enter {
-                    row + 1
-                } else if e.key() == Key::ArrowUp {
-                    row - 1
-                } else {
-                    row
-                };
-                
-                let to_col = 
-                if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
-                    col-1
-                } else if e.key() == Key::Tab || e.key() == Key::ArrowRight {
-                    col+1
-                    
-                } else {
-                    col
-                };
-
-                let script =  format!(r#"
-                    let x = document.getElementById('row-{}-col-{}');
-                    if (x) {{
-                        x.focus();
-                    }}
-
-                "#,to_row,to_col);
-                document::eval(&script);
-            
-            }
-        }
-    };
     
     // Handler for input changes
     let on_input = move |e: Event<FormData>| {
@@ -175,7 +135,6 @@ pub fn Cell(props: CellProps) -> Element {
                 id: "row-{props.row}-col-{props.col}",
                 onfocus: on_focus,
                 onblur: on_blur,
-                onkeydown: on_keydown,
                 oninput: on_input,
                 oncontextmenu: props.oncontextmenu,
                 // Show the formula when editing, otherwise show the result

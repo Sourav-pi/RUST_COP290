@@ -63,9 +63,9 @@ pub struct GridProps {
 
 #[component]
 pub fn Grid(props: GridProps) -> Element {
-    let start_row_ctx = use_context::<StartRowContext>();
-    let start_col_ctx = use_context::<StartColContext>();
-    let selected_cell = use_context::<SelectedCellContext>();
+    let mut start_row_ctx = use_context::<StartRowContext>();
+    let mut start_col_ctx = use_context::<StartColContext>();
+    let mut selected_cell = use_context::<SelectedCellContext>();
 
     let min_cell_width = 80; // Minimum width per cell in pixels
     
@@ -73,50 +73,114 @@ pub fn Grid(props: GridProps) -> Element {
     let rows_per_page = 23; 
     let cols_per_page = 18;
     
-    // State for current page
-    let mut start_row_ctx = use_signal(|| 0);
-    let mut start_col_ctx = use_signal(|| 0);
     
     // Calculate max pages
     let max_start_row = (props.num_rows - rows_per_page).max(0);
     let max_start_col = (props.num_cols - cols_per_page).max(0);
     
-    // Navigation handlers
-    let move_up = move |_| {
+    let mut move_up_help = move || {
         if start_row_ctx.cloned() > 0 {
             start_row_ctx.set(start_row_ctx.cloned() - 1);
         }
     };
     
-    let move_down = move |_| {
+    let mut move_down_help = move || {
         if start_row_ctx.cloned() < max_start_row {
             start_row_ctx.set(start_row_ctx.cloned() + 1);
         }
     };
     
-    let move_left = move |_| {
+    let mut move_left_help = move || {
         if start_col_ctx.cloned() > 0 {
             start_col_ctx.set(start_col_ctx.cloned() - 1);
         }
     };
     
-    let move_right = move |_| {
+    let mut move_right_help = move || {
         if start_col_ctx.cloned() < max_start_col {
             start_col_ctx.set(start_col_ctx.cloned() + 1);
         }
     };
+
+
+    // Navigation handlers
+    let move_up = move |_| {
+            move_up_help();
+    };
+    
+    let move_down = move |_| {
+            move_down_help();
+    };
+    
+    let move_left = move |_| {
+            move_left_help();
+    };
+    
+    let move_right = move |_| {
+            move_right_help();
+    };
     
     // Calculate visible range
 
-    let end_row = (start_row_ctx.cloned() + rows_per_page).min(props.num_rows);
-    
+    let on_keydown = {
+        let row = selected_cell.cloned().0;
+        let col = selected_cell.cloned().1;
+        move |e: Event<KeyboardData>| {
+            let key = e.key();
+            if key == Key::Enter || key == Key::ArrowDown || key == Key::ArrowUp || key == Key::Tab || key == Key::ArrowLeft || key == Key::ArrowRight {
+                e.prevent_default();
+                let to_row = (if e.key() == Key::ArrowDown || e.key() == Key::Enter {
+                    if selected_cell.cloned().0 == start_row_ctx.cloned()+rows_per_page{
+                        move_down_help();
+                    };
+                    row + 1
+                } else if e.key() == Key::ArrowUp {
+                    if selected_cell.cloned().0 == start_row_ctx.cloned()+1 {
+                        move_up_help();
+                    };
+                    row - 1
+                } else {
+                    row
+                }).max(1);
+                
+                let to_col = 
+                (if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
+                    if selected_cell.cloned().1 == start_col_ctx.cloned()+1 {
+                        move_left_help();
+                    };
+                    col-1
+                } else if e.key() == Key::Tab || e.key() == Key::ArrowRight {
+                    if selected_cell.cloned().1 == start_col_ctx.cloned()+cols_per_page {
+                        move_right_help();
+                    };
+                    col+1
+                    
+                } else {
+                    col
+                }).max(1);
+                selected_cell.set((to_row, to_col));
 
+                let script =  format!(r#"
+                    let x = document.getElementById('row-{}-col-{}');
+                    if (x) {{
+                        x.focus();
+                    }}
+
+                "#,to_row,to_col);
+                document::eval(&script);
+            
+            }
+        }
+    };
+
+    let end_row = (start_row_ctx.cloned() + rows_per_page).min(props.num_rows);
     let end_col = (start_col_ctx.cloned() + cols_per_page).min(props.num_cols);
     
     rsx! {
         div {
             style: GRID_STYLE,
             class: "grid-container",
+            onkeydown: on_keydown,
             div {
                 style: TABLE_STYLE,
                 class: "spreadsheet-table",
@@ -131,7 +195,7 @@ pub fn Grid(props: GridProps) -> Element {
                 }
                 
                 // Visible rows
-                for i in (start_row_ctx + 1)..=end_row {
+                for i in (start_row_ctx.cloned()+1)..=(end_row) {
                     Row {
                         row: i,
                         num_cols: cols_per_page,
