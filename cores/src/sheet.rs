@@ -39,9 +39,9 @@ impl Sheet {
                     },
                     depend: Vec::new(),
                 };
-                col
+                col + 1
             ];
-            row
+            row + 1
         ];
         let sheet = Self { grid, row, col };
         sheet

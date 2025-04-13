@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use crate::components::spreadsheet::SheetVersionContext;
+use crate::components::spreadsheet::*;
 use super::row::Row;
 
 const GRID_STYLE: &str = "
@@ -61,61 +61,132 @@ pub struct GridProps {
 
 #[component]
 pub fn Grid(props: GridProps) -> Element {
-    let sheet_version = use_context::<SheetVersionContext>();
-    
-    // Just read the version to subscribe to changes
-    let _ = *sheet_version.read();
+    let mut start_row_ctx = use_signal(|| 1);
+    let mut start_col_ctx = use_signal(|| 1);
+    let mut selected_cell = use_context::<SelectedCellContext>();
 
-    let min_cell_width = 80; // Minimum width per cell in pixels
+    let min_cell_width = 81; // Minimum width per cell in pixels
     
     // Visible rows per page
-    let rows_per_page = 23; 
-    let cols_per_page = 18;
+    let rows_per_page = 20; 
+    let cols_per_page = 16;
     
-    // State for current page
-    let mut row_offset = use_signal(|| 0);
-    let mut col_offset = use_signal(|| 0);
+    // Read context values once at the beginning of the component
+    let start_row = start_row_ctx.cloned();
+    let start_col = start_col_ctx.cloned();
+
+    // Calculate max pages once based on these values
+    let max_start_row = (props.num_rows - rows_per_page).max(1);
+    let max_start_col = (props.num_cols - cols_per_page).max(1);
     
-    // Calculate max pages
-    let max_row_offset = (props.num_rows - rows_per_page).max(0);
-    let max_col_offset = (props.num_cols - cols_per_page).max(0);
+    // Rewrite scrolling functions to be independent
+    let mut move_up_help = move || {
+        // Only read and update row context, don't touch column
+        let current_row = start_row_ctx.cloned();
+        if current_row > 1 {
+            start_row_ctx.set(current_row - 1);
+        }
+        println!("Moving up to row {}", current_row - 1);
+        println!("Start row context: {}", start_row_ctx.cloned());
+        println!("Start column context: {}", start_col_ctx.cloned());
+    };
     
-    // Navigation handlers
-    let move_up = move |_| {
-        if row_offset.cloned() > 0 {
-            row_offset.set(row_offset.cloned() - 1);
+    let mut move_down_help = move || {
+        // Only read and update row context, don't touch column
+        let current_row = start_row_ctx.cloned();
+        if current_row < max_start_row {
+            start_row_ctx.set(current_row + 1);
+        }
+        println!("Moving down to row {}", current_row + 1);
+        println!("Start row context: {}", start_row_ctx.cloned());
+        println!("Start column context: {}", start_col_ctx.cloned());
+    };
+    
+    let mut move_left_help = move || {
+        // Only read and update column context, don't touch row
+        let current_col = start_col_ctx.cloned();
+        if current_col > 1 {
+            start_col_ctx.set(current_col - 1);
         }
     };
     
-    let move_down = move |_| {
-        if row_offset.cloned() < max_row_offset {
-            row_offset.set(row_offset.cloned() + 1);
+    let mut move_right_help = move || {
+        // Only read and update column context, don't touch row
+        let current_col = start_col_ctx.cloned();
+        if current_col < max_start_col {
+            start_col_ctx.set(current_col + 1);
         }
     };
-    
-    let move_left = move |_| {
-        if col_offset.cloned() > 0 {
-            col_offset.set(col_offset.cloned() - 1);
-        }
-    };
-    
-    let move_right = move |_| {
-        if col_offset.cloned() < max_col_offset {
-            col_offset.set(col_offset.cloned() + 1);
-        }
-    };
-    
+
+    // Navigation handle
+    let move_up = move |_| { move_up_help();};
+    let move_down = move |_| { move_down_help();};
+    let move_left = move |_| { move_left_help();};
+    let move_right = move |_| { move_right_help();};
+
+    // Calculate end positions based on the variables we already have
+    let end_row = (start_row + rows_per_page - 1).min(props.num_rows);
+    let end_col = (start_col + cols_per_page - 1).min(props.num_cols);
+
     // Calculate visible range
-    let start_row = row_offset.cloned();
-    let end_row = (start_row + rows_per_page).min(props.num_rows);
-    
-    let start_col = col_offset.cloned();
-    let end_col = (start_col + cols_per_page).min(props.num_cols);
+
+    let on_keydown = {
+        let row = selected_cell.cloned().0;
+        let col = selected_cell.cloned().1;
+        move |e: Event<KeyboardData>| {
+            let key = e.key();
+            if key == Key::Enter || key == Key::ArrowDown || key == Key::ArrowUp || key == Key::Tab || key == Key::ArrowLeft || key == Key::ArrowRight {
+                e.prevent_default();
+                let mut to_row = row;
+                let mut to_col = col;
+                
+                // Store the selected cell position once to avoid inconsistencies
+                let current_row = selected_cell.cloned().0;
+                let current_col = selected_cell.cloned().1;
+                
+                // Handle vertical movement - only change row, not column
+                if e.key() == Key::ArrowDown || e.key() == Key::Enter {
+                    if current_row == end_row && start_row_ctx.cloned() < max_start_row {
+                        move_down_help();
+                    };
+                    to_row = (row + 1).max(1).min(props.num_rows); // Prevent going past the last row
+                } else if e.key() == Key::ArrowUp {
+                    if current_row == start_row && start_row_ctx.cloned() > 1 {
+                        move_up_help();
+                    };
+                    to_row = (row - 1).max(1).min(props.num_rows); // Prevent going before the first row
+                } 
+                
+                // Handle horizontal movement - only change column, not row
+                else if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
+                    if current_col == start_col && start_col_ctx.cloned() > 1 {
+                        move_left_help();
+                    };
+                    to_col = (col-1).max(1).min(props.num_cols); // Prevent going before the first column
+                } else if e.key() == Key::Tab || e.key() == Key::ArrowRight {
+                    if current_col == end_col && start_col_ctx.cloned() < max_start_col {
+                        move_right_help();
+                    };
+                    to_col = (col+1).max(1).min(props.num_cols); // Prevent going past the last column
+                }
+                
+                let script = format!(r#"
+                    let x = document.getElementById('row-{}-col-{}');
+                    if (x) {{
+                        x.focus();
+                    }}
+                "#, to_row, to_col);
+                selected_cell.set((to_row, to_col));
+                document::eval(&script);
+            }
+        }
+    };
     
     rsx! {
         div {
             style: GRID_STYLE,
             class: "grid-container",
+            onkeydown: on_keydown,
             div {
                 style: TABLE_STYLE,
                 class: "spreadsheet-table",
@@ -130,7 +201,7 @@ pub fn Grid(props: GridProps) -> Element {
                 }
                 
                 // Visible rows
-                for i in (start_row + 1)..=end_row {
+                for i in (start_row)..=(end_row) {
                     Row {
                         row: i,
                         num_cols: cols_per_page,
@@ -149,32 +220,36 @@ pub fn Grid(props: GridProps) -> Element {
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
-                    "Rows: {start_row}-{end_row} / {props.num_rows}, Cols: {start_col}-{end_col} / {props.num_cols}"
+                    "Rows: {start_row_ctx+1}-{end_row+1} / {props.num_rows}, Cols: {start_col_ctx+1}-{end_col+1} / {props.num_cols}"
                 }
                 
                 // Navigation buttons
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_up,
-                    disabled: row_offset.cloned() == 0,
+                    disabled: start_row <= 1,  // Use start_row instead of rechecking context
+                    id: "up-button",
                     "↑"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_down,
-                    disabled: row_offset.cloned() >= max_row_offset-1,
+                    disabled: start_row >= max_start_row,
+                    id: "down-button",
                     "↓"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_left,
-                    disabled: col_offset.cloned() == 0,
+                    disabled: start_col <= 1,  // Use start_col instead of rechecking context
+                    id: "left-button",
                     "←"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_right,
-                    disabled: col_offset.cloned() >= max_col_offset-1,
+                    disabled: start_col >= max_start_col,
+                    id: "right-button",
                     "→"
                 }
             }

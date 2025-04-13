@@ -1,5 +1,9 @@
+use std::any::Any;
+
 use dioxus::prelude::*;
-use super::spreadsheet::{CurrentFileContext, GraphPopupContext};
+use super::spreadsheet::*;
+use cores::convert_to_index;
+use super::error_display::{ErrorContext, ErrorType, show_error};
 
 
 const OPEN_ICON : Asset = asset!( "assets/open.png");
@@ -62,8 +66,13 @@ pub struct ToolbarProps {
 pub fn Toolbar() -> Element {
     let mut cur_file = use_context::<CurrentFileContext>();
     let mut is_open = use_context::<GraphPopupContext>();
-    let mut cur_cell = use_context::<CurrentFileContext>();
+    let mut start_row_ctx = use_context::<StartRowContext>();
+    let mut start_col_ctx = use_context::<StartColContext>();
     let mut search_term = use_signal(|| String::new());
+    let mut selected_cell = use_context::<SelectedCellContext>();
+    let mut error_ctx = use_context::<ErrorContext>();
+    let mut sheet = use_context::<SheetContext>();
+    let mut sheetversion = use_context::<SheetVersionContext>();
     
     rsx! {
         div {style : TOOLBAR_STYLE,
@@ -78,10 +87,19 @@ pub fn Toolbar() -> Element {
             button {
                 style: SEARCH_BUTTON_STYLE,
                 onclick: move |_| {
-                    // Handle search
-                    // CONVERT string to cell number
-                    // set cur_cell to the cell number
-                    println!("Searching for: {}", search_term.cloned());
+                    
+                    let (a ,b) = convert_to_index(search_term.cloned());
+                    let (a,b) = (a as i32,b as i32);
+                    println!("ans {a} {b}");
+                    if !(a==0 && b==0){
+                        start_row_ctx.set(a-1);
+                        start_col_ctx.set(b-1);
+                        selected_cell.set((a,b));
+                        let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
+                    } else {
+                        show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Success, Some(5.0));
+                        search_term.set(String::new());
+                    }
                 },
                 "GO"
             }
@@ -93,14 +111,28 @@ pub fn Toolbar() -> Element {
                 let path = std::env::current_dir().unwrap();
 
                 let res = rfd::FileDialog::new()
-                    .add_filter("spreadsheet", &["csv", "xlsx"])
+                    .add_filter("spreadsheet", &["csv"])
                     .set_directory(&path)
                     .pick_file();
             
                 if let Some(file) = &res {
                     cur_file.set(Some(file.clone()));
-                } 
-                // println!("The user choose: {:#?}", res);
+                    let file_path = file.as_path().to_string_lossy().to_string();
+                    // Save the current sheet to the selected file
+                    if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                        // Update the cell value in the Sheet object
+                        let write_result = sheet_locked.read_file(&file_path);
+                        sheetversion.set(sheetversion.cloned() + 1);
+                        if let Err(e) = write_result {
+                            show_error(&mut error_ctx, &format!("Error reading from file: {}", e), ErrorType::Error, Some(5.0));
+                        } else {
+                            show_error(&mut error_ctx, "File loaded successfully", ErrorType::Success, Some(5.0));
+                            sheetversion.set(sheetversion.cloned() + 1);
+                        }
+                    }
+                }
+
+                
             },
             img {
                 src: "{OPEN_ICON}",
@@ -111,11 +143,28 @@ pub fn Toolbar() -> Element {
         button { style: BUTTON_STYLE,
             onclick: move |_| {
                 let path = std::env::current_dir().unwrap();
-                let res = rfd::FileDialog::new()
-                .set_file_name("new_sheet.txt")
+                let res = rfd::FileDialog::new().add_filter("spreadsheet", &["csv"])
+                .set_file_name("new_sheet.csv")
                 .set_directory(&path)
                 .save_file();
                 // println!("The user choose: {:#?}", res);
+                if let Some(file) = &res {
+                    let file_path = file.as_path().to_string_lossy().to_string();
+                    // Save the current sheet to the selected file
+                    if let Ok(sheet_locked) = sheet.cloned().lock() {
+                        // Update the cell value in the Sheet object
+                        let write_result = sheet_locked.write_csv(&file_path);
+                        sheetversion.set(sheetversion.cloned() + 1);
+                        if let Err(e) = write_result {
+                            show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
+                        } else {
+                            show_error(&mut error_ctx, "File saved successfully", ErrorType::Success, Some(5.0));
+                            sheetversion.set(sheetversion.cloned() + 1);
+                        }
+                    }
+                }
+
+
 
             },
             img {
