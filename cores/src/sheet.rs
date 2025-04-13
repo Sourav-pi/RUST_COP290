@@ -72,9 +72,9 @@ impl Sheet {
             
         }
         self.row+=no_of_row;
-        self.row+=no_of_row;
+        
     }
-    pub fn add_col(&mut self,no_of_col:usize) {
+    
     pub fn add_col(&mut self,no_of_col:usize) {
         for i in 0..self.row {
             for _ in 0..no_of_col {
@@ -89,10 +89,10 @@ impl Sheet {
                 });
             }
         }
-        self.col+=no_of_col;
+        
         self.col+=no_of_col;
     }
-    pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
+    
     pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
@@ -100,7 +100,7 @@ impl Sheet {
             self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
     }
-    pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
+    
     pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
@@ -137,7 +137,11 @@ impl Sheet {
                     } else if command.flag.cmd() == 2 {
                         self.grid[row][col].value = command.param1 * command.param2;
                     } else {
-                        self.grid[row][col].value = command.param1 / command.param2;
+                        if command.param2 == 0 {
+                            self.grid[row][col].formula.flag.set_is_div_by_zero(1);
+                        } else {
+                            self.grid[row][col].value = command.param1 / command.param2;
+                        }
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
@@ -579,8 +583,6 @@ impl Sheet {
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
-        if topo_vec.is_empty() {
-            self.grid[row][col].formula.flag.set_error(2);
 
         } else {
             self.update_cell(topo_vec);
@@ -605,6 +607,7 @@ impl Sheet {
             return ans;
         }
     }
+
     pub fn get_value(&self, row: i32, col: i32) -> i32 {
         self.grid[row as usize][col as usize].value
     }
