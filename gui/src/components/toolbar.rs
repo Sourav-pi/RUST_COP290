@@ -122,6 +122,7 @@ pub fn Toolbar() -> Element {
                     if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                         // Update the cell value in the Sheet object
                         let write_result = sheet_locked.read_file(&file_path);
+                        sheetversion.set(sheetversion.cloned() + 1);
                         if let Err(e) = write_result {
                             show_error(&mut error_ctx, &format!("Error reading from file: {}", e), ErrorType::Error, Some(5.0));
                         } else {
@@ -153,6 +154,7 @@ pub fn Toolbar() -> Element {
                     if let Ok(sheet_locked) = sheet.cloned().lock() {
                         // Update the cell value in the Sheet object
                         let write_result = sheet_locked.write_csv(&file_path);
+                        sheetversion.set(sheetversion.cloned() + 1);
                         if let Err(e) = write_result {
                             show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
                         } else {

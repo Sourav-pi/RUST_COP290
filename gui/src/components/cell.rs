@@ -103,10 +103,19 @@ pub fn Cell(props: CellProps) -> Element {
         let new_value = e.value().clone();
         formula.set(new_value);
     };
+
+    use_effect(move || {
+        let _ = sheetversion.cloned();
+        if let Ok(sheet_locked) = sheet.cloned().lock() {
+            // Update the cell value in the Sheet object
+            formula.set(sheet_locked.get_formula(props.row as usize, props.col as usize).to_string());
+        }
+
+    });
     
 
     // use_effect(move ||{
-    //     let _ = sheetversion.cloned();
+        let _ = sheetversion.cloned();
 
         if let Ok(sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
