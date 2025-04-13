@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  PKG_CONFIG_PATH: "/usr/lib/x86_64-linux-gnu/pkgconfig:$PKG_CONFIG_PATH"
 
 jobs:
   build:
