@@ -12,12 +12,13 @@ pub enum Error {
     DivByZero,
     InvalidInput,
     CycleDetected,
+    NoError,
 }
 
 #[allow(dead_code)]
-pub enum CallResult {
-    Time(i32),
-    Error(Error),
+pub struct CallResult {
+    time:i32,
+    error:Error,
 }
 #[allow(dead_code)]
 pub struct Sheet {
@@ -424,11 +425,8 @@ impl Sheet {
                                 self.grid[row][col].value = self.grid[param1_row][param1_col].value
                                     / self.grid[row][col].formula.param2;
                             }
-                            // self.grid[row][col].value=self.grid[param1_row][param1_col].value/self.grid[row][col].formula.param2;
                         }
                     } else if self.grid[row][col].formula.flag.type2() == 1 {
-                        // let param2_row=(self.grid[row][col].formula.param2%1000) as usize;
-                        // let param2_col=(self.grid[row][col].formula.param2/1000) as usize;
 
                         let (param2_row, param2_col) =
                             convert_to_index_int(self.grid[row][col].formula.param2);
@@ -562,35 +560,34 @@ impl Sheet {
     }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         let start = time::Instant::now();
-        println!("aya");
         let mut command = parse_formula(&new_formula);
         command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
-        if topo_vec == vec![] {
+        if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
-            println!("cycle aaa gaya\n");
-            
 
         } else {
             self.update_cell(topo_vec);
         }
         let end= start.elapsed();
+        let mut ans=CallResult{
+            time:end.as_millis() as i32,
+            error:Error::NoError,
+        };
         if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
-            let ans=CallResult::Error(Error::DivByZero);
+            ans.error=Error::DivByZero;
             return ans;
         } else if self.grid[row][col].formula.flag.error()==1 {
-            let ans=CallResult::Error(Error::InvalidInput);
+            ans.error=Error::InvalidInput;
             return ans;
         } else if self.grid[row][col].formula.flag.error()==2 {
-            let ans=CallResult::Error(Error::CycleDetected);
-            println!("Cycle detected now remove dependencies");
+            ans.error=Error::CycleDetected;
             self.remove_old_dependicies(row,col,old_command);
             return ans;
         } 
         else {
-            let ans=CallResult::Time(end.as_millis() as i32);
             return ans;
         }
     }
