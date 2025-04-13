@@ -36,3 +36,7 @@ jobs:
       
     - name: Run core tests
       run: cargo test -p cores --verbose
+      
+    - name: Build GUI (may be skipped)
+      run: cargo build -p gui --verbose
+      continue-on-error: true
