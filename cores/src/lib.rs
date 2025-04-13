@@ -1,5 +1,9 @@
 mod parse;
 mod sheet;
-
-pub use parse::{convert_to_index, encode_cell, decode_cell};
+mod write_csv;
+mod read_csv;
+mod make_graphs;
+pub use parse::convert_to_index;
 pub use sheet::Sheet;
+// pub use sheet::SheetError;
+pub use sheet::CallResult;
