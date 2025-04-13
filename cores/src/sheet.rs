@@ -1,6 +1,7 @@
 use crate::parse::*;
 use std::collections::HashSet;
 use std::{thread, time};
+
 #[derive(Clone)]
 pub struct Cell {
     pub value: i32,
@@ -12,12 +13,17 @@ pub enum Error {
     InvalidInput,
     CycleDetected,
 }
+
+#[allow(dead_code)]
 pub enum CallResult {
     Time(i32),
     Error(Error),
 }
+#[allow(dead_code)]
 pub struct Sheet {
     pub grid: Vec<Vec<Cell>>,
+    pub row: usize,
+    pub col: usize,
 }
 impl Sheet {
     pub fn new(row: usize, col: usize) -> Self {
@@ -36,12 +42,59 @@ impl Sheet {
             ];
             row + 1
         ];
-        let sheet = Self { grid };
+        let sheet = Self { grid, row, col };
         sheet
     }
 
     pub fn get_formula(&self, row: usize, col: usize) -> String {
         return unparse(self.grid[row][col].clone());
+    }
+
+    pub fn add_row(&mut self ,no_of_row:usize) {
+        for _ in 0..no_of_row {
+            let mut new_row: Vec<Cell> = Vec::new();
+            for _ in 0..self.row {
+                new_row.push(Cell {
+                    value: 0,
+                    formula: CommandCall {
+                        flag: CommandFlag::new(),
+                        param1: 0,
+                        param2: 0,
+                    },
+                    depend: Vec::new(),
+                });
+            }
+            self.grid.push(new_row);
+        }
+    }
+    fn add_col(&mut self,no_of_col:usize) {
+        for i in 0..self.row {
+            for _ in 0..no_of_col {
+                self.grid[i].push(Cell {
+                    value: 0,
+                    formula: CommandCall {
+                        flag: CommandFlag::new(),
+                        param1: 0,
+                        param2: 0,
+                    },
+                    depend: Vec::new(),
+                });
+            }
+        }
+    }
+    fn copy_row(&mut self, copy_from:usize,copy_to:usize){
+        for i in 0..self.col {
+            self.grid[copy_to][i].value = self.grid[copy_from][i].value;
+            self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
+            self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
+        }
+    }
+    fn copy_col(&mut self, copy_from:usize,copy_to:usize){
+        for i in 0..self.row {
+            self.grid[i][copy_to].value = self.grid[i][copy_from].value;
+            self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
+            self.grid[i][copy_to].depend = self.grid[i][copy_from].depend.clone();
+        }
     }
 
     fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {
@@ -50,9 +103,17 @@ impl Sheet {
                 self.grid[row][col].value = command.param1;
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                let mut is_found = false;
+                for i in self.grid[param1_row][param1_col].depend.iter() {
+                    if *i == row * ENCODE_SHIFT + col {
+                        is_found = true;
+                        break;
+                    }
+                }
+                if !is_found{
                 self.grid[param1_row][param1_col]
                     .depend
-                    .push(row * ENCODE_SHIFT + col);
+                    .push(row * ENCODE_SHIFT + col);}
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -68,21 +129,57 @@ impl Sheet {
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);
+                    let mut is_found = false;
+                    for i in self.grid[param2_row][param2_col].depend.iter() {
+                        if *i == row * ENCODE_SHIFT + col {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
+                    // self.grid[param2_row][param2_col]
+                    //     .depend
+                    //     .push(row * ENCODE_SHIFT + col);
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                self.grid[param1_row][param1_col]
-                    .depend
-                    .push(row * ENCODE_SHIFT + col);
+                let mut is_found = false;
+                for i in self.grid[param1_row][param1_col].depend.iter() {
+                    if *i == row * ENCODE_SHIFT + col {
+                        is_found = true;
+                        break;
+                    }
+                }
+                if !is_found {
+                    self.grid[param1_row][param1_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);
+                }
+                // self.grid[param1_row][param1_col]
+                //     .depend
+                //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);
+                    let mut is_found = false;
+                    for i in self.grid[param2_row][param2_col].depend.iter() {
+                        if *i == row * ENCODE_SHIFT + col {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
+                    // self.grid[param2_row][param2_col]
+                    //     .depend
+                    //     .push(row * ENCODE_SHIFT + col);
                 }
             }
         } else {
@@ -91,7 +188,17 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
-                    self.grid[i][j].depend.push(t);
+                    let mut is_found = false;
+                    for k in self.grid[i][j].depend.iter() {
+                        if *k == t {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[i][j].depend.push(t);
+                    }
+                    // self.grid[i][j].depend.push(t);
                 }
             }
         }
@@ -395,14 +502,70 @@ impl Sheet {
             }
         }
     }
+    fn remove_old_dependicies(&mut self, row: usize, col: usize,restore_command: CommandCall) {
+        // Remove all dependencies from previous formula
+        let curr_index = row * ENCODE_SHIFT + col;
+        let current_command = &self.grid[row][col].formula.clone();
 
+        // Remove dependencies based on command type
+        if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
+            // Cell reference dependency
+            let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
+            let depend_vec = &mut self.grid[param1_row][param1_col].depend;
+            depend_vec.retain(|&x| x != curr_index);
+        } 
+        else if current_command.flag.type_() == 1 {
+            // Arithmetic operation dependencies
+            if current_command.flag.type1() == 1 {
+                // First parameter is a cell reference
+                let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
+                let depend_vec = &mut self.grid[param1_row][param1_col].depend;
+                depend_vec.retain(|&x| x != curr_index);
+                // let mut new_depend_vec= Vec::new();
+                // for i in self.grid[param1_row][param1_col].depend.iter() {
+                //     if *i != curr_index {
+                //         new_depend_vec.push(*i);
+                //     }
+                // }
+                // self.grid[param1_row][param1_col].depend=new_depend_vec;
+            }
+            if current_command.flag.type2() == 1 {
+                // Second parameter is a cell reference
+                let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
+                let depend_vec = &mut self.grid[param2_row][param2_col].depend;
+                depend_vec.retain(|&x| x != curr_index);
+            }
+        }
+        else if current_command.flag.type_() == 2 {
+            // Range function dependencies
+            let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
+            let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
+            for i in param1_row..(param2_row + 1) {
+                for j in param1_col..(param2_col + 1) {
+                    let depend_vec = &mut self.grid[i][j].depend;
+                    depend_vec.retain(|&x| x != curr_index);
+                }
+            }
+        }
+
+        // // Set the cell's formula to the restore command
+        // self.grid[row][col].formula = restore_command;
+        // Restore the cell's value to the original value
+        self.set_dependicies_cell(row, col, restore_command.clone());
+
+        
+    }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         let start = time::Instant::now();
         let mut command = parse_formula(&new_formula);
+        let old_command=self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec == vec![] {
-            command.flag.set_error(1);
+            command.flag.set_error(2);
+            println!("cycle aaa gaya\n");
+            
+
         } else {
             self.update_cell(topo_vec);
         }
@@ -415,6 +578,7 @@ impl Sheet {
             return ans;
         } else if self.grid[row][col].formula.flag.error()==2 {
             let ans=CallResult::Error(Error::CycleDetected);
+            self.remove_old_dependicies(row,col,old_command);
             return ans;
         } 
         else {
