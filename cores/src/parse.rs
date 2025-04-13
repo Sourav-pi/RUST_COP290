@@ -17,13 +17,14 @@ use crate::sheet::Cell;
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
 #[derive(Clone)]
 #[derive(serde::Serialize)]
+#[derive(Debug)]
 pub struct CommandFlag{
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits
     pub type1: B1,           // 1 bit
     pub type2: B1,           // 1 bit
     pub error: B2,           // 2 bits
-    pub is_div_by_zero: B1,  // 1 bit          // Skip the remaining bits to round up to 16 bits
+    pub is_div_by_zero: B1,  // 1 bit
     pub is_any: B6,              // 6 bits
 }
 #[derive(Clone)]
@@ -217,6 +218,7 @@ pub fn convert_to_index_int(encode:i32) -> (usize,usize){
     convert_to_index(inp)
 }
 
+#[allow(dead_code)]
 pub fn unparse(cell: Cell) -> String {
     match cell.formula.flag.type_(){
         0 =>{ // Constant

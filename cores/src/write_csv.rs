@@ -1,12 +1,12 @@
 use serde::{self,Serialize};
 use crate::sheet::{Sheet, Cell};
 use serde::ser::{ Serializer, SerializeStruct};
-struct csv_store{
+struct CsvStore{
     row: i32,
     col: i32,
     data:Cell
 }
-impl Serialize for csv_store {
+impl Serialize for CsvStore {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
     S: Serializer,
@@ -20,7 +20,7 @@ impl Serialize for csv_store {
         state.serialize_field("value", &self.data.value)?;
         // Format the nested CommandFlag into a string.
         let flag_str = format!(
-            "type: {}, cmd: {}, type1: {}, type2: {}, error: {}, div_by_zero: {}",
+            "type:{},cmd:{},type1:{},type2:{},error:{},div_by_zero:{}",
             self.data.formula.flag.type_(),
             self.data.formula.flag.cmd(),
             self.data.formula.flag.type1(),
@@ -47,15 +47,20 @@ impl Serialize for csv_store {
     }
 }    
 
-pub fn write_csv(data: Sheet, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+
+impl Sheet{
+pub fn write_csv(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
     // Get the dimensions
-    let num_rows = data.grid.len();
-    let num_cols = if num_rows > 0 { data.grid[0].len() } else { 0 };
+    let num_rows = self.grid.len();
+    let num_cols = if num_rows > 0 { self.grid[0].len() } else { 0 };
     let mut wtr = csv::Writer::from_path(file_path)?;
     for row in 0..num_rows {
         for col in 0..num_cols {
-            let cell = &data.grid[row][col];
-            let csv_data = csv_store {
+            if self.grid[row][col].formula.flag.is_any()==0{
+                continue;
+            }
+            let cell = &self.grid[row][col];
+            let csv_data = CsvStore {
                 row: row as i32,
                 col: col as i32,
                 data: cell.clone(),
@@ -65,4 +70,5 @@ pub fn write_csv(data: Sheet, file_path: &str) -> Result<(), Box<dyn std::error:
     }
     wtr.flush()?;
     Ok(())  
+}
 }
