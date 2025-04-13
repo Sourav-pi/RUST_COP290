@@ -335,6 +335,7 @@ impl Sheet {
         for i in list_fpr_update {
             let col = (i as usize) % ENCODE_SHIFT;
             let row = (i as usize) / ENCODE_SHIFT;
+            self.grid[row][col].formula.flag.set_is_div_by_zero(0);
             if self.grid[row][col].formula.flag.type_() == 0 {
                 // value
 
