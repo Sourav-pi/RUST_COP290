@@ -1,8 +1,6 @@
 use dioxus::prelude::*;
-use dioxus_elements::{ol::start, option::selected};
-use crate::components::spreadsheet::{SheetVersionContext, StartRowContext, StartColContext,SelectedCellContext};
+use crate::components::spreadsheet::*;
 use super::row::Row;
-use std::rc::Rc;
 
 const GRID_STYLE: &str = "
     overflow: hidden;
@@ -63,63 +61,73 @@ pub struct GridProps {
 
 #[component]
 pub fn Grid(props: GridProps) -> Element {
-    let mut start_row_ctx = use_context::<StartRowContext>();
-    let mut start_col_ctx = use_context::<StartColContext>();
+    let mut start_row_ctx = use_signal(|| 1);
+    let mut start_col_ctx = use_signal(|| 1);
     let mut selected_cell = use_context::<SelectedCellContext>();
 
-    let min_cell_width = 80; // Minimum width per cell in pixels
+    let min_cell_width = 81; // Minimum width per cell in pixels
     
     // Visible rows per page
-    let rows_per_page = 23; 
-    let cols_per_page = 18;
+    let rows_per_page = 20; 
+    let cols_per_page = 16;
     
+    // Read context values once at the beginning of the component
+    let start_row = start_row_ctx.cloned();
+    let start_col = start_col_ctx.cloned();
+
+    // Calculate max pages once based on these values
+    let max_start_row = (props.num_rows - rows_per_page).max(1);
+    let max_start_col = (props.num_cols - cols_per_page).max(1);
     
-    // Calculate max pages
-    let max_start_row = (props.num_rows - rows_per_page).max(0);
-    let max_start_col = (props.num_cols - cols_per_page).max(0);
-    
+    // Rewrite scrolling functions to be independent
     let mut move_up_help = move || {
-        if start_row_ctx.cloned() > 0 {
-            start_row_ctx.set(start_row_ctx.cloned() - 1);
+        // Only read and update row context, don't touch column
+        let current_row = start_row_ctx.cloned();
+        if current_row > 1 {
+            start_row_ctx.set(current_row - 1);
         }
+        println!("Moving up to row {}", current_row - 1);
+        println!("Start row context: {}", start_row_ctx.cloned());
+        println!("Start column context: {}", start_col_ctx.cloned());
     };
     
     let mut move_down_help = move || {
-        if start_row_ctx.cloned() < max_start_row {
-            start_row_ctx.set(start_row_ctx.cloned() + 1);
+        // Only read and update row context, don't touch column
+        let current_row = start_row_ctx.cloned();
+        if current_row < max_start_row {
+            start_row_ctx.set(current_row + 1);
         }
+        println!("Moving down to row {}", current_row + 1);
+        println!("Start row context: {}", start_row_ctx.cloned());
+        println!("Start column context: {}", start_col_ctx.cloned());
     };
     
     let mut move_left_help = move || {
-        if start_col_ctx.cloned() > 0 {
-            start_col_ctx.set(start_col_ctx.cloned() - 1);
+        // Only read and update column context, don't touch row
+        let current_col = start_col_ctx.cloned();
+        if current_col > 1 {
+            start_col_ctx.set(current_col - 1);
         }
     };
     
     let mut move_right_help = move || {
-        if start_col_ctx.cloned() < max_start_col {
-            start_col_ctx.set(start_col_ctx.cloned() + 1);
+        // Only read and update column context, don't touch row
+        let current_col = start_col_ctx.cloned();
+        if current_col < max_start_col {
+            start_col_ctx.set(current_col + 1);
         }
     };
 
+    // Navigation handle
+    let move_up = move |_| { move_up_help();};
+    let move_down = move |_| { move_down_help();};
+    let move_left = move |_| { move_left_help();};
+    let move_right = move |_| { move_right_help();};
 
-    // Navigation handlers
-    let move_up = move |_| {
-            move_up_help();
-    };
-    
-    let move_down = move |_| {
-            move_down_help();
-    };
-    
-    let move_left = move |_| {
-            move_left_help();
-    };
-    
-    let move_right = move |_| {
-            move_right_help();
-    };
-    
+    // Calculate end positions based on the variables we already have
+    let end_row = (start_row + rows_per_page - 1).min(props.num_rows);
+    let end_col = (start_col + cols_per_page - 1).min(props.num_cols);
+
     // Calculate visible range
 
     let on_keydown = {
@@ -129,52 +137,50 @@ pub fn Grid(props: GridProps) -> Element {
             let key = e.key();
             if key == Key::Enter || key == Key::ArrowDown || key == Key::ArrowUp || key == Key::Tab || key == Key::ArrowLeft || key == Key::ArrowRight {
                 e.prevent_default();
-                let to_row = (if e.key() == Key::ArrowDown || e.key() == Key::Enter {
-                    if selected_cell.cloned().0 == start_row_ctx.cloned()+rows_per_page{
+                let mut to_row = row;
+                let mut to_col = col;
+                
+                // Store the selected cell position once to avoid inconsistencies
+                let current_row = selected_cell.cloned().0;
+                let current_col = selected_cell.cloned().1;
+                
+                // Handle vertical movement - only change row, not column
+                if e.key() == Key::ArrowDown || e.key() == Key::Enter {
+                    if current_row == end_row && start_row_ctx.cloned() < max_start_row {
                         move_down_help();
                     };
-                    row + 1
+                    to_row = (row + 1).max(1).min(props.num_rows); // Prevent going past the last row
                 } else if e.key() == Key::ArrowUp {
-                    if selected_cell.cloned().0 == start_row_ctx.cloned()+1 {
+                    if current_row == start_row && start_row_ctx.cloned() > 1 {
                         move_up_help();
                     };
-                    row - 1
-                } else {
-                    row
-                }).max(1);
+                    to_row = (row - 1).max(1).min(props.num_rows); // Prevent going before the first row
+                } 
                 
-                let to_col = 
-                (if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
-                    if selected_cell.cloned().1 == start_col_ctx.cloned()+1 {
+                // Handle horizontal movement - only change column, not row
+                else if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
+                    if current_col == start_col && start_col_ctx.cloned() > 1 {
                         move_left_help();
                     };
-                    col-1
+                    to_col = (col-1).max(1).min(props.num_cols); // Prevent going before the first column
                 } else if e.key() == Key::Tab || e.key() == Key::ArrowRight {
-                    if selected_cell.cloned().1 == start_col_ctx.cloned()+cols_per_page {
+                    if current_col == end_col && start_col_ctx.cloned() < max_start_col {
                         move_right_help();
                     };
-                    col+1
-                    
-                } else {
-                    col
-                }).max(1);
-                selected_cell.set((to_row, to_col));
-
-                let script =  format!(r#"
+                    to_col = (col+1).max(1).min(props.num_cols); // Prevent going past the last column
+                }
+                
+                let script = format!(r#"
                     let x = document.getElementById('row-{}-col-{}');
                     if (x) {{
                         x.focus();
                     }}
-
-                "#,to_row,to_col);
+                "#, to_row, to_col);
+                selected_cell.set((to_row, to_col));
                 document::eval(&script);
-            
             }
         }
     };
-
-    let end_row = (start_row_ctx.cloned() + rows_per_page).min(props.num_rows);
-    let end_col = (start_col_ctx.cloned() + cols_per_page).min(props.num_cols);
     
     rsx! {
         div {
@@ -190,18 +196,18 @@ pub fn Grid(props: GridProps) -> Element {
                     num_cols: cols_per_page,
                     is_header: true,
                     min_width: min_cell_width,
-                    start_col: start_col_ctx.cloned(),
+                    start_col: start_col,
                     end_col: end_col,
                 }
                 
                 // Visible rows
-                for i in (start_row_ctx.cloned()+1)..=(end_row) {
+                for i in (start_row)..=(end_row) {
                     Row {
                         row: i,
                         num_cols: cols_per_page,
                         is_header: false,
                         min_width: min_cell_width,
-                        start_col: start_col_ctx.cloned(),
+                        start_col: start_col,
                         end_col: end_col,
                     }
                 }
@@ -214,35 +220,35 @@ pub fn Grid(props: GridProps) -> Element {
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
-                    "Rows: {start_row_ctx}-{end_row} / {props.num_rows}, Cols: {start_col_ctx}-{end_col} / {props.num_cols}"
+                    "Rows: {start_row_ctx+1}-{end_row+1} / {props.num_rows}, Cols: {start_col_ctx+1}-{end_col+1} / {props.num_cols}"
                 }
                 
                 // Navigation buttons
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_up,
-                    disabled: start_row_ctx.cloned() == 0,
+                    disabled: start_row <= 1,  // Use start_row instead of rechecking context
                     id: "up-button",
                     "↑"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_down,
-                    disabled: start_row_ctx.cloned() >= max_start_row-1,
+                    disabled: start_row >= max_start_row,
                     id: "down-button",
                     "↓"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_left,
-                    disabled: start_col_ctx.cloned() == 0,
+                    disabled: start_col <= 1,  // Use start_col instead of rechecking context
                     id: "left-button",
                     "←"
                 }
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_right,
-                    disabled: start_col_ctx.cloned() >= max_start_col-1,
+                    disabled: start_col >= max_start_col,
                     id: "right-button",
                     "→"
                 }

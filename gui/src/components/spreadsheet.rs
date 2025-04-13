@@ -8,6 +8,7 @@ use super::header::Header;
 use super::grid::Grid;
 use super::graph_popup::GraphPopup;
 use super::context_menu::{ContextMenu,MenuType};
+use super::error_display::ErrorDisplay;
 
 // Define explicit types for your contexts
 pub type SelectedCellContext = Signal<(i32, i32)>;
@@ -18,12 +19,11 @@ pub type GraphTypeContext = Signal<GraphType>;
 pub type ContextMenuContext = Signal<Option<(f64, f64, i32, i32, MenuType)>>;
 pub type SheetContext = Signal<Arc<Mutex<Sheet>>>;
 pub type SheetVersionContext = Signal<i32>;
-// Change FormulasMapContext to use Vec<Vec<String>> instead of HashMap
-pub type FormulasContext = Signal<Arc<Mutex<Vec<Vec<String>>>>>;
 pub type StartRowContext = Signal<i32>;
 pub type StartColContext = Signal<i32>;
 pub type MaxStartRowContext = Signal<i32>;
 pub type MaxStartColContext = Signal<i32>;
+pub type ErrorContext = super::error_display::ErrorContext;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
@@ -35,8 +35,8 @@ pub enum GraphType {
 
 #[component]
 pub fn Spreadsheet() -> Element {
-    let num_rows = 30;
-    let num_cols = 30;
+    let num_rows = 999;
+    let num_cols = 18000;
 
     // Create the signals for context
     let selected_cell : SelectedCellContext = use_signal(|| (1, 1));
@@ -49,11 +49,12 @@ pub fn Spreadsheet() -> Element {
         let new_sheet = Sheet::new(num_rows,num_cols); // Create a new Sheet instance
         Arc::new(Mutex::new(new_sheet))
     });
-    let start_row: StartRowContext = use_signal(|| 0);
-    let start_col: StartColContext = use_signal(|| 0);
-    let max_start_row: MaxStartRowContext = use_signal(|| 0);
-    let max_start_col: MaxStartColContext = use_signal(|| 0);
+    let start_row: StartRowContext = use_signal(|| 1);
+    let start_col: StartColContext = use_signal(|| 1);
+    let max_start_row: MaxStartRowContext = use_signal(|| 1);
+    let max_start_col: MaxStartColContext = use_signal(|| 1);
     let sheet_version: SheetVersionContext = use_signal(|| 0);
+    let error_ctx: ErrorContext = use_signal(|| None);
     let mut filename = "new_file.xlsx".to_string();
     if let Some(file) = current_file.cloned() {
         filename = file.file_name().unwrap().to_str().unwrap().to_string();
@@ -72,6 +73,7 @@ pub fn Spreadsheet() -> Element {
     provide_context(start_col);
     provide_context(max_start_row);
     provide_context(max_start_col);
+    provide_context(error_ctx);
 
     use_effect(move||{
         let _ = document::eval("
@@ -94,7 +96,8 @@ pub fn Spreadsheet() -> Element {
                 num_cols: num_cols as i32,
             }
             GraphPopup {},
-            ContextMenu {}
+            ContextMenu {},
+            ErrorDisplay {}
         }
     }
 }

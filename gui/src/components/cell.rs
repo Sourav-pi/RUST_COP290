@@ -1,20 +1,17 @@
 use dioxus::prelude::*;
-use dioxus::events::Key;
-use dioxus_elements::script;
-// Import context types from spreadsheet module
-use super::spreadsheet::{SelectedCellContext, SheetContext, SheetVersionContext};
+use super::spreadsheet::*;
 
 const CELL_STYLE: &str = "
-    width: 80px;
-    height: 30px;
+    width: 81px;
+    height: 31px;
     border: 1px solid #ccc;
     outline: none;
     text-align: center;
 ";
 
 const CELL_HEADER_STYLE: &str = "
-    width: 80px;
-    height: 30px;
+    width: 81px;
+    height: 31px;
     border: 1px solid #ccc;
     background-color: #f3f3f3;
     font-weight: bold;
@@ -27,8 +24,8 @@ const CELL_HEADER_STYLE: &str = "
     font-size: 16px;
 ";
 const CELL_SELECTED_STYLE: &str = "
-    width: 80px;
-    height: 30px;
+    width: 81px;
+    height: 31px;
     border: 1px solid blue;
     outline: none;
     text-align: center;
@@ -73,9 +70,8 @@ pub fn Cell(props: CellProps) -> Element {
         let col = props.col;
         move |_| {
             is_editing.set(true);
-            
-            // Update the selected cell in the context
-            if row!=0 && col!=0 { selected_cell.set((row, col))};
+            selected_cell.set((row, col));
+            println!("Selected cell ({}, {}) for editing", row, col);
         }
     };
     

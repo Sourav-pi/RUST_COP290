@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
-use super::spreadsheet::{CurrentFileContext, GraphPopupContext};
+use super::spreadsheet::*;
+use cores::convert_to_index;
+use super::error_display::{ErrorContext, ErrorType, show_error};
 
 
 const OPEN_ICON : Asset = asset!( "assets/open.png");
@@ -62,8 +64,11 @@ pub struct ToolbarProps {
 pub fn Toolbar() -> Element {
     let mut cur_file = use_context::<CurrentFileContext>();
     let mut is_open = use_context::<GraphPopupContext>();
-    let mut cur_cell = use_context::<CurrentFileContext>();
+    let mut start_row_ctx = use_context::<StartRowContext>();
+    let mut start_col_ctx = use_context::<StartColContext>();
     let mut search_term = use_signal(|| String::new());
+    let mut selected_cell = use_context::<SelectedCellContext>();
+    let mut error_ctx = use_context::<ErrorContext>();
     
     rsx! {
         div {style : TOOLBAR_STYLE,
@@ -78,10 +83,19 @@ pub fn Toolbar() -> Element {
             button {
                 style: SEARCH_BUTTON_STYLE,
                 onclick: move |_| {
-                    // Handle search
-                    // CONVERT string to cell number
-                    // set cur_cell to the cell number
-                    println!("Searching for: {}", search_term.cloned());
+                    
+                    let (a ,b) = convert_to_index(search_term.cloned());
+                    let (a,b) = (a as i32,b as i32);
+                    println!("ans {a} {b}");
+                    if !(a==0 && b==0){
+                        start_row_ctx.set(a-1);
+                        start_col_ctx.set(b-1);
+                        selected_cell.set((a,b));
+                        let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
+                    } else {
+                        show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
+                        search_term.set(String::new());
+                    }
                 },
                 "GO"
             }
@@ -101,6 +115,7 @@ pub fn Toolbar() -> Element {
                     cur_file.set(Some(file.clone()));
                 } 
                 // println!("The user choose: {:#?}", res);
+                
             },
             img {
                 src: "{OPEN_ICON}",
@@ -115,7 +130,7 @@ pub fn Toolbar() -> Element {
                 .set_file_name("new_sheet.txt")
                 .set_directory(&path)
                 .save_file();
-                // println!("The user choose: {:#?}", res);
+                println!("The user choose: {:#?}", res);
 
             },
             img {
