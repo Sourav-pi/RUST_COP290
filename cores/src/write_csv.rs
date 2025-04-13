@@ -20,7 +20,7 @@ impl Serialize for CsvStore {
         state.serialize_field("value", &self.data.value)?;
         // Format the nested CommandFlag into a string.
         let flag_str = format!(
-            "type:{}, cmd:{}, type1:{}, type2:{}, error:{}, div_by_zero:{}",
+            "type:{},cmd:{},type1:{},type2:{},error:{},div_by_zero:{}",
             self.data.formula.flag.type_(),
             self.data.formula.flag.cmd(),
             self.data.formula.flag.type1(),
@@ -56,6 +56,9 @@ pub fn write_csv(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error
     let mut wtr = csv::Writer::from_path(file_path)?;
     for row in 0..num_rows {
         for col in 0..num_cols {
+            if self.grid[row][col].formula.flag.is_any()==0{
+                continue;
+            }
             let cell = &self.grid[row][col];
             let csv_data = CsvStore {
                 row: row as i32,
