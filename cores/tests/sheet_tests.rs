@@ -78,14 +78,14 @@ fn test_divide(){
     assert_eq!(test_sheet.get_value(1, 1), 0);
 }
 
-// #[test]
-// fn test_large_cell(){
-//     let mut test_sheet = Sheet::new(703, 703);
-//     test_sheet.update_cell_data(1,1, String::from("ZZ29"));
-//     test_sheet.update_cell_data(29,702, String::from("29"));
-//     println!("{}", test_sheet.get_value(1, 1));
-//     assert!(test_sheet.get_value(1, 1) == 29);
-// }
+#[test]
+fn test_large_cell(){
+    let mut test_sheet = Sheet::new(703, 703);
+    test_sheet.update_cell_data(1,1, String::from("ZZ29"));
+    test_sheet.update_cell_data(29,702, String::from("29"));
+    println!("{}", test_sheet.get_value(1, 1));
+    assert!(test_sheet.get_value(1, 1) == 29);
+}
 #[test]
 fn check_cycle(){
     let mut test_sheet = Sheet::new(6, 6); 

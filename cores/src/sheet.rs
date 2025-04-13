@@ -17,8 +17,8 @@ pub enum Error {
 
 #[allow(dead_code)]
 pub struct CallResult {
-    time:(i32),
-    error:(Error),
+    time:i32,
+    error:Error,
 }
 #[allow(dead_code)]
 pub struct Sheet {
@@ -560,15 +560,13 @@ impl Sheet {
     }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         let start = time::Instant::now();
-        println!("aya");
         let mut command = parse_formula(&new_formula);
         command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
-        if topo_vec == vec![] {
+        if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
-            
 
         } else {
             self.update_cell(topo_vec);
