@@ -505,11 +505,13 @@ impl Sheet {
     fn remove_old_dependicies(&mut self, row: usize, col: usize,restore_command: CommandCall) {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
+        println!("curr index {}", curr_index);
         let current_command = &self.grid[row][col].formula.clone();
-
+        println!("{} {}", current_command.param1, current_command.param2);
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
             // Cell reference dependency
+           
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
             let depend_vec = &mut self.grid[param1_row][param1_col].depend;
             depend_vec.retain(|&x| x != curr_index);
@@ -563,7 +565,7 @@ impl Sheet {
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec == vec![] {
-            command.flag.set_error(2);
+            self.grid[row][col].formula.flag.set_error(2);
             println!("cycle aaa gaya\n");
             
 
@@ -579,6 +581,7 @@ impl Sheet {
             return ans;
         } else if self.grid[row][col].formula.flag.error()==2 {
             let ans=CallResult::Error(Error::CycleDetected);
+            println!("Cycle detected now remove dependencies");
             self.remove_old_dependicies(row,col,old_command);
             return ans;
         } 
