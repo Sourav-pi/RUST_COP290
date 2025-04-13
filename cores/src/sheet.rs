@@ -99,9 +99,17 @@ impl Sheet {
                 self.grid[row][col].value = command.param1;
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                let mut is_found = false;
+                for i in self.grid[param1_row][param1_col].depend.iter() {
+                    if *i == row * ENCODE_SHIFT + col {
+                        is_found = true;
+                        break;
+                    }
+                }
+                if !is_found{
                 self.grid[param1_row][param1_col]
                     .depend
-                    .push(row * ENCODE_SHIFT + col);
+                    .push(row * ENCODE_SHIFT + col);}
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -117,21 +125,57 @@ impl Sheet {
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);
+                    let mut is_found = false;
+                    for i in self.grid[param2_row][param2_col].depend.iter() {
+                        if *i == row * ENCODE_SHIFT + col {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
+                    // self.grid[param2_row][param2_col]
+                    //     .depend
+                    //     .push(row * ENCODE_SHIFT + col);
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                self.grid[param1_row][param1_col]
-                    .depend
-                    .push(row * ENCODE_SHIFT + col);
+                let mut is_found = false;
+                for i in self.grid[param1_row][param1_col].depend.iter() {
+                    if *i == row * ENCODE_SHIFT + col {
+                        is_found = true;
+                        break;
+                    }
+                }
+                if !is_found {
+                    self.grid[param1_row][param1_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);
+                }
+                // self.grid[param1_row][param1_col]
+                //     .depend
+                //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);
+                    let mut is_found = false;
+                    for i in self.grid[param2_row][param2_col].depend.iter() {
+                        if *i == row * ENCODE_SHIFT + col {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
+                    // self.grid[param2_row][param2_col]
+                    //     .depend
+                    //     .push(row * ENCODE_SHIFT + col);
                 }
             }
         } else {
@@ -140,7 +184,17 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
-                    self.grid[i][j].depend.push(t);
+                    let mut is_found = false;
+                    for k in self.grid[i][j].depend.iter() {
+                        if *k == t {
+                            is_found = true;
+                            break;
+                        }
+                    }
+                    if !is_found {
+                        self.grid[i][j].depend.push(t);
+                    }
+                    // self.grid[i][j].depend.push(t);
                 }
             }
         }
@@ -447,7 +501,7 @@ impl Sheet {
     fn remove_old_dependicies(&mut self, row: usize, col: usize,restore_command: CommandCall) {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
-        let current_command = &self.grid[row][col].formula;
+        let current_command = &self.grid[row][col].formula.clone();
 
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
@@ -463,6 +517,13 @@ impl Sheet {
                 let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
                 let depend_vec = &mut self.grid[param1_row][param1_col].depend;
                 depend_vec.retain(|&x| x != curr_index);
+                // let mut new_depend_vec= Vec::new();
+                // for i in self.grid[param1_row][param1_col].depend.iter() {
+                //     if *i != curr_index {
+                //         new_depend_vec.push(*i);
+                //     }
+                // }
+                // self.grid[param1_row][param1_col].depend=new_depend_vec;
             }
             if current_command.flag.type2() == 1 {
                 // Second parameter is a cell reference
@@ -497,8 +558,9 @@ impl Sheet {
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec == vec![] {
-            command.flag.set_error(1);
-            self.remove_old_dependicies(row,col,old_command);
+            command.flag.set_error(2);
+            println!("cycle aaa gaya\n");
+            
 
         } else {
             self.update_cell(topo_vec);
@@ -512,6 +574,7 @@ impl Sheet {
             return ans;
         } else if self.grid[row][col].formula.flag.error()==2 {
             let ans=CallResult::Error(Error::CycleDetected);
+            self.remove_old_dependicies(row,col,old_command);
             return ans;
         } 
         else {

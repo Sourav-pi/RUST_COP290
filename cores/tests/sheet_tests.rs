@@ -86,3 +86,14 @@ fn test_large_cell(){
     println!("{}", test_sheet.get_value(1, 1));
     assert!(test_sheet.get_value(1, 1) == 29);
 }
+#[test]
+fn check_cycle(){
+    let mut test_sheet = Sheet::new(6, 6); 
+    test_sheet.update_cell_data(1,1, String::from("A2"));
+    test_sheet.update_cell_data(2,1,String::from("B1+B5"));
+    test_sheet.update_cell_data(2,2,String::from("A2+A3"));
+    test_sheet.update_cell_data(5,2,String::from("10"));
+    test_sheet.update_cell_data(1,2, String::from("-5"));
+    test_sheet.update_cell_data(3,1, String::from("6"));
+    
+}
