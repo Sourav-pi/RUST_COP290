@@ -27,7 +27,7 @@ pub fn column_to_letter(col: usize) -> String {
 }
 fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize) {
     let mut i=coli;
-    print!(" \t");
+    print!(" \t ");
     while i<coli+10 && i< col {
         // print!(" ");
         print!("{}\t ", column_to_letter(i));
@@ -77,12 +77,13 @@ fn main(){
             display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
         }
         print!("[{time}] ({}) > ", massage);
+        massage="ok";
         io::stdout().flush().unwrap();
 
         input.clear(); // Clear previous input
         io::stdin().read_line(&mut input).expect("Failed to read input");
         trimmed =input.trim();
-        print!("{}\n", trimmed);
+        //print!("{}\n", trimmed);
         trimmed != "q"
         
     }{
@@ -112,13 +113,13 @@ fn main(){
             }
         } else {
         if trimmed=="w"{
-            rowi=cmp::max(0,rowi-10);
+            rowi=cmp::max(1,rowi-10);
             
         }else if trimmed=="s" {
             rowi=cmp::min(int1,rowi+10);
             
         }else if trimmed=="a" {
-            coli=cmp::max(0,coli-10);
+            coli=cmp::max(1,coli-10);
 
         }else if trimmed=="d" {
             coli=cmp::min(int2,coli+10);
@@ -126,6 +127,29 @@ fn main(){
             display_button=false
         }else if trimmed =="enable_output"{
             display_button=true
+        }else if trimmed.len()>9&& &trimmed[0..9]=="scroll_to"   {
+            let parts: Vec<&str> = trimmed.split(' ').collect();
+            if parts.len() == 2 {
+                
+            //     println!("scroll_to: {}", parts[1]);
+            //     println!("scroll_to: {}", parts[0]);
+
+            // println!("This is a normal input: {}this", trimmed);
+            let (scroll_row,scroll_col) = convert_to_index(parts[1].to_string());
+            
+            if scroll_row as i32<=int1 && scroll_col as i32<=int2 && scroll_row as i32>=1 && scroll_col as i32>=1{
+                rowi=scroll_row as i32;
+                coli=scroll_col as i32;
+            }else{
+                massage="invalid input";
+            }
+
+            }else{
+                massage="invalid input";
+            }
+        }else{
+            // println!("this is invalid input: {}", trimmed);
+            massage="invalid input";
         }
         //println!("{display_button}");
         
