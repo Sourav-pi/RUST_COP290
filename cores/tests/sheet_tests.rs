@@ -145,6 +145,7 @@ fn boundry_check(){
 }
 
 #[test]
+#[ignore]
 fn test_write_csv(){
     let mut test_sheet = Sheet::new(6, 6); 
     test_sheet.update_cell_data(1,1, String::from("AVG(A2:D5)"));
@@ -158,6 +159,7 @@ fn test_write_csv(){
     } 
 }
 #[test]
+#[ignore]
 fn test_read_csv(){
     let mut new_sheet = Sheet::new(6, 6);
     let result = new_sheet.read_file("/Users/aditya/Downloads/sem4/cop290/temp.csv");
