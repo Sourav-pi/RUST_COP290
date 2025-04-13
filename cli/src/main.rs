@@ -1,10 +1,14 @@
 use cores::Sheet;
 use cores::convert_to_index;
+use core::time;
 use std::io;
 use std::io::Write;
 // use std::io::stdin;
 use std::cmp;
 use std::env;
+use std::time::Instant;
+use cores::CallResult;
+// use cores::SheetError;
 pub fn column_to_letter(col: usize) -> String {
     if col <= 0 {
         return String::new();
@@ -23,8 +27,9 @@ pub fn column_to_letter(col: usize) -> String {
 }
 fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize) {
     let mut i=coli;
-    print!("\t");
+    print!(" \t");
     while i<coli+10 && i< col {
+        // print!(" ");
         print!("{}\t ", column_to_letter(i));
         i=i+1;
     }println!();
@@ -54,6 +59,9 @@ fn main(){
     let mut coli = 1;
     let mut input = String::new();
     let mut display_button=true;
+    let mut massage="ok";
+    let mut time=0.0;
+    //display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
 
     // Read input from stdin
     // io::stdin()
@@ -62,9 +70,13 @@ fn main(){
 
     // // Trim newline and whitespace
     // let trimmed = input.trim();
+
     let mut trimmed:&str ="";
     while {
-        print!("Enter input (type 'q' to quit):\t");
+        if display_button {
+            display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
+        }
+        print!("[{time}] ({}) > ", massage);
         io::stdout().flush().unwrap();
 
         input.clear(); // Clear previous input
@@ -85,7 +97,16 @@ fn main(){
                 println!("Left: {}, Right: {}", lhs, rhs);
                 // Convert the cell reference to indices
                 let (cell_index_row,cell_index_col) = convert_to_index(lhs.to_string());
-                test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
+                let result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
+            //     match  result {
+            //         CallResult::Time(time) => {
+            //             massage="ok";
+            //             // println!("Time taken: {} seconds", time);
+            //         }
+            //         CallResult::Error(err) => {
+            //             // println!("Error: {}", err);
+            //         }
+            //     } 
             } else {
                 println!("Invalid assignment format");
             }
@@ -121,9 +142,7 @@ fn main(){
         // trimmed = new_trimmed;
 
     }
-    if display_button {
-        display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
-    }
+    
 }
 
 }

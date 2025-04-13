@@ -66,9 +66,11 @@ impl Sheet {
                 });
             }
             self.grid.push(new_row);
+            
         }
+        self.row+=no_of_row;
     }
-    fn add_col(&mut self,no_of_col:usize) {
+    pub fn add_col(&mut self,no_of_col:usize) {
         for i in 0..self.row {
             for _ in 0..no_of_col {
                 self.grid[i].push(Cell {
@@ -82,15 +84,16 @@ impl Sheet {
                 });
             }
         }
+        self.col+=no_of_col;
     }
-    fn copy_row(&mut self, copy_from:usize,copy_to:usize){
+    pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
             self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
             self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
     }
-    fn copy_col(&mut self, copy_from:usize,copy_to:usize){
+    pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
             self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
