@@ -114,7 +114,7 @@ impl Sheet {
         .tooltip(Tooltip::new().trigger(Trigger::Item))
         .legend(Legend::new().orient(Orient::Vertical).left("left"))
         .series(pie::Pie::new()
-            .radius(50)
+            .radius(150)
             .center(vec!["50%", "50%"])
             .data(data)
             .emphasis(Emphasis::new().item_style(ItemStyle::new().shadow_color("rgba(0, 0, 0, 0.5)").shadow_offset_x(0).shadow_offset_y(5).shadow_blur(10)))
