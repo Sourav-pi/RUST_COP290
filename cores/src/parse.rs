@@ -23,9 +23,8 @@ pub struct CommandFlag{
     pub type1: B1,           // 1 bit
     pub type2: B1,           // 1 bit
     pub error: B2,           // 2 bits
-    pub is_div_by_zero: B1,  // 1 bit
-    #[skip]              // Skip the remaining bits to round up to 16 bits
-    __: B6,              // 6 bits
+    pub is_div_by_zero: B1,  // 1 bit          // Skip the remaining bits to round up to 16 bits
+    pub is_any: B6,              // 6 bits
 }
 #[derive(Clone)]
 #[derive(serde::Serialize)]
