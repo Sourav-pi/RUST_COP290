@@ -65,9 +65,11 @@ impl Sheet {
                 });
             }
             self.grid.push(new_row);
+            
         }
+        self.row+=no_of_row;
     }
-    fn add_col(&mut self,no_of_col:usize) {
+    pub fn add_col(&mut self,no_of_col:usize) {
         for i in 0..self.row {
             for _ in 0..no_of_col {
                 self.grid[i].push(Cell {
@@ -81,15 +83,16 @@ impl Sheet {
                 });
             }
         }
+        self.col+=no_of_col;
     }
-    fn copy_row(&mut self, copy_from:usize,copy_to:usize){
+    pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
             self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
             self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
     }
-    fn copy_col(&mut self, copy_from:usize,copy_to:usize){
+    pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
             self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
@@ -505,11 +508,13 @@ impl Sheet {
     fn remove_old_dependicies(&mut self, row: usize, col: usize,restore_command: CommandCall) {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
+        println!("curr index {}", curr_index);
         let current_command = &self.grid[row][col].formula.clone();
-
+        println!("{} {}", current_command.param1, current_command.param2);
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
             // Cell reference dependency
+           
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
             let depend_vec = &mut self.grid[param1_row][param1_col].depend;
             depend_vec.retain(|&x| x != curr_index);
@@ -557,12 +562,14 @@ impl Sheet {
     }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         let start = time::Instant::now();
+        println!("aya");
         let mut command = parse_formula(&new_formula);
+        command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec == vec![] {
-            command.flag.set_error(2);
+            self.grid[row][col].formula.flag.set_error(2);
             println!("cycle aaa gaya\n");
             
 
@@ -578,6 +585,7 @@ impl Sheet {
             return ans;
         } else if self.grid[row][col].formula.flag.error()==2 {
             let ans=CallResult::Error(Error::CycleDetected);
+            println!("Cycle detected now remove dependencies");
             self.remove_old_dependicies(row,col,old_command);
             return ans;
         } 
