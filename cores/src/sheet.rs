@@ -557,6 +557,7 @@ impl Sheet {
     }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         let start = time::Instant::now();
+        println!("aya");
         let mut command = parse_formula(&new_formula);
         command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
