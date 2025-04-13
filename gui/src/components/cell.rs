@@ -105,14 +105,14 @@ pub fn Cell(props: CellProps) -> Element {
     };
     
 
-    use_effect(move ||{
-        let _ = sheetversion.cloned();
+    // use_effect(move ||{
+    //     let _ = sheetversion.cloned();
 
         if let Ok(sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
             value.set(sheet_locked.get_value(props.row, props.col).to_string());
         }
-    });
+    // });
     
     
     if props.is_header {

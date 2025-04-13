@@ -8,6 +8,7 @@ pub enum ErrorType {
     Error,
     Warning,
     Info,
+    Success,
 }
 
 // Signal to store active errors
@@ -60,6 +61,12 @@ const INFO_STYLE: &str = r#"
     color: #055160;
 "#;
 
+const SUCCESS_STYLE: &str = r#"
+    background-color: #d1e7dd;
+    border: 1px solid #badbcc;
+    color: #0f5132;
+"#;
+
 // Close button style
 const CLOSE_BUTTON_STYLE: &str = r#"
     background: none;
@@ -75,22 +82,6 @@ const CLOSE_BUTTON_STYLE: &str = r#"
 pub fn ErrorDisplay() -> Element {
     let mut error_ctx = use_context::<ErrorContext>();
     
-    // Handle auto-dismissal with timer
-    // use_effect(move || {
-    //     if let Some((_, _, Some(timeout_seconds))) = error_ctx.read().as_ref() {
-    //         let error_ctx_clone = error_ctx.clone();
-    //         let duration_ms = (*timeout_seconds * 1000.0) as u64;
-            
-    //         // Set a one-time timer to clear the error after the timeout
-    //         use_timer(move || {
-    //             error_ctx_clone.set(None);
-    //         }, Duration::from_millis(duration_ms));
-    //     }
-        
-    //     // Cleanup function (not necessary here but required for use_effect)
-    //     || {}
-    // });
-    
     // Render error if present
     let error_data = error_ctx.read();
     if let Some((message, error_type, _)) = error_data.as_ref() {
@@ -98,12 +89,14 @@ pub fn ErrorDisplay() -> Element {
             ErrorType::Error => ERROR_STYLE,
             ErrorType::Warning => WARNING_STYLE,
             ErrorType::Info => INFO_STYLE,
+            ErrorType::Success => SUCCESS_STYLE,
         };
         
         let icon = match error_type {
             ErrorType::Error => "⛔",
             ErrorType::Warning => "⚠️",
             ErrorType::Info => "ℹ️",
+            ErrorType::Success => "✅",
         };
         
         rsx! {
