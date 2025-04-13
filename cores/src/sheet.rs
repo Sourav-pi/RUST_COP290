@@ -1,6 +1,7 @@
 use crate::parse::*;
 use std::collections::HashSet;
 use std::{thread, time};
+
 #[derive(Clone)]
 pub struct Cell {
     pub value: i32,
@@ -12,10 +13,13 @@ pub enum Error {
     InvalidInput,
     CycleDetected,
 }
+
+#[allow(dead_code)]
 pub enum CallResult {
     Time(i32),
     Error(Error),
 }
+#[allow(dead_code)]
 pub struct Sheet {
     pub grid: Vec<Vec<Cell>>,
     pub row: usize,

@@ -17,6 +17,7 @@ use crate::sheet::Cell;
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
 #[derive(Clone)]
 #[derive(serde::Serialize)]
+#[derive(Debug)]
 pub struct CommandFlag{
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits
@@ -218,6 +219,7 @@ pub fn convert_to_index_int(encode:i32) -> (usize,usize){
     convert_to_index(inp)
 }
 
+#[allow(dead_code)]
 pub fn unparse(cell: Cell) -> String {
     match cell.formula.flag.type_(){
         0 =>{ // Constant
