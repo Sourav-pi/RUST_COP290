@@ -1,13 +1,12 @@
 use cores::Sheet;
 use cores::convert_to_index;
-use core::time;
 use std::io;
 use std::io::Write;
 // use std::io::stdin;
 use std::cmp;
 use std::env;
 use std::time::Instant;
-use cores::CallResult;
+use cores::Error;
 // use cores::SheetError;
 pub fn column_to_letter(col: usize) -> String {
     if col <= 0 {
@@ -30,6 +29,7 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
     print!(" \t ");
     while i<coli+10 && i< col {
         // print!(" ");
+        // print!(" ");
         print!("{}\t ", column_to_letter(i));
         i=i+1;
     }println!();
@@ -39,7 +39,12 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
         let mut j=coli;
         while j<coli+10 && j< col {
             let value = sheet.get_value(i as i32, j as i32);
-            print!("{}\t ", value);
+            if sheet.grid[i][j].formula.flag.is_div_by_zero()==1 {
+                print!("ERR\t ");
+            }else{
+                print!("{}\t ", value);
+            }
+            //print!("{}\t ", value);
             j=j+1;
         }println!();
         i=i+1;
@@ -61,16 +66,6 @@ fn main(){
     let mut display_button=true;
     let mut massage="ok";
     let mut time=0.0;
-    //display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
-
-    // Read input from stdin
-    // io::stdin()
-    //     .read_line(&mut input)
-    //     .expect("Failed to read line");
-
-    // // Trim newline and whitespace
-    // let trimmed = input.trim();
-
     let mut trimmed:&str ="";
     while {
         if display_button {
@@ -99,17 +94,16 @@ fn main(){
                 // Convert the cell reference to indices
                 let (cell_index_row,cell_index_col) = convert_to_index(lhs.to_string());
                 let result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
-            //     match  result {
-            //         CallResult::Time(time) => {
-            //             massage="ok";
-            //             // println!("Time taken: {} seconds", time);
-            //         }
-            //         CallResult::Error(err) => {
-            //             // println!("Error: {}", err);
-            //         }
-            //     } 
+                time =result.time;
+                match  result.error {
+                    Error::InvalidInput=> {massage="invalid input"}
+                    Error::NoError=> {massage="ok"}
+                    Error::CycleDetected=> {massage="cycle detected"}
+                    Error::DivByZero=> {massage="ok"}
+                }
             } else {
-                println!("Invalid assignment format");
+                // println!("Invalid assignment format");
+                massage="invalid input";
             }
         } else {
         if trimmed=="w"{
