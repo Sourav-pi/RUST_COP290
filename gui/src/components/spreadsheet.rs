@@ -36,7 +36,7 @@ pub enum GraphType {
 #[component]
 pub fn Spreadsheet() -> Element {
     let num_rows = 999;
-    let num_cols = 18000;
+    let num_cols = 18278;
 
     // Create the signals for context
     let selected_cell : SelectedCellContext = use_signal(|| (1, 1));
@@ -90,6 +90,8 @@ pub fn Spreadsheet() -> Element {
             
             Header { 
                 filename: filename.clone(),
+                num_rows: num_rows,
+                num_cols: num_cols,
             }
             Grid {
                 num_rows: num_rows as i32,

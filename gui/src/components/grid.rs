@@ -79,31 +79,54 @@ pub fn Grid(props: GridProps) -> Element {
     let max_start_row = (props.num_rows - rows_per_page).max(1);
     let max_start_col = (props.num_cols - cols_per_page).max(1);
     
-    // Rewrite scrolling functions to be independent
+    // Calculate end positions based on the variables we already have
+    let end_row = (start_row + rows_per_page - 1).min(props.num_rows);
+    let end_col = (start_col + cols_per_page - 1).min(props.num_cols);
+
+    // Function to check if a cell is visible in the current view
+    let is_cell_visible = move |row: i32, col: i32| -> bool {
+        row >= start_row && row <= end_row && col >= start_col && col <= end_col
+    };
+
+    // Function to scroll to a cell that's not in view
+    let mut scroll_to_cell = move |row: i32, col: i32| {
+        // If the cell is above current view, scroll up to show it at the top
+        if row < start_row {
+            start_row_ctx.set((row - 1).max(1));
+        } 
+        // If the cell is below current view, scroll down to show it at the bottom
+        else if row > end_row {
+            let new_start = (row - rows_per_page + 1).max(1).min(max_start_row);
+            start_row_ctx.set(new_start);
+        }
+
+        // If the cell is to the left of current view, scroll left to show it
+        if col < start_col {
+            start_col_ctx.set((col - 1).max(1));
+        } 
+        // If the cell is to the right of current view, scroll right to show it
+        else if col > end_col {
+            let new_start = (col - cols_per_page + 1).max(1).min(max_start_col);
+            start_col_ctx.set(new_start);
+        }
+    };
+    
+    // Scrolling helper functions remain the same
     let mut move_up_help = move || {
-        // Only read and update row context, don't touch column
         let current_row = start_row_ctx.cloned();
         if current_row > 1 {
             start_row_ctx.set(current_row - 1);
         }
-        println!("Moving up to row {}", current_row - 1);
-        println!("Start row context: {}", start_row_ctx.cloned());
-        println!("Start column context: {}", start_col_ctx.cloned());
     };
     
     let mut move_down_help = move || {
-        // Only read and update row context, don't touch column
         let current_row = start_row_ctx.cloned();
         if current_row < max_start_row {
             start_row_ctx.set(current_row + 1);
         }
-        println!("Moving down to row {}", current_row + 1);
-        println!("Start row context: {}", start_row_ctx.cloned());
-        println!("Start column context: {}", start_col_ctx.cloned());
     };
     
     let mut move_left_help = move || {
-        // Only read and update column context, don't touch row
         let current_col = start_col_ctx.cloned();
         if current_col > 1 {
             start_col_ctx.set(current_col - 1);
@@ -111,12 +134,21 @@ pub fn Grid(props: GridProps) -> Element {
     };
     
     let mut move_right_help = move || {
-        // Only read and update column context, don't touch row
         let current_col = start_col_ctx.cloned();
         if current_col < max_start_col {
             start_col_ctx.set(current_col + 1);
         }
     };
+
+    // Effect to handle auto-scrolling when selected cell changes
+    use_effect(move || {
+        let (sel_row, sel_col) = *selected_cell.read();
+        
+        // If the currently selected cell is not visible, scroll to it
+        if !is_cell_visible(sel_row, sel_col) {
+            scroll_to_cell(sel_row, sel_col);
+        }
+    });
 
     // Navigation handle
     let move_up = move |_| { move_up_help();};
@@ -182,7 +214,7 @@ pub fn Grid(props: GridProps) -> Element {
         }
     };
     
-    rsx! {
+        rsx! {
         div {
             style: GRID_STYLE,
             class: "grid-container",
@@ -220,14 +252,14 @@ pub fn Grid(props: GridProps) -> Element {
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
-                    "Rows: {start_row_ctx+1}-{end_row+1} / {props.num_rows}, Cols: {start_col_ctx+1}-{end_col+1} / {props.num_cols}"
+                    "Rows: {start_row}-{end_row} / {props.num_rows}, Cols: {start_col}-{end_col} / {props.num_cols}"
                 }
                 
                 // Navigation buttons
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_up,
-                    disabled: start_row <= 1,  // Use start_row instead of rechecking context
+                    disabled: start_row <= 1,
                     id: "up-button",
                     "↑"
                 }
@@ -241,7 +273,7 @@ pub fn Grid(props: GridProps) -> Element {
                 button {
                     style: NAV_BUTTON_STYLE,
                     onclick: move_left,
-                    disabled: start_col <= 1,  // Use start_col instead of rechecking context
+                    disabled: start_col <= 1,
                     id: "left-button",
                     "←"
                 }

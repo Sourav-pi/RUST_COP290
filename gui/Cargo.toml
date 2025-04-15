@@ -9,8 +9,6 @@ dioxus = {version = "0.6.0"}
 stylist = "0.13.0"
 cores ={ path = "../cores" } 
 rfd = { version = "0.15"}
-dioxus-tw-components = "0.1.6"
-dioxus-timer = "0.4.0"
 
 
 [features]

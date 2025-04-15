@@ -58,12 +58,12 @@ const SEARCH_BUTTON_STYLE: &str = "
 
 #[derive(Props, PartialEq, Clone)]
 pub struct ToolbarProps {
-    pub cur_cell: String,
-    pub filename: String,
+    pub num_rows: usize,
+    pub num_cols: usize,
 }
 
 #[component]
-pub fn Toolbar() -> Element {
+pub fn Toolbar(props: ToolbarProps) -> Element {
     let mut cur_file = use_context::<CurrentFileContext>();
     let mut is_open = use_context::<GraphPopupContext>();
     let mut start_row_ctx = use_context::<StartRowContext>();
@@ -90,14 +90,15 @@ pub fn Toolbar() -> Element {
                     
                     let (a ,b) = convert_to_index(search_term.cloned());
                     let (a,b) = (a as i32,b as i32);
-                    println!("ans {a} {b}");
-                    if !(a==0 && b==0){
+                    // println!("ans {a} {b}");
+                    if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
                         start_row_ctx.set(a-1);
                         start_col_ctx.set(b-1);
                         selected_cell.set((a,b));
+
                         let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
                     } else {
-                        show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Success, Some(5.0));
+                        show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
                         search_term.set(String::new());
                     }
                 },

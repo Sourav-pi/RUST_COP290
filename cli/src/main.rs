@@ -1,13 +1,10 @@
 use cores::Sheet;
 use cores::convert_to_index;
-use core::time;
 use std::io;
 use std::io::Write;
 // use std::io::stdin;
 use std::cmp;
 use std::env;
-use std::time::Instant;
-use cores::CallResult;
 // use cores::SheetError;
 pub fn column_to_letter(col: usize) -> String {
     if col <= 0 {
@@ -60,7 +57,7 @@ fn main(){
     let mut input = String::new();
     let mut display_button=true;
     let mut massage="ok";
-    let mut time=0.0;
+    let time=0.0;
     //display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
 
     // Read input from stdin
@@ -71,7 +68,7 @@ fn main(){
     // // Trim newline and whitespace
     // let trimmed = input.trim();
 
-    let mut trimmed:&str ="";
+    let mut trimmed:&str ;
     while {
         if display_button {
             display_sheet(&test_sheet, int2 as usize, int1 as usize,rowi as usize, coli as usize);
@@ -98,7 +95,7 @@ fn main(){
                 println!("Left: {}, Right: {}", lhs, rhs);
                 // Convert the cell reference to indices
                 let (cell_index_row,cell_index_col) = convert_to_index(lhs.to_string());
-                let result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
+                let _result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
             //     match  result {
             //         CallResult::Time(time) => {
             //             massage="ok";

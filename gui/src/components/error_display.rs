@@ -1,6 +1,4 @@
 use dioxus::prelude::*;
-use std::time::Duration;
-use dioxus_timer::use_timer;
 
 // Define error types/severity levels
 #[derive(Clone, PartialEq)]
