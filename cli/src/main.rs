@@ -5,6 +5,8 @@ use std::io::Write;
 // use std::io::stdin;
 use std::cmp;
 use std::env;
+use std::time::Instant;
+use cores::Error;
 // use cores::SheetError;
 pub fn column_to_letter(col: usize) -> String {
     if col <= 0 {
@@ -27,6 +29,7 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
     print!(" \t ");
     while i<coli+10 && i< col {
         // print!(" ");
+        // print!(" ");
         print!("{}\t ", column_to_letter(i));
         i=i+1;
     }println!();
@@ -36,7 +39,12 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
         let mut j=coli;
         while j<coli+10 && j< col {
             let value = sheet.get_value(i as i32, j as i32);
-            print!("{}\t ", value);
+            if sheet.grid[i][j].formula.flag.is_div_by_zero()==1 {
+                print!("ERR\t ");
+            }else{
+                print!("{}\t ", value);
+            }
+            //print!("{}\t ", value);
             j=j+1;
         }println!();
         i=i+1;
@@ -51,27 +59,20 @@ fn main(){
     }
     let int1: i32 = args[1].parse().expect("Invalid integer for int1");
     let int2: i32 = args[2].parse().expect("Invalid integer for int2");
-    let mut test_sheet = Sheet::new(int2 as usize, int1 as usize);
+    let int1= int1+1;
+    let int2= int2+1;
+    
+    let mut test_sheet = Sheet::new(int1 as usize, int2 as usize);
     let mut rowi = 1;
     let mut coli = 1;
     let mut input = String::new();
     let mut display_button=true;
     let mut massage="ok";
-    let time=0.0;
-    //display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
-
-    // Read input from stdin
-    // io::stdin()
-    //     .read_line(&mut input)
-    //     .expect("Failed to read line");
-
-    // // Trim newline and whitespace
-    // let trimmed = input.trim();
-
-    let mut trimmed:&str ;
+    let mut time=0.0;
+    let mut trimmed:&str ="";
     while {
         if display_button {
-            display_sheet(&test_sheet, int2 as usize, int1 as usize,rowi as usize, coli as usize);
+            display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
         }
         print!("[{time}] ({}) > ", massage);
         massage="ok";
@@ -95,31 +96,30 @@ fn main(){
                 println!("Left: {}, Right: {}", lhs, rhs);
                 // Convert the cell reference to indices
                 let (cell_index_row,cell_index_col) = convert_to_index(lhs.to_string());
-                let _result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
-            //     match  result {
-            //         CallResult::Time(time) => {
-            //             massage="ok";
-            //             // println!("Time taken: {} seconds", time);
-            //         }
-            //         CallResult::Error(err) => {
-            //             // println!("Error: {}", err);
-            //         }
-            //     } 
+                let result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
+                time =result.time;
+                match  result.error {
+                    Error::InvalidInput=> {massage="invalid input"}
+                    Error::NoError=> {massage="ok"}
+                    Error::CycleDetected=> {massage="cycle detected"}
+                    Error::DivByZero=> {massage="ok"}
+                }
             } else {
-                println!("Invalid assignment format");
+                // println!("Invalid assignment format");
+                massage="invalid input";
             }
         } else {
         if trimmed=="w"{
             rowi=cmp::max(1,rowi-10);
             
         }else if trimmed=="s" {
-            rowi=cmp::min(int2,rowi+10);
+            rowi=cmp::min(int1-10,rowi+10);
             
         }else if trimmed=="a" {
             coli=cmp::max(1,coli-10);
 
         }else if trimmed=="d" {
-            coli=cmp::min(int1,coli+10);
+            coli=cmp::min(int2-10,coli+10);
         }else if trimmed =="disable_output" {
             display_button=false
         }else if trimmed =="enable_output"{
@@ -134,9 +134,11 @@ fn main(){
             // println!("This is a normal input: {}this", trimmed);
             let (scroll_row,scroll_col) = convert_to_index(parts[1].to_string());
             
-            if scroll_row as i32<=int2 && scroll_col as i32<=int1 && scroll_row as i32>=1 && scroll_col as i32>=1{
+            if scroll_row as i32<=int1 && scroll_col as i32<=int2 && scroll_row as i32>=1 && scroll_col as i32>=1{
                 rowi=scroll_row as i32;
                 coli=scroll_col as i32;
+                rowi=cmp::min(rowi,int1-10);
+                coli=cmp::min(coli,int2-10);
             }else{
                 massage="invalid input";
             }

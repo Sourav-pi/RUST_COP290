@@ -166,12 +166,14 @@ pub fn parse_expression(input: &str, container: &mut CommandCall){
         Arithmatic(input,container)
     } else if input.contains(':') {
         rangeoper(input,container)
-    } else {
+    } else if Regex::new(r"^[A-Z]+\d+$").unwrap().is_match(input) {
         container.param1= encode_cell(input.to_string());
         container.flag.set_type_(0);
         container.flag.set_cmd(0);
         container.flag.set_type1(1);
-
+    }
+    else{
+        container.flag.set_error(1);
     }
 }
 pub fn convert_to_index(cell:String) -> (usize, usize) {

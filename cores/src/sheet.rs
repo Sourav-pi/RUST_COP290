@@ -2,6 +2,7 @@ use crate::parse::*;
 use std::collections::HashSet;
 use std::{thread, time};
 
+
 #[derive(Clone)]
 pub struct Cell {
     pub value: i32,
@@ -17,9 +18,10 @@ pub enum Error {
 
 #[allow(dead_code)]
 pub struct CallResult {
-    time:i32,
-    error:Error,
+    pub time:f64,
+    pub error:Error,
 }
+#[allow(dead_code)]
 #[allow(dead_code)]
 pub struct Sheet {
     pub grid: Vec<Vec<Cell>>,
@@ -67,9 +69,12 @@ impl Sheet {
             }
             self.grid.push(new_row);
             
+            
         }
         self.row+=no_of_row;
+        
     }
+    
     pub fn add_col(&mut self,no_of_col:usize) {
         for i in 0..self.row {
             for _ in 0..no_of_col {
@@ -84,8 +89,10 @@ impl Sheet {
                 });
             }
         }
+        
         self.col+=no_of_col;
     }
+    
     pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
@@ -93,6 +100,7 @@ impl Sheet {
             self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
     }
+    
     pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
@@ -129,7 +137,11 @@ impl Sheet {
                     } else if command.flag.cmd() == 2 {
                         self.grid[row][col].value = command.param1 * command.param2;
                     } else {
-                        self.grid[row][col].value = command.param1 / command.param2;
+                        if command.param2 == 0 {
+                            self.grid[row][col].formula.flag.set_is_div_by_zero(1);
+                        } else {
+                            self.grid[row][col].value = command.param1 / command.param2;
+                        }
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
@@ -192,15 +204,16 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
+                    let depend_vec = &mut self.grid[i][j].depend;
                     let mut is_found = false;
-                    for k in self.grid[i][j].depend.iter() {
+                    for k in depend_vec.iter() {
                         if *k == t {
                             is_found = true;
                             break;
                         }
                     }
                     if !is_found {
-                        self.grid[i][j].depend.push(t);
+                        depend_vec.push(t);
                     }
                     // self.grid[i][j].depend.push(t);
                 }
@@ -323,6 +336,7 @@ impl Sheet {
         for i in list_fpr_update {
             let col = (i as usize) % ENCODE_SHIFT;
             let row = (i as usize) / ENCODE_SHIFT;
+            self.grid[row][col].formula.flag.set_is_div_by_zero(0);
             if self.grid[row][col].formula.flag.type_() == 0 {
                 // value
 
@@ -507,11 +521,14 @@ impl Sheet {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
         println!("curr index {}", curr_index);
+        println!("curr index {}", curr_index);
         let current_command = &self.grid[row][col].formula.clone();
+        println!("{} {}", current_command.param1, current_command.param2);
         println!("{} {}", current_command.param1, current_command.param2);
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
             // Cell reference dependency
+           
            
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
             let depend_vec = &mut self.grid[param1_row][param1_col].depend;
@@ -562,6 +579,7 @@ impl Sheet {
         let start = time::Instant::now();
         let mut command = parse_formula(&new_formula);
         command.flag.set_is_any(1);
+        command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row as usize, col as usize, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
@@ -573,7 +591,7 @@ impl Sheet {
         }
         let end= start.elapsed();
         let mut ans=CallResult{
-            time:end.as_millis() as i32,
+            time:end.as_millis() as f64,
             error:Error::NoError,
         };
         if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
@@ -591,6 +609,7 @@ impl Sheet {
             return ans;
         }
     }
+
     pub fn get_value(&self, row: i32, col: i32) -> i32 {
         self.grid[row as usize][col as usize].value
     }
