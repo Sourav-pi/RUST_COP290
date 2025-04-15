@@ -2,6 +2,7 @@ use crate::parse::*;
 use std::collections::HashSet;
 use std::{thread, time};
 
+const DEBUG: bool = false;
 
 #[derive(Clone)]
 pub struct Cell {
@@ -230,7 +231,7 @@ impl Sheet {
         let is_cycle = self.dfs(target_cell, &mut visited, &mut stack, &mut result);
 
         if is_cycle {
-            println!("Cycle detected in the graph");
+            if DEBUG { println!("Cycle detected in the graph");}
             return vec![];
         }
         // while let Some(cell) = stack.pop() {
@@ -520,11 +521,11 @@ impl Sheet {
     fn remove_old_dependicies(&mut self, row: usize, col: usize,restore_command: CommandCall) {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
-        println!("curr index {}", curr_index);
-        println!("curr index {}", curr_index);
+        if DEBUG { println!("curr index {}", curr_index);}
+        if DEBUG { println!("curr index {}", curr_index);}
         let current_command = &self.grid[row][col].formula.clone();
-        println!("{} {}", current_command.param1, current_command.param2);
-        println!("{} {}", current_command.param1, current_command.param2);
+        if DEBUG {println!("{} {}", current_command.param1, current_command.param2);}
+        if DEBUG {println!("{} {}", current_command.param1, current_command.param2);}
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
             // Cell reference dependency

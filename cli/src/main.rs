@@ -5,9 +5,11 @@ use std::io::Write;
 // use std::io::stdin;
 use std::cmp;
 use std::env;
-use std::time::Instant;
 use cores::Error;
 // use cores::SheetError;
+
+const DEBUG:bool = false;
+
 pub fn column_to_letter(col: usize) -> String {
     if col <= 0 {
         return String::new();
@@ -85,15 +87,15 @@ fn main(){
         trimmed != "q"
         
     }{
-        print!("{}\n", trimmed);
+        if DEBUG {print!("{}\n", trimmed);}
         if trimmed.contains("=") {
-            println!("This is an assignment: {}", trimmed);
+            if DEBUG { println!("This is an assignment: {}", trimmed);}
             // Split the assignment into left-hand side (lhs) and right-hand side (rhs)
             let parts: Vec<&str> = trimmed.split('=').collect();
             if parts.len() == 2 {
                 let lhs = parts[0].trim(); // e.g., A1
                 let rhs = parts[1].trim(); // e.g., A2+A3
-                println!("Left: {}, Right: {}", lhs, rhs);
+                if DEBUG {println!("Left: {}, Right: {}", lhs, rhs);}
                 // Convert the cell reference to indices
                 let (cell_index_row,cell_index_col) = convert_to_index(lhs.to_string());
                 let result=test_sheet.update_cell_data( cell_index_row, cell_index_col, rhs.to_string());
@@ -137,8 +139,8 @@ fn main(){
             if scroll_row as i32<=int1 && scroll_col as i32<=int2 && scroll_row as i32>=1 && scroll_col as i32>=1{
                 rowi=scroll_row as i32;
                 coli=scroll_col as i32;
-                rowi=cmp::min(rowi,int1-10);
-                coli=cmp::min(coli,int2-10);
+                rowi=cmp::min(rowi,int1);
+                coli=cmp::min(coli,int2);
             }else{
                 massage="invalid input";
             }
