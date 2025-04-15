@@ -204,15 +204,16 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
+                    let depend_vec = &mut self.grid[i][j].depend;
                     let mut is_found = false;
-                    for k in self.grid[i][j].depend.iter() {
+                    for k in depend_vec.iter() {
                         if *k == t {
                             is_found = true;
                             break;
                         }
                     }
                     if !is_found {
-                        self.grid[i][j].depend.push(t);
+                        depend_vec.push(t);
                     }
                     // self.grid[i][j].depend.push(t);
                 }
