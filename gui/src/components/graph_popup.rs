@@ -1,7 +1,6 @@
 use super::spreadsheet::{GraphPopupContext, GraphType, GraphTypeContext};
 use super::graph_forms::{BarChartForm, LineChartForm, PieChartForm, ScatterPlotForm};
 use ::dioxus::prelude::*;
-
 const CLOSE_BUTTON_STYLE: &str = r#"
     background-color:rgb(155, 155, 155);
     height: 30px;
@@ -61,6 +60,7 @@ const OVERLAY_STYLE: &str = r#"
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 "#;
 
 const POPUP_STYLE: &str = r#"

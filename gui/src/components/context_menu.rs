@@ -1,7 +1,5 @@
 use dioxus::prelude::*;
 use super::spreadsheet::ContextMenuContext;
-
-
 #[derive(Clone, Copy, PartialEq)]
 pub enum MenuType {
     RowMenu,
@@ -10,6 +8,7 @@ pub enum MenuType {
 }
 
 #[component]
+#[allow(unused_braces)]
 pub fn ContextMenu() -> Element {
     let mut context_menu = use_context::<ContextMenuContext>();
     

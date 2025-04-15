@@ -10,8 +10,8 @@ const ROW_STYLE: &str = "
 ";
 
 const CELL_HEADER_STYLE: &str = "
-    width: 80px;
-    height: 30px;
+    width: 81px;
+    height: 31px;
     border: 1px solid #ccc;
     background-color: #f3f3f3;
     font-weight: bold;
@@ -127,7 +127,7 @@ pub fn Row(props: RowProps) -> Element {
             // Add column header (A, B, C...) cell if this is the first column
             if props.is_header {
                 input { style: CELL_HEADER_STYLE, readonly: true, "" }
-                for col in (props.start_col +1)..=props.end_col {
+                for col in (props.start_col)..=props.end_col {
                     {
                         let col_letter = column_to_letter(col);
                         rsx! {
@@ -149,7 +149,7 @@ pub fn Row(props: RowProps) -> Element {
                 }
 
                 // Generate cells for this row
-                for col in (props.start_col +1)..=props.end_col {
+                for col in (props.start_col)..=props.end_col {
                     Cell {
                         row: props.row,
                         col,

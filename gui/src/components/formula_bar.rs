@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use dioxus::events::Key;
-use super::spreadsheet::{SelectedCellContext, FormulaContext};
+use super::spreadsheet::{SelectedCellContext, SheetContext, SheetVersionContext};
 use crate::components::row::column_to_letter;
 
 const FORMULA_BAR_STYLE: &str = "display: flex;
@@ -10,19 +10,49 @@ const FORMULA_BAR_STYLE: &str = "display: flex;
                                 padding: 0px;
                                 width: 100%;";
 
-#[derive(Props, PartialEq, Clone)]
-pub struct FormulaBarProps {
-    pub cur_cell: String,
-    pub formula: String,
-}
 
 #[component]
-pub fn FormulaBar(props: FormulaBarProps) -> Element {
+pub fn FormulaBar() -> Element {
     // Consume the contexts
 
+    let sheet = use_context::<SheetContext>();
+    let mut sheetversion = use_context::<SheetVersionContext>();
     let selected_cell = use_context::<SelectedCellContext>();
-    let mut formula = use_context::<FormulaContext>();
-    
+    let mut formula = use_signal(|| String::new());
+
+    use_effect(move || {
+        let _ = sheetversion.cloned();
+
+        if let Ok(sheet_locked) = sheet.cloned().lock() {
+        // Update the cell value in the Sheet object
+            let formula_in_sheet = sheet_locked.get_formula(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize).to_string();
+            if formula_in_sheet != "0" {
+                formula.set(formula_in_sheet);
+            } else {
+                formula.set("".to_string());
+            }
+        }
+    });
+
+  
+    let on_submit = move |e: Event<KeyboardData>| {
+        if e.key()==Key::Enter {
+            if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                // Update the cell value in the Sheet object
+                sheet_locked.update_cell_data(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize, formula.cloned());
+                sheetversion.set(sheetversion.cloned() + 1);
+            }
+        };
+    };
+
+    let on_blur = move |_| {
+        if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+            // Update the cell value in the Sheet object
+            sheet_locked.update_cell_data(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize, formula.cloned());
+            sheetversion.set(sheetversion.cloned() + 1);
+        }
+    };
+
     rsx! {
         div {
             style: FORMULA_BAR_STYLE,
@@ -39,15 +69,13 @@ pub fn FormulaBar(props: FormulaBarProps) -> Element {
                 oninput: move |e| {
                     formula.set(e.value().clone());
                 },
-                onkeydown: move |e| {
-                    if e.key() == Key::Enter {
-                        // Handle the Enter key event
-                        println!("Enter key pressed");
-                        // You can also update the formula signal here if needed
-                        println!("Formula: {}{}", props.cur_cell,formula); 
-                        formula.set("".to_string()); // Clear the input after pressing Enter
-                    }
-                },
+                onkeydown: on_submit,
+                onblur : on_blur,
+                // onkeydown: move |e| {
+                //     if e.key() == Key::Enter {
+                        
+                //     }
+                // },
             }
         }
     }
