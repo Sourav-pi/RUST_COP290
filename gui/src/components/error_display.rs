@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 
 // Define error types/severity levels
 #[derive(Clone, PartialEq)]
+#[allow(unused)]
 pub enum ErrorType {
     Error,
     Warning,

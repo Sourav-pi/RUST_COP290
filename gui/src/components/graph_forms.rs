@@ -52,7 +52,7 @@ pub fn LineChartForm() -> Element {
     let mut y_label = use_signal(|| String::new());
     let mut title = use_signal(|| String::new());
     let mut point_labels = use_signal(|| String::new());
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(|| String::new());
 
     if show_graph.cloned(){
@@ -160,7 +160,7 @@ pub fn BarChartForm() -> Element {
     let mut y_label = use_signal(|| String::new());
     let mut title = use_signal(|| String::new());
     let mut bar_labels = use_signal(|| String::new());
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(|| String::new());
 
     if show_graph.cloned() {
@@ -268,7 +268,7 @@ pub fn PieChartForm() -> Element {
     let mut range = use_signal(|| String::new());
     let mut title = use_signal(|| String::new());
     let mut slice_labels = use_signal(|| String::new());
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(|| String::new());
 
     if show_graph.cloned() {
@@ -376,7 +376,7 @@ pub fn ScatterPlotForm() -> Element {
     let mut x_label = use_signal(|| String::new());
     let mut y_label = use_signal(|| String::new());
     let mut title = use_signal(|| String::new());
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(|| String::new());
 
     if show_graph.cloned() {

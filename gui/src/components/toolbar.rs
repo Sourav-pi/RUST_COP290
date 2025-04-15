@@ -1,5 +1,3 @@
-use std::any::Any;
-
 use dioxus::prelude::*;
 use super::spreadsheet::*;
 use cores::convert_to_index;
@@ -71,7 +69,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     let mut search_term = use_signal(|| String::new());
     let mut selected_cell = use_context::<SelectedCellContext>();
     let mut error_ctx = use_context::<ErrorContext>();
-    let mut sheet = use_context::<SheetContext>();
+    let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
     
     rsx! {

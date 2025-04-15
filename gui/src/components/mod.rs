@@ -11,4 +11,3 @@ mod graph_popup;
 mod graph_forms;
 mod context_menu;
 mod error_display;
-pub use error_display::{ErrorDisplay, ErrorType, ErrorContext, show_error};
