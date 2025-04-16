@@ -703,6 +703,7 @@ version = "0.1.0"
 dependencies = [
  "charming",
  "csv",
+ "fxhash",
  "modular-bitfield",
  "regex",
  "serde",

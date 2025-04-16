@@ -1,6 +1,8 @@
 use crate::parse::*;
-use std::collections::HashSet;
+use fxhash::FxHashSet;
+use std::hash::Hash;
 use std::{thread, time};
+
 
 const DEBUG: bool = false;
 
@@ -8,7 +10,7 @@ const DEBUG: bool = false;
 pub struct Cell {
     pub value: i32,
     pub formula: CommandCall,
-    pub depend: Vec<usize>,
+    pub depend: FxHashSet<usize>,
 }
 pub enum Error {
     DivByZero,
@@ -40,7 +42,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    depend: Vec::new(),
+                    depend: FxHashSet::default(),
                 };
                 col + 1
             ];
@@ -65,7 +67,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    depend: Vec::new(),
+                    depend: FxHashSet::default(),
                 });
             }
             self.grid.push(new_row);
@@ -86,7 +88,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    depend: Vec::new(),
+                    depend: FxHashSet::default(),
                 });
             }
         }
@@ -116,17 +118,9 @@ impl Sheet {
                 self.grid[row][col].value = command.param1;
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                let mut is_found = false;
-                for i in self.grid[param1_row][param1_col].depend.iter() {
-                    if *i == row * ENCODE_SHIFT + col {
-                        is_found = true;
-                        break;
-                    }
-                }
-                if !is_found{
                 self.grid[param1_row][param1_col]
                     .depend
-                    .push(row * ENCODE_SHIFT + col);}
+                    .insert(row * ENCODE_SHIFT + col);
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -146,54 +140,27 @@ impl Sheet {
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    let mut is_found = false;
-                    for i in self.grid[param2_row][param2_col].depend.iter() {
-                        if *i == row * ENCODE_SHIFT + col {
-                            is_found = true;
-                            break;
-                        }
-                    }
-                    if !is_found {
                         self.grid[param2_row][param2_col]
                             .depend
-                            .push(row * ENCODE_SHIFT + col);
-                    }
+                            .insert(row * ENCODE_SHIFT + col);
                     // self.grid[param2_row][param2_col]
                     //     .depend
                     //     .push(row * ENCODE_SHIFT + col);
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                let mut is_found = false;
-                for i in self.grid[param1_row][param1_col].depend.iter() {
-                    if *i == row * ENCODE_SHIFT + col {
-                        is_found = true;
-                        break;
-                    }
-                }
-                if !is_found {
                     self.grid[param1_row][param1_col]
                         .depend
-                        .push(row * ENCODE_SHIFT + col);
-                }
+                        .insert(row * ENCODE_SHIFT + col);
                 // self.grid[param1_row][param1_col]
                 //     .depend
                 //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    let mut is_found = false;
-                    for i in self.grid[param2_row][param2_col].depend.iter() {
-                        if *i == row * ENCODE_SHIFT + col {
-                            is_found = true;
-                            break;
-                        }
-                    }
-                    if !is_found {
                         self.grid[param2_row][param2_col]
                             .depend
-                            .push(row * ENCODE_SHIFT + col);
-                    }
+                            .insert(row * ENCODE_SHIFT + col);
                     // self.grid[param2_row][param2_col]
                     //     .depend
                     //     .push(row * ENCODE_SHIFT + col);
@@ -206,16 +173,7 @@ impl Sheet {
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
                     let depend_vec = &mut self.grid[i][j].depend;
-                    let mut is_found = false;
-                    for k in depend_vec.iter() {
-                        if *k == t {
-                            is_found = true;
-                            break;
-                        }
-                    }
-                    if !is_found {
-                        depend_vec.push(t);
-                    }
+                        depend_vec.insert(t);
                     // self.grid[i][j].depend.push(t);
                 }
             }
@@ -225,8 +183,8 @@ impl Sheet {
     }
 
     fn toposort(&self, target_cell: usize) -> Vec<usize> {
-        let mut visited: HashSet<usize> = HashSet::new();
-        let mut stack: HashSet<usize> = HashSet::new();
+        let mut visited: FxHashSet<usize> = FxHashSet::default();
+        let mut stack: FxHashSet<usize> = FxHashSet::default();
         let mut result: Vec<usize> = vec![];
         let is_cycle = self.dfs(target_cell, &mut visited, &mut stack, &mut result);
 
@@ -244,8 +202,8 @@ impl Sheet {
     fn dfs(
         &self,
         cell: usize,
-        visited: &mut HashSet<usize>,
-        stack: &mut HashSet<usize>,
+        visited: &mut FxHashSet<usize>,
+        stack: &mut FxHashSet<usize>,
         result: &mut Vec<usize>,
     ) -> bool {
         if stack.contains(&cell) {
@@ -533,7 +491,7 @@ impl Sheet {
            
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
             let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-            depend_vec.retain(|&x| x != curr_index);
+            depend_vec.remove(&curr_index);
         } 
         else if current_command.flag.type_() == 1 {
             // Arithmetic operation dependencies
@@ -541,7 +499,8 @@ impl Sheet {
                 // First parameter is a cell reference
                 let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
                 let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-                depend_vec.retain(|&x| x != curr_index);
+                // depend_vec.retain(|&x| x != curr_index);
+                depend_vec.remove(&curr_index);
                 // let mut new_depend_vec= Vec::new();
                 // for i in self.grid[param1_row][param1_col].depend.iter() {
                 //     if *i != curr_index {
@@ -554,7 +513,8 @@ impl Sheet {
                 // Second parameter is a cell reference
                 let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
                 let depend_vec = &mut self.grid[param2_row][param2_col].depend;
-                depend_vec.retain(|&x| x != curr_index);
+                // depend_vec.retain(|&x| x != curr_index);
+                depend_vec.remove(&curr_index);
             }
         }
         else if current_command.flag.type_() == 2 {
@@ -564,7 +524,8 @@ impl Sheet {
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
                     let depend_vec = &mut self.grid[i][j].depend;
-                    depend_vec.retain(|&x| x != curr_index);
+                    // depend_vec.retain(|&x| x != curr_index);
+                    depend_vec.remove(&curr_index);
                 }
             }
         }

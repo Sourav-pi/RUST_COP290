@@ -1,3 +1,5 @@
+use fxhash::FxHashSet as HashSet;
+
 use serde::{self,Deserialize};
 use crate::{parse::CommandCall, sheet::*};
 use crate::parse::CommandFlag;
@@ -27,7 +29,7 @@ impl Sheet{
                     param1: record.param1,
                     param2: record.param2,
                 },
-                depend: vec![],
+                depend: HashSet::default(),
             };
             new_cell.value = record.value;
             new_cell.formula.param1 = record.param1;
@@ -49,12 +51,12 @@ impl Sheet{
                 }
             }
             if record.depend == "" {
-                new_cell.depend = vec![];
+                new_cell.depend = HashSet::default();
             }
             let depend_parts: Vec<&str> = record.depend.split(",").collect();
             for i in depend_parts {
                 if let Ok(index) = i.parse::<usize>() {
-                    new_cell.depend.push(index);
+                    new_cell.depend.insert(index);
                 }
             }
             self.grid[record.row as usize][record.col as usize] = new_cell;

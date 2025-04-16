@@ -3,6 +3,7 @@
 
 use regex::Regex;
 use modular_bitfield::prelude::*;
+use fxhash::FxHashSet as HashSet;
 
 use crate::sheet::Cell;
 
@@ -284,6 +285,8 @@ pub fn unparse(cell: Cell) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::hash::Hash;
+
     use super::*;
 
     #[test]
@@ -603,7 +606,7 @@ mod tests {
                 param2: 0,
             },
             value: 5,
-            depend: vec![],
+            depend: HashSet::default(),
         };
         let result = unparse(cell);
         assert_eq!(result, "5");
@@ -618,7 +621,7 @@ mod tests {
                 param2: 99918278,
             },
             value: 0,
-            depend: vec![],
+            depend: HashSet::default(),
         };
         cell.formula.flag.set_type_(2);
         cell.formula.flag.set_cmd(2);
