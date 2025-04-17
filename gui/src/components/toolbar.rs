@@ -3,7 +3,6 @@ use super::spreadsheet::*;
 use cores::convert_to_index;
 use super::error_display::{ErrorContext, ErrorType, show_error};
 
-
 const OPEN_ICON : Asset = asset!( "assets/open.png");
 const SAVE_ICON : Asset = asset!( "assets/save.png");
 const VISUALIZE_ICON : Asset = asset!( "assets/visualize.png");
@@ -80,7 +79,24 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
                 style: SEARCH_INPUT_STYLE,
                 placeholder: "Cell Number",
                 value: "{search_term}",
-                oninput: move |evt| search_term.set(evt.value().clone())
+                oninput: move |evt| search_term.set(evt.value().clone()),
+                onkeydown: move |evt| {
+                    if evt.key() == Key::Enter {
+                        let (a ,b) = convert_to_index(search_term.cloned());
+                        let (a,b) = (a as i32,b as i32);
+                        // println!("ans {a} {b}");
+                        if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
+                            start_row_ctx.set(a-1);
+                            start_col_ctx.set(b-1);
+                            selected_cell.set((a,b));
+
+                            let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
+                        } else {
+                            show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
+                            search_term.set(String::new());
+                        }
+                    }
+                }
             }
             button {
                 style: SEARCH_BUTTON_STYLE,

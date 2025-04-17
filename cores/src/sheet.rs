@@ -56,60 +56,127 @@ impl Sheet {
         return unparse(self.grid[row][col].clone());
     }
 
-    pub fn add_row(&mut self ,no_of_row:usize) {
-        for _ in 0..no_of_row {
-            let mut new_row: Vec<Cell> = Vec::new();
-            for _ in 0..self.row {
-                new_row.push(Cell {
-                    value: 0,
-                    formula: CommandCall {
-                        flag: CommandFlag::new(),
-                        param1: 0,
-                        param2: 0,
-                    },
-                    depend: FxHashSet::default(),
-                });
-            }
-            self.grid.push(new_row);
+    // pub fn add_row(&mut self ,no_of_row:usize) {
+    //     for _ in 0..no_of_row {
+    //         let mut new_row: Vec<Cell> = Vec::new();
+    //         for _ in 0..self.row {
+    //             new_row.push(Cell {
+    //                 value: 0,
+    //                 formula: CommandCall {
+    //                     flag: CommandFlag::new(),
+    //                     param1: 0,
+    //                     param2: 0,
+    //                 },
+    //                 depend: FxHashSet::default(),
+    //             });
+    //         }
+    //         self.grid.push(new_row);
             
             
-        }
-        self.row+=no_of_row;
+    //     }
+    //     self.row+=no_of_row;
         
-    }
+    // }
     
-    pub fn add_col(&mut self,no_of_col:usize) {
-        for i in 0..self.row {
-            for _ in 0..no_of_col {
-                self.grid[i].push(Cell {
-                    value: 0,
-                    formula: CommandCall {
-                        flag: CommandFlag::new(),
-                        param1: 0,
-                        param2: 0,
-                    },
-                    depend: FxHashSet::default(),
-                });
-            }
-        }
+    // pub fn add_col(&mut self,no_of_col:usize) {
+    //     for i in 0..self.row {
+    //         for _ in 0..no_of_col {
+    //             self.grid[i].push(Cell {
+    //                 value: 0,
+    //                 formula: CommandCall {
+    //                     flag: CommandFlag::new(),
+    //                     param1: 0,
+    //                     param2: 0,
+    //                 },
+    //                 depend: FxHashSet::default(),
+    //             });
+    //         }
+    //     }
         
-        self.col+=no_of_col;
-    }
+    //     self.col+=no_of_col;
+    // }
     
-    pub fn copy_row(&mut self, copy_from:usize,copy_to:usize){
+    pub fn copy_row(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
+        // Save original state of destination row in case we need to rollback
+        let original_row: Vec<Cell> = self.grid[copy_to].clone();
+        
+        // Perform the copy operation
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
             self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
             self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
+        
+        // Check for cycles for each cell in the row
+        for i in 0..self.col {
+            let cell_index = copy_to * ENCODE_SHIFT + i;
+            let topo_sort = self.toposort(cell_index);
+            
+            // If empty result from toposort, a cycle was detected
+            if topo_sort.is_empty() {
+                // Rollback all changes to prevent corrupted state
+                self.grid[copy_to] = original_row;
+                return Err(Error::CycleDetected);
+            }
+        }
+        
+        Ok(())
     }
-    
-    pub fn copy_col(&mut self, copy_from:usize,copy_to:usize){
+
+    pub fn copy_col(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
+        // Save original state of destination column in case we need to rollback
+        let mut original_col: Vec<Cell> = Vec::with_capacity(self.row);
+        for i in 0..self.row {
+            original_col.push(self.grid[i][copy_to].clone());
+        }
+        
+        // Perform the copy operation
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
             self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
             self.grid[i][copy_to].depend = self.grid[i][copy_from].depend.clone();
         }
+        
+        // Check for cycles for each cell in the column
+        for i in 0..self.row {
+            let cell_index = i * ENCODE_SHIFT + copy_to;
+            let topo_sort = self.toposort(cell_index);
+            
+            // If empty result from toposort, a cycle was detected
+            if topo_sort.is_empty() {
+                // Rollback all changes to prevent corrupted state
+                for i in 0..self.row {
+                    self.grid[i][copy_to] = original_col[i].clone();
+                }
+                return Err(Error::CycleDetected);
+            }
+        }
+        
+        Ok(())
+    }
+
+    pub fn copy_cell(&mut self, copy_from_row: usize, copy_from_col: usize, 
+                     copy_to_row: usize, copy_to_col: usize) -> Result<(), Error> {
+        // Save original state of destination cell
+        let original_cell = self.grid[copy_to_row][copy_to_col].clone();
+        
+        // Perform the copy operation
+        self.grid[copy_to_row][copy_to_col].value = self.grid[copy_from_row][copy_from_col].value;
+        self.grid[copy_to_row][copy_to_col].formula = self.grid[copy_from_row][copy_from_col].formula.clone();
+        self.grid[copy_to_row][copy_to_col].depend = self.grid[copy_from_row][copy_from_col].depend.clone();
+        
+        // Check for cycles
+        let cell_index = copy_to_row * ENCODE_SHIFT + copy_to_col;
+        let topo_sort = self.toposort(cell_index);
+        
+        // If empty result from toposort, a cycle was detected
+        if topo_sort.is_empty() {
+            // Restore the original cell state
+            self.grid[copy_to_row][copy_to_col] = original_cell;
+            return Err(Error::CycleDetected);
+        }
+        
+        Ok(())
     }
 
     fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {

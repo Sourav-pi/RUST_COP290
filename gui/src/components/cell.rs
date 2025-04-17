@@ -1,5 +1,7 @@
 use dioxus::prelude::*;
 use super::spreadsheet::*;
+use super::error_display::{ ErrorContext,ErrorType, show_error};
+use cores::Error;
 
 const CELL_STYLE: &str = "
     width: 81px;
@@ -52,6 +54,7 @@ pub fn Cell(props: CellProps) -> Element {
     let mut selected_cell = use_context::<SelectedCellContext>();
     let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
+    let mut error_ctx = use_context::<ErrorContext>();
     
     let mut is_editing = use_signal(|| false);
     let mut formula = use_signal(|| String::new());
@@ -83,17 +86,29 @@ pub fn Cell(props: CellProps) -> Element {
             is_editing.set(false);
             
             // Get the formula from context in case it was updated elsewhere
-            let formula_text = formula.read().clone();
+            let mut formula_text = formula.read().clone();
             // Evaluate the formula and update the displayed value
-            if !formula_text.is_empty() {
+            if formula_text.is_empty() {
+                formula_text = "0".to_string();
+            } 
                 if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                     // Update the cell value in the Sheet object
-                    sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
-                    sheetversion.set(sheetversion.cloned() + 1);
+                    let res = sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
+                    match res.error {
+                        Error::NoError | Error::DivByZero => {
+                            sheetversion.set(sheetversion.cloned() + 1);
+                        },
+                        Error::InvalidInput => {
+                            show_error(&mut error_ctx, "Invalid Formula", ErrorType::Error, Some(3.0));
+                        },
+                        Error::CycleDetected => {
+                            show_error(&mut error_ctx, "Cannot apply formula : would create circular reference", 
+                                      ErrorType::Error, Some(3.0));
+                        }
+                    }
                     // Update the displayed value
                     println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
                 }
-            }
         }
     };
     

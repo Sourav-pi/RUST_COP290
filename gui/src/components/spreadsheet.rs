@@ -25,6 +25,13 @@ pub type MaxStartRowContext = Signal<i32>;
 pub type MaxStartColContext = Signal<i32>;
 pub type ErrorContext = super::error_display::ErrorContext;
 
+// Add these context definitions
+
+// Just track which row/column/cell was last copied
+pub type CopiedRowContext = Signal<Option<i32>>;  // row index
+pub type CopiedColContext = Signal<Option<i32>>;  // column index
+pub type CopiedCellContext = Signal<Option<(i32, i32)>>;  // (row, col)
+
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
     Line,
@@ -60,6 +67,11 @@ pub fn Spreadsheet() -> Element {
         filename = file.file_name().unwrap().to_str().unwrap().to_string();
     }
 
+    // Clipboard contexts
+    let copied_cell: CopiedCellContext = use_signal(|| None);
+    let copied_row: CopiedRowContext = use_signal(|| None);
+    let copied_col: CopiedColContext = use_signal(|| None);
+
     // Provide the contexts to the components
     provide_context(selected_cell);
     provide_context(formula);
@@ -74,6 +86,9 @@ pub fn Spreadsheet() -> Element {
     provide_context(max_start_row);
     provide_context(max_start_col);
     provide_context(error_ctx);
+    provide_context(copied_cell);
+    provide_context(copied_row);
+    provide_context(copied_col);
 
     use_effect(move||{
         let _ = document::eval("
