@@ -102,7 +102,7 @@ fn main(){
                 time =result.time;
                 match  result.error {
                     Error::InvalidInput=> {massage="invalid input"}
-                    Error::NoError=> {massage="ok"}
+                    Error::None=> {massage="ok"}
                     Error::CycleDetected=> {massage="cycle detected"}
                     Error::DivByZero=> {massage="ok"}
                 }

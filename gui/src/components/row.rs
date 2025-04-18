@@ -74,7 +74,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and row number
-            context_menu.set(Some((mouse_x, mouse_y, row, 0, MenuType::RowMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, row, 0, MenuType::Row)));
 
             println!("Right-clicked on row {}", row);
         }
@@ -91,7 +91,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and column number
-            context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::ColMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::Col)));
 
             println!("Right-clicked on column {}", col_num);
         }
@@ -106,7 +106,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and cell coordinates
-            context_menu.set(Some((mouse_x, mouse_y, row, col, MenuType::CellMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, row, col, MenuType::Cell)));
 
             println!("Right-clicked on cell ({}, {})", row, col);
         }

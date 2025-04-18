@@ -23,8 +23,7 @@ pub struct CommandFlag {
     pub type2: B1,           // 1 bit
     pub error: B2,           // 2 bits
     pub is_div_by_zero: B1,  // 1 bit
-    pub is_any: B6              // 6 bits
-}
+    pub is_any: B6}
 
 #[derive(Clone,serde::Serialize)]
 pub struct CommandCall {

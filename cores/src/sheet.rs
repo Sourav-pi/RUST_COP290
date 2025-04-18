@@ -15,7 +15,7 @@ pub enum Error {
     DivByZero,
     InvalidInput,
     CycleDetected,
-    NoError,
+    None,
 }
 
 #[allow(dead_code)]
@@ -614,7 +614,7 @@ impl Sheet {
         let end= start.elapsed();
         let mut ans=CallResult{
             time:end.as_millis() as f64,
-            error:Error::NoError,
+            error:Error::None,
         };
         if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
             ans.error=Error::DivByZero;

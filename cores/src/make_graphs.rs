@@ -68,7 +68,7 @@ impl Sheet {
         let mut values = Vec::new();
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
-                values.push(self.grid[i][j].value.clone());
+                values.push(self.grid[i][j].value);
             }
         };
         Ok(Chart::new()
@@ -143,9 +143,7 @@ impl Sheet {
         let mut values:Vec<Vec<i32>> = vec![];
         for i in 0..diff1+1 {
             for j in 0..diff2+1 {
-                let mut temp_vec:Vec<i32> = Vec::new();
-                temp_vec.push(self.grid[start1.0+i][start1.1+j].value);
-                temp_vec.push(self.grid[start2.0+i][start2.1+j].value);
+                let temp_vec:Vec<i32> = vec![self.grid[start1.0+i][start1.1+j].value,self.grid[start2.0+i][start2.1+j].value];
                 values.push(temp_vec);
             }
         };

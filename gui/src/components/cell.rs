@@ -95,7 +95,7 @@ pub fn Cell(props: CellProps) -> Element {
                     // Update the cell value in the Sheet object
                     let res = sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
                     match res.error {
-                        Error::NoError | Error::DivByZero => {
+                        Error::None | Error::DivByZero => {
                             sheetversion.set(sheetversion.cloned() + 1);
                         },
                         Error::InvalidInput => {
