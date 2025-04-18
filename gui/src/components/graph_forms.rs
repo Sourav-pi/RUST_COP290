@@ -50,7 +50,7 @@ pub fn LineChartForm() -> Element {
     let mut x_label = use_signal(String::new);
     let mut y_label = use_signal(String::new);
     let mut title = use_signal(String::new);
-    let mut point_labels = use_signal(String::new);
+    let point_labels = use_signal(String::new);
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
 
@@ -120,14 +120,6 @@ pub fn LineChartForm() -> Element {
                     }
                 }
                 div {
-                    div { style: LABEL_STYLE, "Point Labels (Optional)" }
-                    input {
-                        style: INPUT_STYLE,
-                        placeholder: "Comma-separated labels",
-                        oninput: move |evt| point_labels.set(evt.value().clone())
-                    }
-                }
-                div {
                     div { style: LABEL_STYLE, "Chart Title (Optional)" }
                     input {
                         style: INPUT_STYLE,
@@ -154,7 +146,6 @@ pub fn LineChartForm() -> Element {
 pub fn BarChartForm() -> Element {
     let mut show_graph = use_signal(|| false);
     let mut range = use_signal(String::new);
-    let mut x_label = use_signal(String::new);
     let mut y_label = use_signal(String::new);
     let mut title = use_signal(String::new);
     let mut bar_labels = use_signal(String::new);
@@ -213,14 +204,6 @@ pub fn BarChartForm() -> Element {
                         style: INPUT_STYLE,
                         placeholder: "Enter cell range",
                         oninput: move |evt| range.set(evt.value().clone())
-                    }
-                }
-                div {
-                    div { style: LABEL_STYLE, "X-Axis Label" }
-                    input {
-                        style: INPUT_STYLE,
-                        placeholder: "X-Axis",
-                        oninput: move |evt| x_label.set(evt.value().clone())
                     }
                 }
                 div {
