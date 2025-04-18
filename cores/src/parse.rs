@@ -3,7 +3,6 @@
 
 use regex::Regex;
 use modular_bitfield::prelude::*;
-use fxhash::FxHashSet as HashSet;
 
 use crate::sheet::Cell;
 
@@ -285,9 +284,9 @@ pub fn unparse(cell: Cell) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::hash::Hash;
 
     use super::*;
+    use fxhash::FxHashSet as HashSet;
 
     #[test]
     fn test_parse_formula_add() {

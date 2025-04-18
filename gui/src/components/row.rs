@@ -82,7 +82,7 @@ pub fn Row(props: RowProps) -> Element {
 
     let generate_on_col_contextmenu = |col: i32| {
         let col_num = col;
-        let z =
+        
         move |e: Event<MouseData>| {
             e.stop_propagation();
             e.prevent_default();
@@ -94,8 +94,7 @@ pub fn Row(props: RowProps) -> Element {
             context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::ColMenu)));
 
             println!("Right-clicked on column {}", col_num);
-        };
-        z
+        }
     };
 
     let generate_on_cell_contextmenu = |row: i32, col: i32| {

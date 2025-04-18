@@ -65,7 +65,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     let mut is_open = use_context::<GraphPopupContext>();
     let mut start_row_ctx = use_context::<StartRowContext>();
     let mut start_col_ctx = use_context::<StartColContext>();
-    let mut search_term = use_signal(|| String::new());
+    let mut search_term = use_signal(String::new);
     let mut selected_cell = use_context::<SelectedCellContext>();
     let mut error_ctx = use_context::<ErrorContext>();
     let sheet = use_context::<SheetContext>();

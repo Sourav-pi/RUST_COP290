@@ -47,7 +47,7 @@ pub fn ContextMenu() -> Element {
                                 "padding: 8px 16px; cursor: not-allowed; color: #ccc;"
                             },
                             onclick: move |_| {
-                                if let Some(source_row) = copied_row.read().clone() {
+                                if let Some(source_row) = *copied_row.read() {
                                     if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                                         // Use the Sheet's copy_row method with error handling
                                         match sheet_locked.copy_row(source_row as usize, row as usize) {
@@ -95,7 +95,7 @@ pub fn ContextMenu() -> Element {
                                 "padding: 8px 16px; cursor: not-allowed; color: #ccc;"
                             },
                             onclick: move |_| {
-                                if let Some(source_col) = copied_col.read().clone() {
+                                if let Some(source_col) = *copied_col.read() {
                                     if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                                         // Use the Sheet's copy_col method with error handling
                                         match sheet_locked.copy_col(source_col as usize, col as usize) {
@@ -143,7 +143,7 @@ pub fn ContextMenu() -> Element {
                                 "padding: 8px 16px; cursor: not-allowed; color: #ccc;"
                             },
                             onclick: move |_| {
-                                if let Some((source_row, source_col)) = copied_cell.read().clone() {
+                                if let Some((source_row, source_col)) = *copied_cell.read() {
                                     if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                                         // Use the Sheet's copy_cell method with error handling
                                         match sheet_locked.copy_cell(

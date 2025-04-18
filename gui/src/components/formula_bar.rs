@@ -18,7 +18,7 @@ pub fn FormulaBar() -> Element {
     let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
     let selected_cell = use_context::<SelectedCellContext>();
-    let mut formula = use_signal(|| String::new());
+    let mut formula = use_signal(String::new);
 
     use_effect(move || {
         let _ = sheetversion.cloned();

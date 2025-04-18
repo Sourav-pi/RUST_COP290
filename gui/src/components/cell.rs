@@ -57,8 +57,8 @@ pub fn Cell(props: CellProps) -> Element {
     let mut error_ctx = use_context::<ErrorContext>();
     
     let mut is_editing = use_signal(|| false);
-    let mut formula = use_signal(|| String::new());
-    let mut value = use_signal(|| String::new());
+    let mut formula = use_signal(String::new);
+    let mut value = use_signal(String::new);
     
 
     // Check if this cell is selected based on context

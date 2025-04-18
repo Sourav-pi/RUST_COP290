@@ -33,7 +33,7 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
         // print!(" ");
         // print!(" ");
         print!("{}\t ", column_to_letter(i));
-        i=i+1;
+        i += 1;
     }println!();
     i = rowi;
     while i<rowi+10 && i< row {
@@ -47,9 +47,9 @@ fn display_sheet(sheet: &Sheet, row: usize, col: usize,rowi: usize, coli: usize)
                 print!("{}\t ", value);
             }
             //print!("{}\t ", value);
-            j=j+1;
+            j += 1;
         }println!();
-        i=i+1;
+        i += 1;
     }
      
 }
@@ -71,7 +71,7 @@ fn main(){
     let mut display_button=true;
     let mut massage="ok";
     let mut time=0.0;
-    let mut trimmed:&str ="";
+    let mut trimmed:&str;
     while {
         if display_button {
             display_sheet(&test_sheet, int1 as usize, int2 as usize,rowi as usize, coli as usize);
@@ -87,7 +87,7 @@ fn main(){
         trimmed != "q"
         
     }{
-        if DEBUG {print!("{}\n", trimmed);}
+        if DEBUG {println!("{}", trimmed);}
         if trimmed.contains("=") {
             if DEBUG { println!("This is an assignment: {}", trimmed);}
             // Split the assignment into left-hand side (lhs) and right-hand side (rhs)
@@ -110,8 +110,7 @@ fn main(){
                 // println!("Invalid assignment format");
                 massage="invalid input";
             }
-        } else {
-        if trimmed=="w"{
+        } else if trimmed=="w"{
             rowi=cmp::max(1,rowi-10);
             
         }else if trimmed=="s" {
@@ -152,21 +151,6 @@ fn main(){
             // println!("this is invalid input: {}", trimmed);
             massage="invalid input";
         }
-        //println!("{display_button}");
-        
-        
-        // Read the next input
-         // Clear the input buffer
-        // let mut new_input = String::new();
-        // io::stdin()
-        //     .read_line(&mut new_input)
-        //     .expect("Failed to read line");
-        // // Trim newline and whitespace
-        // let new_trimmed = new_input.trim();
-        // trimmed.clear(); // Clear the previous input
-        // trimmed = new_trimmed;
-
-    }
     
 }
 

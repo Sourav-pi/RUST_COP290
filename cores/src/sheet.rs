@@ -1,6 +1,5 @@
 use crate::parse::*;
 use fxhash::FxHashSet;
-use std::hash::Hash;
 use std::{thread, time};
 
 
@@ -52,6 +51,7 @@ impl Sheet {
         sheet
     }
 
+    #[allow(dead_code)]     
     pub fn get_formula(&self, row: usize, col: usize) -> String {
         return unparse(self.grid[row][col].clone());
     }
@@ -96,6 +96,7 @@ impl Sheet {
     //     self.col+=no_of_col;
     // }
     
+    #[allow(dead_code)]   
     pub fn copy_row(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
         // Save original state of destination row in case we need to rollback
         let original_row: Vec<Cell> = self.grid[copy_to].clone();
@@ -123,6 +124,7 @@ impl Sheet {
         Ok(())
     }
 
+    #[allow(dead_code)]   
     pub fn copy_col(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
         // Save original state of destination column in case we need to rollback
         let mut original_col: Vec<Cell> = Vec::with_capacity(self.row);
@@ -155,6 +157,7 @@ impl Sheet {
         Ok(())
     }
 
+    #[allow(dead_code)]   
     pub fn copy_cell(&mut self, copy_from_row: usize, copy_from_col: usize, 
                      copy_to_row: usize, copy_to_col: usize) -> Result<(), Error> {
         // Save original state of destination cell

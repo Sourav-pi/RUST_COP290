@@ -47,7 +47,7 @@ pub fn Spreadsheet() -> Element {
 
     // Create the signals for context
     let selected_cell : SelectedCellContext = use_signal(|| (1, 1));
-    let formula : FormulaContext = use_signal(|| String::new());
+    let formula : FormulaContext = use_signal(String::new);
     let current_file : CurrentFileContext = use_signal(|| None);
     let graph_popup : GraphPopupContext = use_signal(|| false);
     let graph_type : GraphTypeContext = use_signal(|| GraphType::Line);

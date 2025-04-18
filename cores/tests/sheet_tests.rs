@@ -1,4 +1,3 @@
-use cores;
 use cores::Sheet;
 #[test]
 fn test_avg() {
