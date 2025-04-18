@@ -1,6 +1,6 @@
 use super::cell::Cell;
-use super::spreadsheet::ContextMenuContext;
 use super::context_menu::MenuType;
+use super::spreadsheet::ContextMenuContext;
 use dioxus::prelude::*;
 
 const ROW_STYLE: &str = "
@@ -54,7 +54,6 @@ pub struct RowProps {
     pub start_col: i32,
     #[props(default = 0)]
     pub end_col: i32,
-
 }
 
 #[component]
@@ -74,7 +73,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and row number
-            context_menu.set(Some((mouse_x, mouse_y, row, 0, MenuType::RowMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, row, 0, MenuType::Row)));
 
             println!("Right-clicked on row {}", row);
         }
@@ -82,7 +81,7 @@ pub fn Row(props: RowProps) -> Element {
 
     let generate_on_col_contextmenu = |col: i32| {
         let col_num = col;
-        let z =
+
         move |e: Event<MouseData>| {
             e.stop_propagation();
             e.prevent_default();
@@ -91,11 +90,10 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and column number
-            context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::ColMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::Col)));
 
             println!("Right-clicked on column {}", col_num);
-        };
-        z
+        }
     };
 
     let generate_on_cell_contextmenu = |row: i32, col: i32| {
@@ -107,7 +105,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and cell coordinates
-            context_menu.set(Some((mouse_x, mouse_y, row, col, MenuType::CellMenu)));
+            context_menu.set(Some((mouse_x, mouse_y, row, col, MenuType::Cell)));
 
             println!("Right-clicked on cell ({}, {})", row, col);
         }

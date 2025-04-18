@@ -35,11 +35,7 @@ jobs:
       uses: Swatinem/rust-cache@v2
       
     - name: Build cores crate only
-      run: cargo build -p cores --verbose
+      run: cd cores && cargo build
       
     - name: Run core tests
-      run: cargo test -p cores --verbose
-      
-    - name: Build GUI (may be skipped)
-      run: cargo build -p gui --verbose
-      continue-on-error: true
+      run: cd cores && cargo test

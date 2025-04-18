@@ -15,7 +15,7 @@ pub fn run() {
         .with_decorations(true)
         .with_always_on_top(false);
     let config = Config::new().with_window(window_builder);
-      dioxus::LaunchBuilder::desktop()
+    dioxus::LaunchBuilder::desktop()
         .with_cfg(config)
         .launch(App);
 }
