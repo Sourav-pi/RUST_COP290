@@ -1,6 +1,8 @@
 #![allow(non_snake_case)]
 #![allow(unused_braces)]
 
+use std::default;
+
 use regex::Regex;
 use modular_bitfield::prelude::*;
 
@@ -15,9 +17,7 @@ use crate::sheet::Cell;
 
 #[bitfield]
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
-#[derive(Clone)]
-#[derive(serde::Serialize)]
-#[derive(Debug)]
+#[derive(Clone,Debug,serde::Serialize, Default)]
 pub struct CommandFlag{
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits
@@ -195,7 +195,7 @@ pub const ENCODE_SHIFT: usize = 100000;
 
 pub fn encode_cell(cell:String) -> i32{
     let (row, col) = convert_to_index(cell);
-    let encoded= row*(ENCODE_SHIFT as usize)+col;
+    let encoded= row*(ENCODE_SHIFT)+col;
     encoded as i32
 }
 
@@ -208,7 +208,7 @@ pub fn decode_cell(encoded:i32) -> String{
         if temp==0{
             temp=26;
         }
-        cell.insert(0,(temp as u8 + 'A' as u8 -1) as char);
+        cell.insert(0,(temp as u8 + b'A' as u8 -1) as char);
         col=(col-temp)/26;
     }
     cell.push_str(&row.to_string());
@@ -225,60 +225,60 @@ pub fn unparse(cell: Cell) -> String {
     match cell.formula.flag.type_(){
         0 =>{ // Constant
             if cell.formula.flag.type1() == 0 {
-                return cell.formula.param1.to_string();
+                cell.formula.param1.to_string()
             } else {
-                return decode_cell(cell.formula.param1);
+                decode_cell(cell.formula.param1)
             }
         }
         1 =>{
-            let sym;
+            let sym =
             match cell.formula.flag.cmd(){
-                0 => sym = "+",
-                1 => sym = "-",
-                2 => sym = "*",
-                3 => sym = "/",
-                _ => sym = "",
-            }
-            let left;
+                0 => "+",
+                1 => "-",
+                2 => "*",
+                3 => "/",
+                _ => "",
+            };
+            let left =
             if cell.formula.flag.type1() == 0 {
-                left = cell.formula.param1.to_string();
+                cell.formula.param1.to_string()
             } else {
-                left = decode_cell(cell.formula.param1);
-            }
-            let right;
+                decode_cell(cell.formula.param1)
+            };
+            let right =
             if cell.formula.flag.type2() == 0 {
-                right = cell.formula.param2.to_string();
+                cell.formula.param2.to_string()
             } else {
-                right = decode_cell(cell.formula.param2);
-            }
-            return format!("{}{}{}", left, sym, right);
+                decode_cell(cell.formula.param2)
+            };
+            format!("{}{}{}", left, sym, right)
         }
         2 =>{
-            let func;
+            let func =
             match cell.formula.flag.cmd(){
-                0 => func = "MIN",
-                1 => func = "MAX",
-                2 => func = "SUM",
-                3 => func = "AVG",
-                4 => func = "STDEV",
-                5 => func = "SLEEP",
-                _ => func = "",
-            }
-            let start;
+                0 => "MIN",
+                1 => "MAX",
+                2 => "SUM",
+                3 => "AVG",
+                4 => "STDEV",
+                5 => "SLEEP",
+                _ => "",
+            };
+            let start =
             if cell.formula.flag.type1() == 0 {
-                start = cell.formula.param1.to_string();
+                cell.formula.param1.to_string()
             } else {
-                start = decode_cell(cell.formula.param1);
-            }
-            let end;
+                decode_cell(cell.formula.param1)
+            };
+            let end =
             if cell.formula.flag.type2() == 0 {
-                end = cell.formula.param2.to_string();
+                cell.formula.param2.to_string()
             } else {
-                end = decode_cell(cell.formula.param2);
-            }
-            return format!("{}({}:{})", func, start, end);
+                decode_cell(cell.formula.param2)
+            };
+            format!("{}({}:{})", func, start, end)
         }
-        _ => return "".to_string(),
+        _ => "".to_string(),
     }
 }
 

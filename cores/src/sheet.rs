@@ -24,7 +24,6 @@ pub struct CallResult {
     pub error:Error,
 }
 #[allow(dead_code)]
-#[allow(dead_code)]
 pub struct Sheet {
     pub grid: Vec<Vec<Cell>>,
     pub row: usize,
@@ -47,13 +46,12 @@ impl Sheet {
             ];
             row + 1
         ];
-        let sheet = Self { grid, row, col };
-        sheet
+        Self { grid, row, col }
     }
 
     #[allow(dead_code)]     
     pub fn get_formula(&self, row: usize, col: usize) -> String {
-        return unparse(self.grid[row][col].clone());
+        unparse(self.grid[row][col].clone())
     }
 
     // pub fn add_row(&mut self ,no_of_row:usize) {
@@ -201,13 +199,12 @@ impl Sheet {
                         self.grid[row][col].value = command.param1 - command.param2;
                     } else if command.flag.cmd() == 2 {
                         self.grid[row][col].value = command.param1 * command.param2;
-                    } else {
-                        if command.param2 == 0 {
+                    } else if command.param2 == 0 {
                             self.grid[row][col].formula.flag.set_is_div_by_zero(1);
                         } else {
                             self.grid[row][col].value = command.param1 / command.param2;
                         }
-                    }
+                    
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
                         self.grid[param2_row][param2_col]
@@ -294,7 +291,7 @@ impl Sheet {
         }
         stack.remove(&cell);
         result.push(cell);
-        return is_cycle;
+        is_cycle
     }
 
     fn minimum(&self, row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
@@ -397,15 +394,13 @@ impl Sheet {
                         } else if self.grid[row][col].formula.flag.cmd() == 2 {
                             self.grid[row][col].value = self.grid[row][col].formula.param1
                                 * self.grid[row][col].formula.param2;
-                        } else {
-                            if self.grid[row][col].formula.param2 == 0 {
+                        } else if self.grid[row][col].formula.param2 == 0 {
                                 self.grid[row][col].formula.flag.set_is_div_by_zero(1);
                                 
                             } else {
                                 self.grid[row][col].value = self.grid[row][col].formula.param1
                                     / self.grid[row][col].formula.param2;
                             }
-                        }
                     } else {
                         // let param2_row=(self.grid[row][col].formula.param2%1000) as usize;
                         // let param2_col=(self.grid[row][col].formula.param2/1000) as usize;
@@ -461,14 +456,12 @@ impl Sheet {
                         } else if self.grid[row][col].formula.flag.cmd() == 2 {
                             self.grid[row][col].value = self.grid[param1_row][param1_col].value
                                 * self.grid[row][col].formula.param2;
-                        } else {
-                            if self.grid[row][col].formula.param2 == 0 {
+                        } else if self.grid[row][col].formula.param2 == 0 {
                                 self.grid[row][col].formula.flag.set_is_div_by_zero(1);
                             } else {
                                 self.grid[row][col].value = self.grid[param1_row][param1_col].value
                                     / self.grid[row][col].formula.param2;
                             }
-                        }
                     } else if self.grid[row][col].formula.flag.type2() == 1 {
 
                         let (param2_row, param2_col) =
@@ -490,15 +483,13 @@ impl Sheet {
                         } else if self.grid[row][col].formula.flag.cmd() == 2 {
                             self.grid[row][col].value = self.grid[param1_row][param1_col].value
                                 * self.grid[param2_row][param2_col].value;
-                        } else {
-                            if self.grid[param2_row][param2_col].value == 0 {
+                        } else if self.grid[param2_row][param2_col].value == 0 {
                                 self.grid[row][col].formula.flag.set_is_div_by_zero(1);
                             } else {
                                 self.grid[row][col].value = self.grid[param1_row][param1_col].value
                                     / self.grid[param2_row][param2_col].value;
                             }
                             // self.grid[row][col].value=self.grid[param1_row][param1_col].value/self.grid[param2_row][param2_col].value;
-                        }
                     }
                 }
             } else {
