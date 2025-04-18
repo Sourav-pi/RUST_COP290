@@ -80,7 +80,6 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-        println!("{}", x_labels);
         let (start, end) = parse_range(range)?;
         let label_x;
         if x_labels.is_empty() {
@@ -92,7 +91,6 @@ impl Sheet {
             label_x = temp_vec;
         } else {
             label_x = parse_lables(x_labels);
-            println!("label_x: {:?}", label_x);
         }
         let mut values = Vec::new();
         for i in start.0..=end.0 {
@@ -110,7 +108,6 @@ impl Sheet {
     pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
         let (start, end) = parse_range(range)?;
         let mut x_labels = parse_lables(x_labels);
-        println!("x_labels: {:?}", x_labels);
         let mut values: Vec<i32> = Vec::new();
         let mut cnt = 0;
 
@@ -134,7 +131,6 @@ impl Sheet {
             return Err("Invalid range".to_string());
         }
         let data: Vec<(i32, String)> = values.into_iter().zip(x_labels).collect();
-        println!("{:?}", data);
         Ok(Chart::new()
             .tooltip(Tooltip::new().trigger(Trigger::Item))
             .legend(Legend::new().orient(Orient::Vertical).right("right"))
@@ -216,7 +212,7 @@ mod tests {
         let result = test_sheet.line_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Line Graph");
         assert!(result.is_ok());
     }
-}
+
 #[test]
 fn test_scatter_graph() {
     let mut test_sheet = Sheet::new(6, 6);
@@ -228,4 +224,31 @@ fn test_scatter_graph() {
     test_sheet.update_cell_data(6, 1, String::from("6"));
     let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
     assert!(result.is_ok());
+}
+
+#[test]
+fn test_bar_graph() {
+    let mut test_sheet = Sheet::new(6, 6);
+    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+    test_sheet.update_cell_data(2, 1, String::from("90"));
+    test_sheet.update_cell_data(3, 1, String::from("50"));
+    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+    test_sheet.update_cell_data(5, 1, String::from("-5"));
+    test_sheet.update_cell_data(6, 1, String::from("6"));
+    let result = test_sheet.bar_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Bar Graph");
+    assert!(result.is_ok());
+}
+
+#[test]
+fn test_pie_graph() {
+    let mut test_sheet = Sheet::new(6, 6);
+    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+    test_sheet.update_cell_data(2, 1, String::from("90"));
+    test_sheet.update_cell_data(3, 1, String::from("50"));
+    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+    test_sheet.update_cell_data(5, 1, String::from("-5"));
+    test_sheet.update_cell_data(6, 1, String::from("6"));
+    let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
+    assert!(result.is_ok());
+}
 }
