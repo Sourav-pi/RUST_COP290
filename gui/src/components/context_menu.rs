@@ -5,9 +5,9 @@ use cores::Error;
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum MenuType {
-    RowMenu,
-    ColMenu,
-    CellMenu,
+    Row,
+    Col,
+    Cell
 }
 
 #[component]
@@ -25,7 +25,7 @@ pub fn ContextMenu() -> Element {
     
     if let Some((x_cord, y_cord, row, col, menu_type)) = context_menu.cloned() {
         match menu_type {
-            MenuType::RowMenu => {
+            MenuType::Row => {
                 // Check if we have a copied row
                 let has_copied_row = copied_row.read().is_some();
                 
@@ -72,7 +72,7 @@ pub fn ContextMenu() -> Element {
                     }
                 }
             },
-            MenuType::ColMenu => {
+            MenuType::Col => {
                 // Check if we have a copied column
                 let has_copied_col = copied_col.read().is_some();
                 
@@ -120,7 +120,7 @@ pub fn ContextMenu() -> Element {
                     }
                 }
             },
-            MenuType::CellMenu => {
+            MenuType::Cell => {
                 // Check if we have a copied cell
                 let has_copied_cell = copied_cell.read().is_some();
                 

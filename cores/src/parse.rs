@@ -1,8 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(unused_braces)]
 
-use std::default;
-
 use regex::Regex;
 use modular_bitfield::prelude::*;
 
@@ -18,17 +16,17 @@ use crate::sheet::Cell;
 #[bitfield]
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
 #[derive(Clone,Debug,serde::Serialize, Default)]
-pub struct CommandFlag{
+pub struct CommandFlag {
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits
     pub type1: B1,           // 1 bit
     pub type2: B1,           // 1 bit
     pub error: B2,           // 2 bits
     pub is_div_by_zero: B1,  // 1 bit
-    pub is_any: B6,              // 6 bits
+    pub is_any: B6              // 6 bits
 }
-#[derive(Clone)]
-#[derive(serde::Serialize)]
+
+#[derive(Clone,serde::Serialize)]
 pub struct CommandCall {
     pub flag: CommandFlag, // 16 bits
     pub param1: i32,         // 4 bytes
@@ -208,7 +206,7 @@ pub fn decode_cell(encoded:i32) -> String{
         if temp==0{
             temp=26;
         }
-        cell.insert(0,(temp as u8 + b'A' as u8 -1) as char);
+        cell.insert(0,(temp as u8 + b'A' -1) as char);
         col=(col-temp)/26;
     }
     cell.push_str(&row.to_string());

@@ -50,7 +50,7 @@ impl Sheet{
                     }
                 }
             }
-            if record.depend == "" {
+            if record.depend.is_empty() {
                 new_cell.depend = HashSet::default();
             }
             let depend_parts: Vec<&str> = record.depend.split(",").collect();

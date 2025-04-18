@@ -20,11 +20,11 @@ fn parse_range(range: &str) -> Result<((usize, usize), (usize, usize)), String> 
         return Err("Invalid cell reference".to_string());
     }
     if start_tuple.0 == end_tuple.0 && start_tuple.1 <= end_tuple.1 {
-        return Ok((start_tuple, end_tuple));
+        Ok((start_tuple, end_tuple))
     } else if start_tuple.0 <= end_tuple.0 && start_tuple.1 == end_tuple.1 {
-        return Ok((start_tuple, end_tuple));
+        Ok((start_tuple, end_tuple))
     } else {
-        return Err("Invalid range".to_string());
+        Err("Invalid range".to_string())
     }
 }
 
@@ -46,7 +46,7 @@ impl Sheet {
         let mut values = Vec::new();
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
-                values.push(self.grid[i][j].value.clone());
+                values.push(self.grid[i][j].value);
             }
         };
         Ok(Chart::new()
@@ -91,16 +91,16 @@ impl Sheet {
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
                 if cnt<x_labels.len(){
-                    values.push(self.grid[i][j].value.clone());
+                    values.push(self.grid[i][j].value);
                     cnt+=1;
                 }
                 else{
-                    values.push(self.grid[i][j].value.clone());
+                    values.push(self.grid[i][j].value);
                 }
             }
         };
     let data: Vec<DataPoint> = values.into_iter()
-    .zip(x_labels.into_iter())
+    .zip(x_labels)
     .map(|(v, label)| {
         DataPoint::from(
             CompositeValue::from(vec![
@@ -140,12 +140,12 @@ impl Sheet {
         if diff1!=diff3 || diff2!=diff4{
             return Err("Invalid range".to_string());
         }
-        let mut values:Vec<Vec<i32>> = Vec::new();
+        let mut values:Vec<Vec<i32>> = vec![];
         for i in 0..diff1+1 {
             for j in 0..diff2+1 {
                 let mut temp_vec:Vec<i32> = Vec::new();
-                temp_vec.push(self.grid[start1.0+i][start1.1+j].value.clone());
-                temp_vec.push(self.grid[start2.0+i][start2.1+j].value.clone());
+                temp_vec.push(self.grid[start1.0+i][start1.1+j].value);
+                temp_vec.push(self.grid[start2.0+i][start2.1+j].value);
                 values.push(temp_vec);
             }
         };

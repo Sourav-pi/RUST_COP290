@@ -282,8 +282,8 @@ impl Sheet {
 
         visited.insert(cell);
 
-        let col = (cell as usize) % ENCODE_SHIFT;
-        let row = (cell as usize) / ENCODE_SHIFT;
+        let col = cell % ENCODE_SHIFT;
+        let row = cell / ENCODE_SHIFT;
         let mut is_cycle = false;
         stack.insert(cell);
         for &dep in &self.grid[row][col].depend {
@@ -299,8 +299,8 @@ impl Sheet {
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
                 // No need to check for negative values as `i` and `j` are of type `usize`
-                if self.grid[i as usize][j as usize].value < min {
-                    min = self.grid[i as usize][j as usize].value;
+                if self.grid[i][j].value < min {
+                    min = self.grid[i][j].value;
                 }
             }
         }
@@ -311,8 +311,8 @@ impl Sheet {
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
                 // println!("{}",self.grid[i as usize][j as usize].value);
-                if self.grid[i as usize][j as usize].value > max {
-                    max = self.grid[i as usize][j as usize].value;
+                if self.grid[i][j].value > max {
+                    max = self.grid[i][j].value;
                 }
             }
         }
@@ -323,7 +323,7 @@ impl Sheet {
         let mut count = 0;
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
-                sum += self.grid[i as usize][j as usize].value;
+                sum += self.grid[i][j].value;
                 count += 1;
             }
         }
@@ -336,7 +336,7 @@ impl Sheet {
         let mut sum = 0;
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
-                sum += self.grid[i as usize][j as usize].value;
+                sum += self.grid[i][j].value;
             }
         }
         sum
@@ -347,7 +347,7 @@ impl Sheet {
         let mut count = 0;
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
-                let value = self.grid[i as usize][j as usize].value;
+                let value = self.grid[i][j].value;
                 sum += (value - mean).pow(2);
                 count += 1;
             }
@@ -360,8 +360,8 @@ impl Sheet {
 
     fn update_cell(&mut self, list_fpr_update: Vec<usize>){
         for i in list_fpr_update {
-            let col = (i as usize) % ENCODE_SHIFT;
-            let row = (i as usize) / ENCODE_SHIFT;
+            let col = i % ENCODE_SHIFT;
+            let row = i / ENCODE_SHIFT;
             self.grid[row][col].formula.flag.set_is_div_by_zero(0);
             if self.grid[row][col].formula.flag.type_() == 0 {
                 // value
@@ -423,15 +423,14 @@ impl Sheet {
                         } else if self.grid[row][col].formula.flag.cmd() == 2 {
                             self.grid[row][col].value = self.grid[row][col].formula.param1
                                 * self.grid[param2_row][param2_col].value;
-                        } else {
-                            if self.grid[param2_row][param2_col].value == 0 {
+                        } else if self.grid[param2_row][param2_col].value == 0 {
                                 self.grid[row][col].formula.flag.set_is_div_by_zero(1);
                             } else {
                                 self.grid[row][col].value = self.grid[row][col].formula.param1
                                     / self.grid[param2_row][param2_col].value;
                             }
                             // self.grid[row][col].value=self.grid[row][col].formula.param1/self.grid[param2_row][param2_col].value;
-                        }
+                        
                     }
                 } else if self.grid[row][col].formula.flag.type1() == 1 {
                     // let param1_row=(self.grid[row][col].formula.param1%1000) as usize;
@@ -604,7 +603,7 @@ impl Sheet {
         command.flag.set_is_any(1);
         command.flag.set_is_any(1);
         let old_command=self.grid[row][col].formula.clone();
-        self.set_dependicies_cell(row as usize, col as usize, command.clone());
+        self.set_dependicies_cell(row , col, command.clone());
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
         if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
@@ -619,17 +618,17 @@ impl Sheet {
         };
         if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
             ans.error=Error::DivByZero;
-            return ans;
+            ans
         } else if self.grid[row][col].formula.flag.error()==1 {
             ans.error=Error::InvalidInput;
-            return ans;
+            ans
         } else if self.grid[row][col].formula.flag.error()==2 {
             ans.error=Error::CycleDetected;
             self.remove_old_dependicies(row,col,old_command);
-            return ans;
+            ans
         } 
         else {
-            return ans;
+            ans
         }
     }
 
