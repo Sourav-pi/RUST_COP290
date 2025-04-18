@@ -11,10 +11,6 @@ use cores::Error;
 const DEBUG:bool = false;
 
 pub fn column_to_letter(col: usize) -> String {
-    if col <= 0 {
-        return String::new();
-    }
-
     let mut result = String::new();
     let mut col_num = col;
 

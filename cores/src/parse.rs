@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(unused_braces)]
+#![allow(clippy::identity_op)] // This had to be added as clippy dosn't support the bitfield macro
 
 use regex::Regex;
 use modular_bitfield::prelude::*;
@@ -16,6 +17,7 @@ use crate::sheet::Cell;
 #[bitfield]
 #[repr(u16)] // Use a 16-bit underlying storage for all your bitfields
 #[derive(Clone,Debug,serde::Serialize, Default)]
+#[allow(clippy::identity_op)]
 pub struct CommandFlag {
     pub type_: B2,           // 2 bits
     pub cmd: B3,             // 3 bits

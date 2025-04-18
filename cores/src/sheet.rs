@@ -145,8 +145,8 @@ impl Sheet {
             // If empty result from toposort, a cycle was detected
             if topo_sort.is_empty() {
                 // Rollback all changes to prevent corrupted state
-                for i in 0..self.row {
-                    self.grid[i][copy_to] = original_col[i].clone();
+                for (i,item) in original_col.iter().enumerate().take(self.row) {
+                    self.grid[i][copy_to] = item.clone();
                 }
                 return Err(Error::CycleDetected);
             }

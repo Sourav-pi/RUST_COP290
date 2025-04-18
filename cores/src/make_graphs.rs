@@ -4,7 +4,9 @@ use crate::parse::convert_to_index;
 use charming::datatype::DataPoint;
 use charming::datatype::CompositeValue;
 
-fn parse_range(range: &str) -> Result<((usize, usize), (usize, usize)), String> {
+type Range = ((usize, usize), (usize, usize));
+
+fn parse_range(range: &str) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
         return Err("Invalid range format".to_string());
@@ -20,8 +22,6 @@ fn parse_range(range: &str) -> Result<((usize, usize), (usize, usize)), String> 
         return Err("Invalid cell reference".to_string());
     }
     if start_tuple.0 == end_tuple.0 && start_tuple.1 <= end_tuple.1 {
-        Ok((start_tuple, end_tuple))
-    } else if start_tuple.0 <= end_tuple.0 && start_tuple.1 == end_tuple.1 {
         Ok((start_tuple, end_tuple))
     } else {
         Err("Invalid range".to_string())
