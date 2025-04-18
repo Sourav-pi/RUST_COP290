@@ -1,7 +1,7 @@
-use dioxus::prelude::*;
+use super::error_display::{show_error, ErrorContext, ErrorType};
 use super::spreadsheet::*;
-use super::error_display::{ ErrorContext,ErrorType, show_error};
 use cores::Error;
+use dioxus::prelude::*;
 
 const CELL_STYLE: &str = "
     width: 81px;
@@ -47,7 +47,6 @@ pub struct CellProps {
     pub oncontextmenu: Callback<dioxus::prelude::Event<dioxus::events::MouseData>>,
 }
 
-
 #[component]
 pub fn Cell(props: CellProps) -> Element {
     // Consume the contexts
@@ -55,11 +54,10 @@ pub fn Cell(props: CellProps) -> Element {
     let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
     let mut error_ctx = use_context::<ErrorContext>();
-    
+
     let mut is_editing = use_signal(|| false);
     let mut formula = use_signal(String::new);
     let mut value = use_signal(String::new);
-    
 
     // Check if this cell is selected based on context
     let is_this_cell_selected = {
@@ -69,7 +67,7 @@ pub fn Cell(props: CellProps) -> Element {
 
     // Handler for when user starts editing
     let on_focus = {
-        let row = props.row; 
+        let row = props.row;
         let col = props.col;
         move |_| {
             is_editing.set(true);
@@ -77,42 +75,51 @@ pub fn Cell(props: CellProps) -> Element {
             println!("Selected cell ({}, {}) for editing", row, col);
         }
     };
-    
+
     // Handler for when the cell loses focus
     let on_blur = {
         let row = props.row;
         let col = props.col;
         move |_| {
             is_editing.set(false);
-            
+
             // Get the formula from context in case it was updated elsewhere
             let mut formula_text = formula.read().clone();
             // Evaluate the formula and update the displayed value
             if formula_text.is_empty() {
                 formula_text = "0".to_string();
-            } 
-                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
-                    // Update the cell value in the Sheet object
-                    let res = sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
-                    match res.error {
-                        Error::None | Error::DivByZero => {
-                            sheetversion.set(sheetversion.cloned() + 1);
-                        },
-                        Error::InvalidInput => {
-                            show_error(&mut error_ctx, "Invalid Formula", ErrorType::Error, Some(3.0));
-                        },
-                        Error::CycleDetected => {
-                            show_error(&mut error_ctx, "Cannot apply formula : would create circular reference", 
-                                      ErrorType::Error, Some(3.0));
-                        }
+            }
+            if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                // Update the cell value in the Sheet object
+                let res =
+                    sheet_locked.update_cell_data(row as usize, col as usize, formula_text.clone());
+                match res.error {
+                    Error::None | Error::DivByZero => {
+                        sheetversion.set(sheetversion.cloned() + 1);
                     }
-                    // Update the displayed value
-                    println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
+                    Error::InvalidInput => {
+                        show_error(
+                            &mut error_ctx,
+                            "Invalid Formula",
+                            ErrorType::Error,
+                            Some(3.0),
+                        );
+                    }
+                    Error::CycleDetected => {
+                        show_error(
+                            &mut error_ctx,
+                            "Cannot apply formula : would create circular reference",
+                            ErrorType::Error,
+                            Some(3.0),
+                        );
+                    }
                 }
+                // Update the displayed value
+                println!("Updated cell ({}, {}) to: {}", row, col, formula_text);
+            }
         }
     };
-    
-    
+
     // Handler for input changes
     let on_input = move |e: Event<FormData>| {
         let new_value = e.value().clone();
@@ -123,24 +130,25 @@ pub fn Cell(props: CellProps) -> Element {
         let _ = sheetversion.cloned();
         if let Ok(sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
-            formula.set(sheet_locked.get_formula(props.row as usize, props.col as usize).to_string());
+            formula.set(
+                sheet_locked
+                    .get_formula(props.row as usize, props.col as usize)
+                    .to_string(),
+            );
         }
-
     });
-    
 
     // use_effect(move ||{
-        let _ = sheetversion.cloned();
+    let _ = sheetversion.cloned();
 
-        if let Ok(sheet_locked) = sheet.cloned().lock() {
-            // Update the cell value in the Sheet object
-            value.set(sheet_locked.get_value(props.row, props.col).to_string());
-        }
+    if let Ok(sheet_locked) = sheet.cloned().lock() {
+        // Update the cell value in the Sheet object
+        value.set(sheet_locked.get_value(props.row, props.col).to_string());
+    }
     // });
-    
-    
+
     if props.is_header {
-        rsx!{
+        rsx! {
             input {
                 id: "row-{props.row}-col-{props.col}",
                 readonly: true,

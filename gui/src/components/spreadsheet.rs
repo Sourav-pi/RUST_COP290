@@ -1,14 +1,14 @@
-use std::path::PathBuf;
 use cores::Sheet;
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
 
-use dioxus::prelude::*;
-use super::header::Header;
-use super::grid::Grid;
-use super::graph_popup::GraphPopup;
-use super::context_menu::{ContextMenu,MenuType};
+use super::context_menu::{ContextMenu, MenuType};
 use super::error_display::ErrorDisplay;
+use super::graph_popup::GraphPopup;
+use super::grid::Grid;
+use super::header::Header;
+use dioxus::prelude::*;
 
 // Define explicit types for your contexts
 pub type SelectedCellContext = Signal<(i32, i32)>;
@@ -28,16 +28,16 @@ pub type ErrorContext = super::error_display::ErrorContext;
 // Add these context definitions
 
 // Just track which row/column/cell was last copied
-pub type CopiedRowContext = Signal<Option<i32>>;  // row index
-pub type CopiedColContext = Signal<Option<i32>>;  // column index
-pub type CopiedCellContext = Signal<Option<(i32, i32)>>;  // (row, col)
+pub type CopiedRowContext = Signal<Option<i32>>; // row index
+pub type CopiedColContext = Signal<Option<i32>>; // column index
+pub type CopiedCellContext = Signal<Option<(i32, i32)>>; // (row, col)
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum GraphType {
     Line,
     Pie,
     Scatter,
-    Bar,   
+    Bar,
 }
 
 #[component]
@@ -46,14 +46,14 @@ pub fn Spreadsheet() -> Element {
     let num_cols = 18278;
 
     // Create the signals for context
-    let selected_cell : SelectedCellContext = use_signal(|| (1, 1));
-    let formula : FormulaContext = use_signal(String::new);
-    let current_file : CurrentFileContext = use_signal(|| None);
-    let graph_popup : GraphPopupContext = use_signal(|| false);
-    let graph_type : GraphTypeContext = use_signal(|| GraphType::Line);
-    let context_menu : ContextMenuContext = use_signal(|| None);
+    let selected_cell: SelectedCellContext = use_signal(|| (1, 1));
+    let formula: FormulaContext = use_signal(String::new);
+    let current_file: CurrentFileContext = use_signal(|| None);
+    let graph_popup: GraphPopupContext = use_signal(|| false);
+    let graph_type: GraphTypeContext = use_signal(|| GraphType::Line);
+    let context_menu: ContextMenuContext = use_signal(|| None);
     let sheet: SheetContext = use_signal(|| {
-        let new_sheet = Sheet::new(num_rows,num_cols); // Create a new Sheet instance
+        let new_sheet = Sheet::new(num_rows, num_cols); // Create a new Sheet instance
         Arc::new(Mutex::new(new_sheet))
     });
     let start_row: StartRowContext = use_signal(|| 1);
@@ -90,11 +90,13 @@ pub fn Spreadsheet() -> Element {
     provide_context(copied_row);
     provide_context(copied_col);
 
-    use_effect(move||{
-        let _ = document::eval("
+    use_effect(move || {
+        let _ = document::eval(
+            "
             document.getElementById('row-1-col-1').focus();
         
-        ");
+        ",
+        );
     });
 
     rsx! {
@@ -102,8 +104,8 @@ pub fn Spreadsheet() -> Element {
             // Global keyboard event listener
             tabindex: 0, // Makes the div focusable
             style: "outline: none; width: 100%; height: 100%; overflow: hidden;",
-            
-            Header { 
+
+            Header {
                 filename: filename.clone(),
                 num_rows: num_rows,
                 num_cols: num_cols,

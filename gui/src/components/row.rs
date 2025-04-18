@@ -1,6 +1,6 @@
 use super::cell::Cell;
-use super::spreadsheet::ContextMenuContext;
 use super::context_menu::MenuType;
+use super::spreadsheet::ContextMenuContext;
 use dioxus::prelude::*;
 
 const ROW_STYLE: &str = "
@@ -54,7 +54,6 @@ pub struct RowProps {
     pub start_col: i32,
     #[props(default = 0)]
     pub end_col: i32,
-
 }
 
 #[component]
@@ -82,7 +81,7 @@ pub fn Row(props: RowProps) -> Element {
 
     let generate_on_col_contextmenu = |col: i32| {
         let col_num = col;
-        
+
         move |e: Event<MouseData>| {
             e.stop_propagation();
             e.prevent_default();

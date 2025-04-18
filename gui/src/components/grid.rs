@@ -1,6 +1,6 @@
-use dioxus::prelude::*;
-use crate::components::spreadsheet::*;
 use super::row::Row;
+use crate::components::spreadsheet::*;
+use dioxus::prelude::*;
 
 const GRID_STYLE: &str = "
     overflow: hidden;
@@ -66,11 +66,11 @@ pub fn Grid(props: GridProps) -> Element {
     let mut selected_cell = use_context::<SelectedCellContext>();
 
     let min_cell_width = 81; // Minimum width per cell in pixels
-    
+
     // Visible rows per page
-    let rows_per_page = 20; 
+    let rows_per_page = 20;
     let cols_per_page = 16;
-    
+
     // Read context values once at the beginning of the component
     let start_row = start_row_ctx.cloned();
     let start_col = start_col_ctx.cloned();
@@ -78,7 +78,7 @@ pub fn Grid(props: GridProps) -> Element {
     // Calculate max pages once based on these values
     let max_start_row = (props.num_rows - rows_per_page).max(1);
     let max_start_col = (props.num_cols - cols_per_page).max(1);
-    
+
     // Calculate end positions based on the variables we already have
     let end_row = (start_row + rows_per_page - 1).min(props.num_rows);
     let end_col = (start_col + cols_per_page - 1).min(props.num_cols);
@@ -93,7 +93,7 @@ pub fn Grid(props: GridProps) -> Element {
         // If the cell is above current view, scroll up to show it at the top
         if row < start_row {
             start_row_ctx.set((row - 1).max(1));
-        } 
+        }
         // If the cell is below current view, scroll down to show it at the bottom
         else if row > end_row {
             let new_start = (row - rows_per_page + 1).max(1).min(max_start_row);
@@ -103,14 +103,14 @@ pub fn Grid(props: GridProps) -> Element {
         // If the cell is to the left of current view, scroll left to show it
         if col < start_col {
             start_col_ctx.set((col - 1).max(1));
-        } 
+        }
         // If the cell is to the right of current view, scroll right to show it
         else if col > end_col {
             let new_start = (col - cols_per_page + 1).max(1).min(max_start_col);
             start_col_ctx.set(new_start);
         }
     };
-    
+
     // Scrolling helper functions remain the same
     let mut move_up_help = move || {
         let current_row = start_row_ctx.cloned();
@@ -118,21 +118,21 @@ pub fn Grid(props: GridProps) -> Element {
             start_row_ctx.set(current_row - 1);
         }
     };
-    
+
     let mut move_down_help = move || {
         let current_row = start_row_ctx.cloned();
         if current_row < max_start_row {
             start_row_ctx.set(current_row + 1);
         }
     };
-    
+
     let mut move_left_help = move || {
         let current_col = start_col_ctx.cloned();
         if current_col > 1 {
             start_col_ctx.set(current_col - 1);
         }
     };
-    
+
     let mut move_right_help = move || {
         let current_col = start_col_ctx.cloned();
         if current_col < max_start_col {
@@ -143,7 +143,7 @@ pub fn Grid(props: GridProps) -> Element {
     // Effect to handle auto-scrolling when selected cell changes
     use_effect(move || {
         let (sel_row, sel_col) = *selected_cell.read();
-        
+
         // If the currently selected cell is not visible, scroll to it
         if !is_cell_visible(sel_row, sel_col) {
             scroll_to_cell(sel_row, sel_col);
@@ -151,10 +151,18 @@ pub fn Grid(props: GridProps) -> Element {
     });
 
     // Navigation handle
-    let move_up = move |_| { move_up_help();};
-    let move_down = move |_| { move_down_help();};
-    let move_left = move |_| { move_left_help();};
-    let move_right = move |_| { move_right_help();};
+    let move_up = move |_| {
+        move_up_help();
+    };
+    let move_down = move |_| {
+        move_down_help();
+    };
+    let move_left = move |_| {
+        move_left_help();
+    };
+    let move_right = move |_| {
+        move_right_help();
+    };
 
     // Calculate end positions based on the variables we already have
     let end_row = (start_row + rows_per_page - 1).min(props.num_rows);
@@ -167,15 +175,21 @@ pub fn Grid(props: GridProps) -> Element {
         let col = selected_cell.cloned().1;
         move |e: Event<KeyboardData>| {
             let key = e.key();
-            if key == Key::Enter || key == Key::ArrowDown || key == Key::ArrowUp || key == Key::Tab || key == Key::ArrowLeft || key == Key::ArrowRight {
+            if key == Key::Enter
+                || key == Key::ArrowDown
+                || key == Key::ArrowUp
+                || key == Key::Tab
+                || key == Key::ArrowLeft
+                || key == Key::ArrowRight
+            {
                 e.prevent_default();
                 let mut to_row = row;
                 let mut to_col = col;
-                
+
                 // Store the selected cell position once to avoid inconsistencies
                 let current_row = selected_cell.cloned().0;
                 let current_col = selected_cell.cloned().1;
-                
+
                 // Handle vertical movement - only change row, not column
                 if e.key() == Key::ArrowDown || e.key() == Key::Enter {
                     if current_row == end_row && start_row_ctx.cloned() < max_start_row {
@@ -187,34 +201,38 @@ pub fn Grid(props: GridProps) -> Element {
                         move_up_help();
                     };
                     to_row = (row - 1).max(1).min(props.num_rows); // Prevent going before the first row
-                } 
-                
+                }
                 // Handle horizontal movement - only change column, not row
-                else if (e.key() == Key::Tab && e.modifiers().shift()) || e.key() == Key::ArrowLeft {
+                else if (e.key() == Key::Tab && e.modifiers().shift())
+                    || e.key() == Key::ArrowLeft
+                {
                     if current_col == start_col && start_col_ctx.cloned() > 1 {
                         move_left_help();
                     };
-                    to_col = (col-1).max(1).min(props.num_cols); // Prevent going before the first column
+                    to_col = (col - 1).max(1).min(props.num_cols); // Prevent going before the first column
                 } else if e.key() == Key::Tab || e.key() == Key::ArrowRight {
                     if current_col == end_col && start_col_ctx.cloned() < max_start_col {
                         move_right_help();
                     };
-                    to_col = (col+1).max(1).min(props.num_cols); // Prevent going past the last column
+                    to_col = (col + 1).max(1).min(props.num_cols); // Prevent going past the last column
                 }
-                
-                let script = format!(r#"
+
+                let script = format!(
+                    r#"
                     let x = document.getElementById('row-{}-col-{}');
                     if (x) {{
                         x.focus();
                     }}
-                "#, to_row, to_col);
+                "#,
+                    to_row, to_col
+                );
                 selected_cell.set((to_row, to_col));
                 document::eval(&script);
             }
         }
     };
-    
-        rsx! {
+
+    rsx! {
         div {
             style: GRID_STYLE,
             class: "grid-container",
@@ -231,7 +249,7 @@ pub fn Grid(props: GridProps) -> Element {
                     start_col: start_col,
                     end_col: end_col,
                 }
-                
+
                 // Visible rows
                 for i in (start_row)..=(end_row) {
                     Row {
@@ -244,17 +262,17 @@ pub fn Grid(props: GridProps) -> Element {
                     }
                 }
             }
-            
+
             // Navigation controls
             div {
                 style: NAVIGATION_CONTROLS_STYLE,
-                
+
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
                     "Rows: {start_row}-{end_row} / {props.num_rows}, Cols: {start_col}-{end_col} / {props.num_cols}"
                 }
-                
+
                 // Navigation buttons
                 button {
                     style: NAV_BUTTON_STYLE,

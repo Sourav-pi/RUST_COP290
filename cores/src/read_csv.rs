@@ -1,8 +1,8 @@
 use fxhash::FxHashSet as HashSet;
 
-use serde::{self,Deserialize};
-use crate::{parse::CommandCall, sheet::*};
 use crate::parse::CommandFlag;
+use crate::{parse::CommandCall, sheet::*};
+use serde::{self, Deserialize};
 
 #[derive(Debug, Deserialize)]
 struct TempRecord {
@@ -15,9 +15,7 @@ struct TempRecord {
     depend: String,
 }
 
-
-impl Sheet{
-
+impl Sheet {
     pub fn read_file(&mut self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut rdr = csv::Reader::from_path(file_path)?;
         for result in rdr.deserialize() {
@@ -34,18 +32,35 @@ impl Sheet{
             new_cell.value = record.value;
             new_cell.formula.param1 = record.param1;
             new_cell.formula.param2 = record.param2;
-            
+
             let flag_parts: Vec<&str> = record.flag.split(",").collect();
-            for i in flag_parts{
+            for i in flag_parts {
                 if let [flag_type, value_of_flag] = i.split(":").collect::<Vec<&str>>().as_slice() {
-                    
                     match *flag_type {
-                        "type" => new_cell.formula.flag.set_type_(value_of_flag.parse::<u8>().unwrap()),
-                        "cmd" => new_cell.formula.flag.set_cmd(value_of_flag.parse::<u8>().unwrap()),
-                        "type1" => new_cell.formula.flag.set_type1(value_of_flag.parse::<u8>().unwrap()),
-                        "type2" => new_cell.formula.flag.set_type2(value_of_flag.parse::<u8>().unwrap()),
-                        "error" => new_cell.formula.flag.set_error(value_of_flag.parse::<u8>().unwrap()),
-                        "div_by_zero" => new_cell.formula.flag.set_is_div_by_zero(value_of_flag.parse::<u8>().unwrap()),
+                        "type" => new_cell
+                            .formula
+                            .flag
+                            .set_type_(value_of_flag.parse::<u8>().unwrap()),
+                        "cmd" => new_cell
+                            .formula
+                            .flag
+                            .set_cmd(value_of_flag.parse::<u8>().unwrap()),
+                        "type1" => new_cell
+                            .formula
+                            .flag
+                            .set_type1(value_of_flag.parse::<u8>().unwrap()),
+                        "type2" => new_cell
+                            .formula
+                            .flag
+                            .set_type2(value_of_flag.parse::<u8>().unwrap()),
+                        "error" => new_cell
+                            .formula
+                            .flag
+                            .set_error(value_of_flag.parse::<u8>().unwrap()),
+                        "div_by_zero" => new_cell
+                            .formula
+                            .flag
+                            .set_is_div_by_zero(value_of_flag.parse::<u8>().unwrap()),
                         _ => {}
                     }
                 }

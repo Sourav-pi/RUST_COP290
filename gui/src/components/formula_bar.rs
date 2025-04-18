@@ -1,7 +1,7 @@
-use dioxus::prelude::*;
-use dioxus::events::Key;
 use super::spreadsheet::{SelectedCellContext, SheetContext, SheetVersionContext};
 use crate::components::row::column_to_letter;
+use dioxus::events::Key;
+use dioxus::prelude::*;
 
 const FORMULA_BAR_STYLE: &str = "display: flex;
                                 height: 30px;
@@ -9,7 +9,6 @@ const FORMULA_BAR_STYLE: &str = "display: flex;
                                 margin: 0px;
                                 padding: 0px;
                                 width: 100%;";
-
 
 #[component]
 pub fn FormulaBar() -> Element {
@@ -24,8 +23,13 @@ pub fn FormulaBar() -> Element {
         let _ = sheetversion.cloned();
 
         if let Ok(sheet_locked) = sheet.cloned().lock() {
-        // Update the cell value in the Sheet object
-            let formula_in_sheet = sheet_locked.get_formula(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize).to_string();
+            // Update the cell value in the Sheet object
+            let formula_in_sheet = sheet_locked
+                .get_formula(
+                    selected_cell.cloned().0 as usize,
+                    selected_cell.cloned().1 as usize,
+                )
+                .to_string();
             if formula_in_sheet != "0" {
                 formula.set(formula_in_sheet);
             } else {
@@ -34,12 +38,15 @@ pub fn FormulaBar() -> Element {
         }
     });
 
-  
     let on_submit = move |e: Event<KeyboardData>| {
-        if e.key()==Key::Enter {
+        if e.key() == Key::Enter {
             if let Ok(mut sheet_locked) = sheet.cloned().lock() {
                 // Update the cell value in the Sheet object
-                sheet_locked.update_cell_data(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize, formula.cloned());
+                sheet_locked.update_cell_data(
+                    selected_cell.cloned().0 as usize,
+                    selected_cell.cloned().1 as usize,
+                    formula.cloned(),
+                );
                 sheetversion.set(sheetversion.cloned() + 1);
             }
         };
@@ -48,7 +55,11 @@ pub fn FormulaBar() -> Element {
     let on_blur = move |_| {
         if let Ok(mut sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
-            sheet_locked.update_cell_data(selected_cell.cloned().0 as usize, selected_cell.cloned().1 as usize, formula.cloned());
+            sheet_locked.update_cell_data(
+                selected_cell.cloned().0 as usize,
+                selected_cell.cloned().1 as usize,
+                formula.cloned(),
+            );
             sheetversion.set(sheetversion.cloned() + 1);
         }
     };
@@ -73,7 +84,7 @@ pub fn FormulaBar() -> Element {
                 onblur : on_blur,
                 // onkeydown: move |e| {
                 //     if e.key() == Key::Enter {
-                        
+
                 //     }
                 // },
             }

@@ -1,5 +1,5 @@
-use super::spreadsheet::{GraphPopupContext, GraphType, GraphTypeContext};
 use super::graph_forms::{BarChartForm, LineChartForm, PieChartForm, ScatterPlotForm};
+use super::spreadsheet::{GraphPopupContext, GraphType, GraphTypeContext};
 use ::dioxus::prelude::*;
 const CLOSE_BUTTON_STYLE: &str = r#"
     background-color:rgb(155, 155, 155);
@@ -128,7 +128,7 @@ pub fn GraphPopup() -> Element {
                 div {
                     style: POPUP_STYLE,
                     div{ style: HEADER_STYLE,
-                        
+
                         div { style: TABS_GROUP_STYLE,
                             {options.into_iter().map(|graph| {
                             rsx! {button {
@@ -148,7 +148,7 @@ pub fn GraphPopup() -> Element {
                             "X"
                         }
                     }
-                    div { 
+                    div {
                         style: BODY_STYLE,
                         match graph_type.cloned() {
                             GraphType::Line => rsx! { LineChartForm {} },

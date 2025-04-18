@@ -1,11 +1,11 @@
-use dioxus::prelude::*;
+use super::error_display::{show_error, ErrorContext, ErrorType};
 use super::spreadsheet::*;
 use cores::convert_to_index;
-use super::error_display::{ErrorContext, ErrorType, show_error};
+use dioxus::prelude::*;
 
-const OPEN_ICON : Asset = asset!( "assets/open.png");
-const SAVE_ICON : Asset = asset!( "assets/save.png");
-const VISUALIZE_ICON : Asset = asset!( "assets/visualize.png");
+const OPEN_ICON: Asset = asset!("assets/open.png");
+const SAVE_ICON: Asset = asset!("assets/save.png");
+const VISUALIZE_ICON: Asset = asset!("assets/visualize.png");
 
 const TOOLBAR_STYLE: &str = "
     height: 50px;
@@ -52,7 +52,6 @@ const SEARCH_BUTTON_STYLE: &str = "
     height: 31px;
     ";
 
-
 #[derive(Props, PartialEq, Clone)]
 pub struct ToolbarProps {
     pub num_rows: usize,
@@ -70,136 +69,135 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     let mut error_ctx = use_context::<ErrorContext>();
     let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
-    
+
     rsx! {
-        div {style : TOOLBAR_STYLE,
-        // Search bar
-        div { style: SEARCH_CONTAINER_STYLE,
-            input {
-                style: SEARCH_INPUT_STYLE,
-                placeholder: "Cell Number",
-                value: "{search_term}",
-                oninput: move |evt| search_term.set(evt.value().clone()),
-                onkeydown: move |evt| {
-                    if evt.key() == Key::Enter {
-                        let (a ,b) = convert_to_index(search_term.cloned());
-                        let (a,b) = (a as i32,b as i32);
-                        // println!("ans {a} {b}");
-                        if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
-                            start_row_ctx.set(a-1);
-                            start_col_ctx.set(b-1);
-                            selected_cell.set((a,b));
+      div {style : TOOLBAR_STYLE,
+      // Search bar
+      div { style: SEARCH_CONTAINER_STYLE,
+          input {
+              style: SEARCH_INPUT_STYLE,
+              placeholder: "Cell Number",
+              value: "{search_term}",
+              oninput: move |evt| search_term.set(evt.value().clone()),
+              onkeydown: move |evt| {
+                  if evt.key() == Key::Enter {
+                      let (a ,b) = convert_to_index(search_term.cloned());
+                      let (a,b) = (a as i32,b as i32);
+                      // println!("ans {a} {b}");
+                      if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
+                          start_row_ctx.set(a-1);
+                          start_col_ctx.set(b-1);
+                          selected_cell.set((a,b));
 
-                            let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
-                        } else {
-                            show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
-                            search_term.set(String::new());
-                        }
-                    }
-                }
-            }
-            button {
-                style: SEARCH_BUTTON_STYLE,
-                onclick: move |_| {
-                    
-                    let (a ,b) = convert_to_index(search_term.cloned());
-                    let (a,b) = (a as i32,b as i32);
-                    // println!("ans {a} {b}");
-                    if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
-                        start_row_ctx.set(a-1);
-                        start_col_ctx.set(b-1);
-                        selected_cell.set((a,b));
+                          let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
+                      } else {
+                          show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
+                          search_term.set(String::new());
+                      }
+                  }
+              }
+          }
+          button {
+              style: SEARCH_BUTTON_STYLE,
+              onclick: move |_| {
 
-                        let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
-                    } else {
-                        show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
-                        search_term.set(String::new());
-                    }
-                },
-                "GO"
-            }
-        }
-        
-        // Existing buttons
-        button { style: BUTTON_STYLE,
-            onclick: move |_| {
-                let path = std::env::current_dir().unwrap();
+                  let (a ,b) = convert_to_index(search_term.cloned());
+                  let (a,b) = (a as i32,b as i32);
+                  // println!("ans {a} {b}");
+                  if !(a==0 && b==0) && a <= props.num_rows as i32 && b <= props.num_cols as i32 {
+                      start_row_ctx.set(a-1);
+                      start_col_ctx.set(b-1);
+                      selected_cell.set((a,b));
 
-                let res = rfd::FileDialog::new()
-                    .add_filter("spreadsheet", &["csv"])
-                    .set_directory(&path)
-                    .pick_file();
-            
-                if let Some(file) = &res {
-                    cur_file.set(Some(file.clone()));
-                    let file_path = file.as_path().to_string_lossy().to_string();
-                    // Save the current sheet to the selected file
-                    if let Ok(mut sheet_locked) = sheet.cloned().lock() {
-                        // Update the cell value in the Sheet object
-                        let write_result = sheet_locked.read_file(&file_path);
-                        sheetversion.set(sheetversion.cloned() + 1);
-                        if let Err(e) = write_result {
-                            show_error(&mut error_ctx, &format!("Error reading from file: {}", e), ErrorType::Error, Some(5.0));
-                        } else {
-                            show_error(&mut error_ctx, "File loaded successfully", ErrorType::Success, Some(5.0));
-                            sheetversion.set(sheetversion.cloned() + 1);
-                        }
-                    }
-                }
-
-                
-            },
-            img {
-                src: "{OPEN_ICON}",
-                alt: "Open",
-                style: "width: 30px; height: 30px;"
-            }
-        },
-        button { style: BUTTON_STYLE,
-            onclick: move |_| {
-                let path = std::env::current_dir().unwrap();
-                let res = rfd::FileDialog::new().add_filter("spreadsheet", &["csv"])
-                .set_file_name("new_sheet.csv")
-                .set_directory(&path)
-                .save_file();
-                // println!("The user choose: {:#?}", res);
-                if let Some(file) = &res {
-                    let file_path = file.as_path().to_string_lossy().to_string();
-                    // Save the current sheet to the selected file
-                    if let Ok(sheet_locked) = sheet.cloned().lock() {
-                        // Update the cell value in the Sheet object
-                        let write_result = sheet_locked.write_csv(&file_path);
-                        sheetversion.set(sheetversion.cloned() + 1);
-                        if let Err(e) = write_result {
-                            show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
-                        } else {
-                            show_error(&mut error_ctx, "File saved successfully", ErrorType::Success, Some(5.0));
-                            sheetversion.set(sheetversion.cloned() + 1);
-                        }
-                    }
-                }
-
-
-
-            },
-            img {
-                src: "{SAVE_ICON}",
-                alt: "Save",
-                style: "width: 30px; height: 30px;"
-            }
-        },
-        button { style: BUTTON_STYLE,
-            
-            img {
-                onclick: move |_| {
-                    is_open.set(true);
-                },
-                src: "{VISUALIZE_ICON}",
-                alt: "Visualize",
-                style: "width: 30px; height: 30px;"
-            }
-        },
-        }
+                      let _ =document::eval(&format!("document.getElementById('row-{}-col-{}').focus()",a,b));
+                  } else {
+                      show_error(&mut error_ctx, "Invalid Cell !!", ErrorType::Error, Some(5.0));
+                      search_term.set(String::new());
+                  }
+              },
+              "GO"
+          }
       }
-    
+
+      // Existing buttons
+      button { style: BUTTON_STYLE,
+          onclick: move |_| {
+              let path = std::env::current_dir().unwrap();
+
+              let res = rfd::FileDialog::new()
+                  .add_filter("spreadsheet", &["csv"])
+                  .set_directory(&path)
+                  .pick_file();
+
+              if let Some(file) = &res {
+                  cur_file.set(Some(file.clone()));
+                  let file_path = file.as_path().to_string_lossy().to_string();
+                  // Save the current sheet to the selected file
+                  if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                      // Update the cell value in the Sheet object
+                      let write_result = sheet_locked.read_file(&file_path);
+                      sheetversion.set(sheetversion.cloned() + 1);
+                      if let Err(e) = write_result {
+                          show_error(&mut error_ctx, &format!("Error reading from file: {}", e), ErrorType::Error, Some(5.0));
+                      } else {
+                          show_error(&mut error_ctx, "File loaded successfully", ErrorType::Success, Some(5.0));
+                          sheetversion.set(sheetversion.cloned() + 1);
+                      }
+                  }
+              }
+
+
+          },
+          img {
+              src: "{OPEN_ICON}",
+              alt: "Open",
+              style: "width: 30px; height: 30px;"
+          }
+      },
+      button { style: BUTTON_STYLE,
+          onclick: move |_| {
+              let path = std::env::current_dir().unwrap();
+              let res = rfd::FileDialog::new().add_filter("spreadsheet", &["csv"])
+              .set_file_name("new_sheet.csv")
+              .set_directory(&path)
+              .save_file();
+              // println!("The user choose: {:#?}", res);
+              if let Some(file) = &res {
+                  let file_path = file.as_path().to_string_lossy().to_string();
+                  // Save the current sheet to the selected file
+                  if let Ok(sheet_locked) = sheet.cloned().lock() {
+                      // Update the cell value in the Sheet object
+                      let write_result = sheet_locked.write_csv(&file_path);
+                      sheetversion.set(sheetversion.cloned() + 1);
+                      if let Err(e) = write_result {
+                          show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
+                      } else {
+                          show_error(&mut error_ctx, "File saved successfully", ErrorType::Success, Some(5.0));
+                          sheetversion.set(sheetversion.cloned() + 1);
+                      }
+                  }
+              }
+
+
+
+          },
+          img {
+              src: "{SAVE_ICON}",
+              alt: "Save",
+              style: "width: 30px; height: 30px;"
+          }
+      },
+      button { style: BUTTON_STYLE,
+
+          img {
+              onclick: move |_| {
+                  is_open.set(true);
+              },
+              src: "{VISUALIZE_ICON}",
+              alt: "Visualize",
+              style: "width: 30px; height: 30px;"
+          }
+      },
+      }
+    }
 }

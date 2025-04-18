@@ -1,5 +1,5 @@
-use dioxus::prelude::*;
 use super::spreadsheet::SheetContext;
+use dioxus::prelude::*;
 
 // Common style for input containers
 const INPUT_CONTAINER_STYLE: &str = r#"
@@ -45,7 +45,6 @@ const SUBMIT_BUTTON_STYLE: &str = r#"
 // Helper component for each type of graph input
 #[component]
 pub fn LineChartForm() -> Element {
-
     let mut show_graph = use_signal(|| false);
     let mut range = use_signal(String::new);
     let mut x_label = use_signal(String::new);
@@ -55,7 +54,7 @@ pub fn LineChartForm() -> Element {
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
 
-    if show_graph.cloned(){
+    if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
             let x = sheet_locked.line_graph(
@@ -81,7 +80,8 @@ pub fn LineChartForm() -> Element {
                     }});
                     chart.setOption({});
                 }}, millis)
-            "#, chart_json.cloned()
+            "#,
+            chart_json.cloned()
         );
         return rsx! {
             document::Script { src: asset!("/assets/echarts-5.5.1.min.js") }
@@ -91,65 +91,63 @@ pub fn LineChartForm() -> Element {
             },}
         }
 
-        }
+        };
     } else {
-
-
-    rsx! {
-        div { style: INPUT_CONTAINER_STYLE,
-            div {
-                div { style: LABEL_STYLE, "Cell Range (e.g., A1:C10)" }
-                input { 
-                    style: INPUT_STYLE, 
-                    placeholder: "Enter cell range",
-                    oninput: move |evt| range.set(evt.value().clone())
+        rsx! {
+            div { style: INPUT_CONTAINER_STYLE,
+                div {
+                    div { style: LABEL_STYLE, "Cell Range (e.g., A1:C10)" }
+                    input {
+                        style: INPUT_STYLE,
+                        placeholder: "Enter cell range",
+                        oninput: move |evt| range.set(evt.value().clone())
+                    }
                 }
-            }
-            div {
-                div { style: LABEL_STYLE, "X-Axis Label" }
-                input { 
-                    style: INPUT_STYLE, 
-                    placeholder: "X-Axis",
-                    oninput: move |evt| x_label.set(evt.value().clone())
+                div {
+                    div { style: LABEL_STYLE, "X-Axis Label" }
+                    input {
+                        style: INPUT_STYLE,
+                        placeholder: "X-Axis",
+                        oninput: move |evt| x_label.set(evt.value().clone())
+                    }
                 }
-            }
-            div {
-                div { style: LABEL_STYLE, "Y-Axis Label" }
-                input { 
-                    style: INPUT_STYLE, 
-                    placeholder: "Y-Axis",
-                    oninput: move |evt| y_label.set(evt.value().clone())
+                div {
+                    div { style: LABEL_STYLE, "Y-Axis Label" }
+                    input {
+                        style: INPUT_STYLE,
+                        placeholder: "Y-Axis",
+                        oninput: move |evt| y_label.set(evt.value().clone())
+                    }
                 }
-            }
-            div {
-                div { style: LABEL_STYLE, "Point Labels (Optional)" }
-                input { 
-                    style: INPUT_STYLE, 
-                    placeholder: "Comma-separated labels",
-                    oninput: move |evt| point_labels.set(evt.value().clone())
+                div {
+                    div { style: LABEL_STYLE, "Point Labels (Optional)" }
+                    input {
+                        style: INPUT_STYLE,
+                        placeholder: "Comma-separated labels",
+                        oninput: move |evt| point_labels.set(evt.value().clone())
+                    }
                 }
-            }
-            div {
-                div { style: LABEL_STYLE, "Chart Title (Optional)" }
-                input { 
-                    style: INPUT_STYLE, 
-                    placeholder: "Enter title",
-                    oninput: move |evt| title.set(evt.value().clone())
+                div {
+                    div { style: LABEL_STYLE, "Chart Title (Optional)" }
+                    input {
+                        style: INPUT_STYLE,
+                        placeholder: "Enter title",
+                        oninput: move |evt| title.set(evt.value().clone())
+                    }
                 }
-            }
-            button { 
-                style: SUBMIT_BUTTON_STYLE,
-                onclick: move |_| {
-                    // Handle submission
-                    println!("Line chart with range: {}, x: {}, y: {}, title: {}, labels: {}", 
-                             range.cloned(), x_label.cloned(), y_label.cloned(), title.cloned(), point_labels.cloned());
-                    show_graph.set(true);
-                },
-                "Generate Chart"
+                button {
+                    style: SUBMIT_BUTTON_STYLE,
+                    onclick: move |_| {
+                        // Handle submission
+                        println!("Line chart with range: {}, x: {}, y: {}, title: {}, labels: {}",
+                                 range.cloned(), x_label.cloned(), y_label.cloned(), title.cloned(), point_labels.cloned());
+                        show_graph.set(true);
+                    },
+                    "Generate Chart"
+                }
             }
         }
     }
-}
 }
 
 #[component]
@@ -179,7 +177,7 @@ pub fn BarChartForm() -> Element {
                 return rsx! { div { "Error generating bar chart" } };
             }
         }
-        
+
         let mount_code = format!(
             r#"
                 var millis = 500;
@@ -190,68 +188,69 @@ pub fn BarChartForm() -> Element {
                     }});
                     chart.setOption({});
                 }}, millis)
-            "#, chart_json.cloned()
+            "#,
+            chart_json.cloned()
         );
-        
+
         return rsx! {
             document::Script { src: asset!("/assets/echarts-5.5.1.min.js") }
             div { style: "width: 100%; text-align: center; display: flex; justify-content: center; align-items: center;",
-                div { 
-                    id: "chart", 
-                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;", 
+                div {
+                    id: "chart",
+                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;",
                     onmounted: move |_| {
                         document::eval(&mount_code);
                     }
                 }
             }
-        }
+        };
     } else {
         rsx! {
             div { style: INPUT_CONTAINER_STYLE,
                 div {
                     div { style: LABEL_STYLE, "Cell Range (e.g., A1:C10)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter cell range",
                         oninput: move |evt| range.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "X-Axis Label" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "X-Axis",
                         oninput: move |evt| x_label.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Y-Axis Label" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Y-Axis",
                         oninput: move |evt| y_label.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Bar Labels (Comma-separated)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Comma-separated labels",
                         oninput: move |evt| bar_labels.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Chart Title (Optional)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter title",
                         oninput: move |evt| title.set(evt.value().clone())
                     }
                 }
-                button { 
+                button {
                     style: SUBMIT_BUTTON_STYLE,
                     onclick: move |_| {
-                        println!("Bar chart with range: {}, labels: {}, y: {}, title: {}", 
+                        println!("Bar chart with range: {}, labels: {}, y: {}, title: {}",
                                 range.cloned(), bar_labels.cloned(), y_label.cloned(), title.cloned());
                         show_graph.set(true);
                     },
@@ -274,11 +273,8 @@ pub fn PieChartForm() -> Element {
     if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
             // Generate pie chart
-            let x = sheet_locked.pie_graph(
-                &range.cloned(),
-                &slice_labels.cloned(),
-                &title.cloned(),
-            );
+            let x =
+                sheet_locked.pie_graph(&range.cloned(), &slice_labels.cloned(), &title.cloned());
             if let Ok(json) = x {
                 chart_json.set(json);
             } else {
@@ -286,7 +282,7 @@ pub fn PieChartForm() -> Element {
                 return rsx! { div { "Error generating pie chart" } };
             }
         }
-        
+
         let mount_code = format!(
             r#"
                 var millis = 500;
@@ -297,44 +293,45 @@ pub fn PieChartForm() -> Element {
                     }});
                     chart.setOption({});
                 }}, millis)
-            "#, chart_json.cloned()
+            "#,
+            chart_json.cloned()
         );
-        
+
         return rsx! {
             document::Script { src: asset!("/assets/echarts-5.5.1.min.js") }
             div { style: "width: 100%; text-align: center; display: flex; justify-content: center; align-items: center;",
-                div { 
-                    id: "pie-chart", 
-                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;", 
+                div {
+                    id: "pie-chart",
+                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;",
                     onmounted: move |_| {
                         document::eval(&mount_code);
                     }
                 }
             }
-        }
+        };
     } else {
         rsx! {
             div { style: INPUT_CONTAINER_STYLE,
                 div {
                     div { style: LABEL_STYLE, "Cell Range (e.g., A1:A10,B1:B10)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter cell range",
                         oninput: move |evt| range.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Chart Title (Optional)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter title",
                         oninput: move |evt| title.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Slice Labels (Comma-separated)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Comma-separated labels",
                         oninput: move |evt| slice_labels.set(evt.value().clone())
                     }
@@ -342,22 +339,22 @@ pub fn PieChartForm() -> Element {
                 // Keep the placeholder divs for consistent layout
                 div { style : "visibility: hidden ",
                     div { style: LABEL_STYLE, "placeholder" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "placeholder"
                     }
                 }
                 div { style : "visibility: hidden ",
                     div { style: LABEL_STYLE, "placeholder" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "placeholder"
                     }
                 }
-                button { 
+                button {
                     style: SUBMIT_BUTTON_STYLE,
                     onclick: move |_| {
-                        println!("Pie chart with range: {}, title: {}, labels: {}", 
+                        println!("Pie chart with range: {}, title: {}, labels: {}",
                                 range.cloned(), title.cloned(), slice_labels.cloned());
                         show_graph.set(true);
                     },
@@ -387,7 +384,7 @@ pub fn ScatterPlotForm() -> Element {
                 &y_range.cloned(),
                 &title.cloned(),
                 &x_label.cloned(),
-                &y_label.cloned()
+                &y_label.cloned(),
             );
             if let Ok(json) = x {
                 chart_json.set(json);
@@ -396,7 +393,7 @@ pub fn ScatterPlotForm() -> Element {
                 return rsx! { div { "Error generating scatter plot" } };
             }
         }
-        
+
         let mount_code = format!(
             r#"
                 var millis = 500;
@@ -407,68 +404,69 @@ pub fn ScatterPlotForm() -> Element {
                     }});
                     chart.setOption({});
                 }}, millis)
-            "#, chart_json.cloned()
+            "#,
+            chart_json.cloned()
         );
-        
+
         return rsx! {
             document::Script { src: asset!("/assets/echarts-5.5.1.min.js") }
             div { style: "width: 100%; text-align: center; display: flex; justify-content: center; align-items: center;",
-                div { 
-                    id: "scatter-chart", 
-                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;", 
+                div {
+                    id: "scatter-chart",
+                    style: "display: inline-block; height: 80%; width:80%; background-color: white; border-radius: 10px;",
                     onmounted: move |_| {
                         document::eval(&mount_code);
                     }
                 }
             }
-        }
+        };
     } else {
         rsx! {
             div { style: INPUT_CONTAINER_STYLE,
                 div {
                     div { style: LABEL_STYLE, "X-Axis Cell Range (e.g., A1:A10)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter X-axis cell range",
                         oninput: move |evt| x_range.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Y-Axis Cell Range (e.g., B1:B10)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter Y-axis cell range",
                         oninput: move |evt| y_range.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "X-Axis Label" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "X-Axis",
                         oninput: move |evt| x_label.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Y-Axis Label" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Y-Axis",
                         oninput: move |evt| y_label.set(evt.value().clone())
                     }
                 }
                 div {
                     div { style: LABEL_STYLE, "Chart Title (Optional)" }
-                    input { 
-                        style: INPUT_STYLE, 
+                    input {
+                        style: INPUT_STYLE,
                         placeholder: "Enter title",
                         oninput: move |evt| title.set(evt.value().clone())
                     }
                 }
-                button { 
+                button {
                     style: SUBMIT_BUTTON_STYLE,
                     onclick: move |_| {
-                        println!("Scatter plot with x-range: {}, y-range: {}, x-label: {}, y-label: {}, title: {}", 
+                        println!("Scatter plot with x-range: {}, y-range: {}, x-label: {}, y-label: {}, title: {}",
                                 x_range.cloned(), y_range.cloned(), x_label.cloned(), y_label.cloned(), title.cloned());
                         show_graph.set(true);
                     },

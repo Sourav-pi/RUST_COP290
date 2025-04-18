@@ -80,7 +80,7 @@ const CLOSE_BUTTON_STYLE: &str = r#"
 #[component]
 pub fn ErrorDisplay() -> Element {
     let mut error_ctx = use_context::<ErrorContext>();
-    
+
     // Render error if present
     let error_data = error_ctx.read();
     if let Some((message, error_type, _)) = error_data.as_ref() {
@@ -90,20 +90,20 @@ pub fn ErrorDisplay() -> Element {
             ErrorType::Info => INFO_STYLE,
             ErrorType::Success => SUCCESS_STYLE,
         };
-        
+
         let icon = match error_type {
             ErrorType::Error => "⛔",
             ErrorType::Warning => "⚠️",
             ErrorType::Info => "ℹ️",
             ErrorType::Success => "✅",
         };
-        
+
         rsx! {
             // Overlay to capture clicks outside
             div {
                 style: OVERLAY_STYLE,
                 onclick: move |_| error_ctx.set(None),
-                
+
                 // Error container
                 div {
                     style: format!("{} {}", ERROR_CONTAINER_STYLE, type_style),
@@ -127,9 +127,9 @@ pub fn ErrorDisplay() -> Element {
 // Helper function to show an error
 pub fn show_error(
     error_ctx: &mut ErrorContext,
-    message: &str, 
-    error_type: ErrorType, 
-    timeout_seconds: Option<f64>
+    message: &str,
+    error_type: ErrorType,
+    timeout_seconds: Option<f64>,
 ) {
     error_ctx.set(Some((message.to_string(), error_type, timeout_seconds)));
 }

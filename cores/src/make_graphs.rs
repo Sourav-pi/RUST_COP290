@@ -1,8 +1,13 @@
-use charming::{Chart, component::{Axis,Title,Legend}, element::{AxisType,Emphasis, ItemStyle, Orient, Tooltip, Trigger, Symbol}, series::{Bar, Line,pie}};
-use crate::sheet::Sheet;
 use crate::parse::convert_to_index;
-use charming::datatype::DataPoint;
+use crate::sheet::Sheet;
 use charming::datatype::CompositeValue;
+use charming::datatype::DataPoint;
+use charming::{
+    Chart,
+    component::{Axis, Legend, Title},
+    element::{AxisType, Emphasis, ItemStyle, Orient, Symbol, Tooltip, Trigger},
+    series::{Bar, Line, pie},
+};
 
 type Range = ((usize, usize), (usize, usize));
 
@@ -32,7 +37,6 @@ fn parse_lables(labels: &str) -> Vec<String> {
     labels.split(',').map(|s| s.trim().to_string()).collect()
 }
 impl Sheet {
-
     pub fn line_graph(
         &self,
         range: &str,
@@ -40,7 +44,6 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-
         let (start, end) = parse_range(range)?;
         let x_labels = parse_lables(x_labels);
         let mut values = Vec::new();
@@ -48,12 +51,13 @@ impl Sheet {
             for j in start.1..=end.1 {
                 values.push(self.grid[i][j].value);
             }
-        };
+        }
         Ok(Chart::new()
-        .x_axis(Axis::new().type_(AxisType::Category).data(x_labels))
-        .title(Title::new().text(title))
-        .y_axis(Axis::new().name(y_lable).type_(AxisType::Value))
-        .series(Line::new().data(values)).to_string())
+            .x_axis(Axis::new().type_(AxisType::Category).data(x_labels))
+            .title(Title::new().text(title))
+            .y_axis(Axis::new().name(y_lable).type_(AxisType::Value))
+            .series(Line::new().data(values))
+            .to_string())
     }
 
     pub fn bar_graph(
@@ -70,56 +74,60 @@ impl Sheet {
             for j in start.1..=end.1 {
                 values.push(self.grid[i][j].value);
             }
-        };
+        }
         Ok(Chart::new()
-        .x_axis(Axis::new().type_(AxisType::Category).data(x_labels))
-        .title(Title::new().text(title))
-        .y_axis(Axis::new().name(y_lable).type_(AxisType::Value))
-        .series(Bar::new().data(values)).to_string())
+            .x_axis(Axis::new().type_(AxisType::Category).data(x_labels))
+            .title(Title::new().text(title))
+            .y_axis(Axis::new().name(y_lable).type_(AxisType::Value))
+            .series(Bar::new().data(values))
+            .to_string())
     }
-    pub fn pie_graph(
-        &self,
-        range: &str,
-        x_labels: &str,
-        title: &str,
-    ) -> Result<String, String> {
+    pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
         let (start, end) = parse_range(range)?;
         let x_labels = parse_lables(x_labels);
-        let mut values:Vec<i32> = Vec::new();
-        let mut cnt=0;
-        
+        let mut values: Vec<i32> = Vec::new();
+        let mut cnt = 0;
+
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
-                if cnt<x_labels.len(){
+                if cnt < x_labels.len() {
                     values.push(self.grid[i][j].value);
-                    cnt+=1;
-                }
-                else{
+                    cnt += 1;
+                } else {
                     values.push(self.grid[i][j].value);
                 }
             }
-        };
-    let data: Vec<DataPoint> = values.into_iter()
-    .zip(x_labels)
-    .map(|(v, label)| {
-        DataPoint::from(
-            CompositeValue::from(vec![
-                CompositeValue::from(v),
-                CompositeValue::from(label),
-            ])
-        )
-    })
-    .collect();
+        }
+        let data: Vec<DataPoint> = values
+            .into_iter()
+            .zip(x_labels)
+            .map(|(v, label)| {
+                DataPoint::from(CompositeValue::from(vec![
+                    CompositeValue::from(v),
+                    CompositeValue::from(label),
+                ]))
+            })
+            .collect();
         Ok(Chart::new()
-        .tooltip(Tooltip::new().trigger(Trigger::Item))
-        .legend(Legend::new().orient(Orient::Vertical).left("left"))
-        .series(pie::Pie::new()
-            .radius(150)
-            .center(vec!["50%", "50%"])
-            .data(data)
-            .emphasis(Emphasis::new().item_style(ItemStyle::new().shadow_color("rgba(0, 0, 0, 0.5)").shadow_offset_x(0).shadow_offset_y(5).shadow_blur(10)))
-        )
-        .title(Title::new().text(title)).to_string())
+            .tooltip(Tooltip::new().trigger(Trigger::Item))
+            .legend(Legend::new().orient(Orient::Vertical).left("left"))
+            .series(
+                pie::Pie::new()
+                    .radius(150)
+                    .center(vec!["50%", "50%"])
+                    .data(data)
+                    .emphasis(
+                        Emphasis::new().item_style(
+                            ItemStyle::new()
+                                .shadow_color("rgba(0, 0, 0, 0.5)")
+                                .shadow_offset_x(0)
+                                .shadow_offset_y(5)
+                                .shadow_blur(10),
+                        ),
+                    ),
+            )
+            .title(Title::new().text(title))
+            .to_string())
     }
 
     pub fn scatter_graph(
@@ -133,25 +141,34 @@ impl Sheet {
         let (start1, end1) = parse_range(rangex)?;
         let (start2, end2) = parse_range(rangey)?;
 
-        let diff1= start1.0 - end1.0;
-        let diff2= start1.1 - end1.1;
-        let diff3= start2.0 - end2.0;
-        let diff4= start2.1 - end2.1;
-        if diff1!=diff3 || diff2!=diff4{
+        let diff1 = start1.0 - end1.0;
+        let diff2 = start1.1 - end1.1;
+        let diff3 = start2.0 - end2.0;
+        let diff4 = start2.1 - end2.1;
+        if diff1 != diff3 || diff2 != diff4 {
             return Err("Invalid range".to_string());
         }
-        let mut values:Vec<Vec<i32>> = vec![];
-        for i in 0..diff1+1 {
-            for j in 0..diff2+1 {
-                let temp_vec:Vec<i32> = vec![self.grid[start1.0+i][start1.1+j].value,self.grid[start2.0+i][start2.1+j].value];
+        let mut values: Vec<Vec<i32>> = vec![];
+        for i in 0..diff1 + 1 {
+            for j in 0..diff2 + 1 {
+                let temp_vec: Vec<i32> = vec![
+                    self.grid[start1.0 + i][start1.1 + j].value,
+                    self.grid[start2.0 + i][start2.1 + j].value,
+                ];
                 values.push(temp_vec);
             }
-        };
+        }
         Ok(Chart::new()
-        .title(Title::new().text(title))
-        .x_axis(Axis::new().type_(AxisType::Value).name(x_name))
-        .y_axis(Axis::new().type_(AxisType::Value).name(y_name))
-        .series(Line::new().data(values).symbol(Symbol::Circle).symbol_size(10).item_style(ItemStyle::new().color("blue")))
-        .to_string())
+            .title(Title::new().text(title))
+            .x_axis(Axis::new().type_(AxisType::Value).name(x_name))
+            .y_axis(Axis::new().type_(AxisType::Value).name(y_name))
+            .series(
+                Line::new()
+                    .data(values)
+                    .symbol(Symbol::Circle)
+                    .symbol_size(10)
+                    .item_style(ItemStyle::new().color("blue")),
+            )
+            .to_string())
     }
 }
