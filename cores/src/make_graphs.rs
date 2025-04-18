@@ -1,7 +1,9 @@
+use charming::{Chart, component::{Axis,Title,Legend}, element::{AxisType,Emphasis, ItemStyle, Orient, Tooltip, Trigger, Symbol}, series::{Bar, Line,pie}};
+use crate::sheet::Sheet;
 use crate::parse::convert_to_index;
 use std::{cmp::max, vec};
 
-fn parse_range(range: &str) -> Result<Range, String> {
+fn parse_range(range: &str) -> Result<((usize, usize), (usize, usize)), String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
         return Err("Invalid range format".to_string());
@@ -17,9 +19,11 @@ fn parse_range(range: &str) -> Result<Range, String> {
         return Err("Invalid cell reference".to_string());
     }
     if start_tuple.0 == end_tuple.0 && start_tuple.1 <= end_tuple.1 {
-        Ok((start_tuple, end_tuple))
+        return Ok((start_tuple, end_tuple));
+    } else if start_tuple.0 <= end_tuple.0 && start_tuple.1 == end_tuple.1 {
+        return Ok((start_tuple, end_tuple));
     } else {
-        Err("Invalid range".to_string())
+        return Err("Invalid range".to_string());
     }
 }
 
@@ -30,6 +34,7 @@ fn parse_lables(labels: &str) -> Vec<String> {
     labels.split(',').map(|s| s.trim().to_string()).collect()
 }
 impl Sheet {
+
     pub fn line_graph(
         &self,
         range: &str,
@@ -37,6 +42,7 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
+
         let (start, end) = parse_range(range)?;
         let label_x: Vec<String>;
         if x_labels.is_empty() {
@@ -54,9 +60,9 @@ impl Sheet {
         let mut values = Vec::new();
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
-                values.push(self.grid[i][j].value);
+                values.push(self.grid[i][j].value.clone());
             }
-        }
+        };
         Ok(Chart::new()
         .x_axis(Axis::new().type_(AxisType::Category).data(label_x))
         .title(Title::new().text(title))
@@ -90,16 +96,21 @@ impl Sheet {
         let mut values = Vec::new();
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
-                values.push(self.grid[i][j].value);
+                values.push(self.grid[i][j].value.clone());
             }
-        }
+        };
         Ok(Chart::new()
         .x_axis(Axis::new().type_(AxisType::Category).data(label_x))
         .title(Title::new().text(title))
         .y_axis(Axis::new().name(y_lable).type_(AxisType::Value))
         .series(Bar::new().data(values)).to_string())
     }
-    pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
+    pub fn pie_graph(
+        &self,
+        range: &str,
+        x_labels: &str,
+        title: &str,
+    ) -> Result<String, String> {
         let (start, end) = parse_range(range)?;
         let mut x_labels = parse_lables(x_labels);
         println!("x_labels: {:?}", x_labels);
@@ -168,19 +179,13 @@ impl Sheet {
                 temp_vec.push(self.grid[start2.0+i as usize][start2.1+j as usize].value.clone());
                 values.push(temp_vec);
             }
-        }
+        };
         Ok(Chart::new()
-            .title(Title::new().text(title))
-            .x_axis(Axis::new().type_(AxisType::Value).name(x_name))
-            .y_axis(Axis::new().type_(AxisType::Value).name(y_name))
-            .series(
-                Line::new()
-                    .data(values)
-                    .symbol(Symbol::Circle)
-                    .symbol_size(10)
-                    .item_style(ItemStyle::new().color("blue")),
-            )
-            .to_string())
+        .title(Title::new().text(title))
+        .x_axis(Axis::new().type_(AxisType::Value).name(x_name))
+        .y_axis(Axis::new().type_(AxisType::Value).name(y_name))
+        .series(Line::new().data(values).symbol(Symbol::Circle).symbol_size(10).item_style(ItemStyle::new().color("blue")))
+        .to_string())
     }
 }
 
