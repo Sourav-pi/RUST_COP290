@@ -18,6 +18,19 @@ struct TempRecord {
 impl Sheet {
     pub fn read_file(&mut self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut rdr = csv::Reader::from_path(file_path)?;
+        for i in 0..self.row {
+            for j in 0..self.col {
+                self.grid[i as usize][j as usize] = Cell {
+                    value: 0,
+                    formula: CommandCall {
+                        flag: CommandFlag::new(),
+                        param1: 0,
+                        param2: 0,
+                    },
+                    depend: HashSet::default(),
+                };
+            }
+        }
         for result in rdr.deserialize() {
             let record: TempRecord = result?;
             let mut new_cell = Cell {
@@ -77,5 +90,17 @@ impl Sheet {
             self.grid[record.row as usize][record.col as usize] = new_cell;
         }
         Ok(())
+}
+}
+
+#[test]
+fn test_read_csv() {
+    let mut new_sheet = Sheet::new(6, 6);
+    let result = new_sheet.read_file("/Users/aditya/Downloads/sem4/cop290/temp.csv");
+    match result {
+        Ok(()) => println!("CSV file read successfully."),
+        Err(e) => println!("Error reading CSV file: {}", e),
     }
+    assert_eq!(new_sheet.get_value(2, 2), 500);
+    assert_eq!(new_sheet.get_value(1, 1), 31);
 }

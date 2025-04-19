@@ -22,6 +22,7 @@ pub struct CommandFlag {
 }
 
 #[derive(Clone, serde::Serialize)]
+#[derive(Debug)]
 pub struct CommandCall {
     pub flag: CommandFlag, // 16 bits
     pub param1: i32,       // 4 bytes
@@ -67,10 +68,29 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
     // Check if input starts with "SLEEP(" and ends with ")"
     if input.starts_with("SLEEP(") && input.ends_with(")") {
         // Extract the part between parentheses
-        let sleep_time = &input[6..input.len() - 1];
+        let sleep_time = &input[6..input.len() - 1].trim();
         
-        // Check if it's a cell reference (contains at least one letter)
-        if sleep_time.chars().any(is_uppercase_letter) {
+        // Check if it's a cell reference
+        let mut is_cell_ref = true;
+        let mut has_letter = false;
+        let mut has_digit = false;
+        
+        for c in sleep_time.chars() {
+            if is_uppercase_letter(c) {
+            if has_digit {
+                is_cell_ref = false;
+                break;
+            }
+            has_letter = true;
+            } else if is_digit(c) {
+            has_digit = true;
+            } else {
+            is_cell_ref = false;
+            break;
+            }
+        }
+        
+        if is_cell_ref && has_letter && has_digit {
             container.param1 = encode_cell(sleep_time.to_string());
             container.flag.set_type1(1);
         } else if let Ok(value) = sleep_time.parse::<i32>() {
@@ -79,9 +99,9 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
         } else {
             container.flag.set_error(1);
         }
-    } else {
+        } else {
         container.flag.set_error(1);
-    }
+        }
 }
 
 pub fn Arithmatic(input: &str, container: &mut CommandCall) {
@@ -89,9 +109,7 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
     
     // Find the operator position
     let mut op_pos = None;
-    let mut in_operand = false;
-    let mut had_letter = false;
-    
+    let mut in_operand = false;    
     for (i, c) in input.chars().enumerate() {
         if is_operator(c) && in_operand {
             // Found an operator after seeing an operand
@@ -100,7 +118,6 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
         } else if is_digit(c) || is_uppercase_letter(c) {
             in_operand = true;
             if is_uppercase_letter(c) {
-                had_letter = true;
             }
         } else if is_sign(c) && !in_operand {
             // Sign at the beginning is ok
@@ -191,12 +208,28 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
     // Encode cell references
     container.param1 = encode_cell(start_cell.to_string());
     container.param2 = encode_cell(end_cell.to_string());
-    
+    if container.param1 == 0 || container.param2 == 0 {
+        container.flag.set_error(1);
+        container.param1 = 0;
+        container.param2 = 0;
+        container.flag.set_type_(0);
+        container.flag.set_type1(0);
+        container.flag.set_type2(0);
+        container.flag.set_cmd(0);
+        return;
+    }
     // Check if range is valid
     let (row1, col1) = convert_to_index_int(container.param1);
     let (row2, col2) = convert_to_index_int(container.param2);
     if row1 > row2 || col1 > col2 {
         container.flag.set_error(1);
+        container.param1 = 0;
+        container.param2 = 0;
+        container.flag.set_type_(0);
+        container.flag.set_type1(0);
+        container.flag.set_type2(0);
+        container.flag.set_cmd(0);
+
         return;
     }
     
@@ -262,7 +295,7 @@ pub fn parse_expression(input: &str, container: &mut CommandCall) {
     let mut has_letter = false;
     let mut has_digit = false;
     
-    for (i, c) in trimmed.chars().enumerate() {
+    for (_, c) in trimmed.chars().enumerate() {
         if is_uppercase_letter(c) {
             if has_digit {
                 is_cell_ref = false;
