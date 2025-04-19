@@ -604,36 +604,65 @@ impl Sheet {
         self.set_dependicies_cell(row, col, restore_command.clone());
     }
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
-        let start = time::Instant::now();
+        // Overall timing
+        let start_total = time::Instant::now();
+        
+        // Stage 1: Parse formula
+        let start_parse = time::Instant::now();
         let mut command = parse_formula(&new_formula);
         command.flag.set_is_any(1);
-        command.flag.set_is_any(1);
+        let parse_time = start_parse.elapsed();
+        
+        // Stage 2: Save old command and set dependencies
+        let start_deps = time::Instant::now();
         let old_command = self.grid[row][col].formula.clone();
         self.set_dependicies_cell(row, col, command.clone());
+        let deps_time = start_deps.elapsed();
+        
+        // Stage 3: Topological sort
+        let start_topo = time::Instant::now();
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
+        let topo_time = start_topo.elapsed();
+        
+        // Stage 4: Update cells
+        let start_update = time::Instant::now();
         if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
         } else {
             self.update_cell(topo_vec);
         }
-        let end = start.elapsed();
+        let update_time = start_update.elapsed();
+        
+        // Stage 5: Error handling
+        let start_error = time::Instant::now();
         let mut ans = CallResult {
-            time: end.as_millis() as f64,
+            time: start_total.elapsed().as_nanos() as f64,
             error: Error::None,
         };
+        
         if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
             ans.error = Error::DivByZero;
-            ans
         } else if self.grid[row][col].formula.flag.error() == 1 {
             ans.error = Error::InvalidInput;
-            ans
         } else if self.grid[row][col].formula.flag.error() == 2 {
             ans.error = Error::CycleDetected;
             self.remove_old_dependicies(row, col, old_command);
-            ans
-        } else {
-            ans
         }
+        let error_time = start_error.elapsed();
+        let end_total = start_total.elapsed();
+        
+        // Print or store timing data
+        if DEBUG { // Force printing regardless of DEBUG setting
+            println!("Performance breakdown for cell [{},{}] formula '{}':", row, col, new_formula);
+            println!("  Parse formula: {:?}", parse_time);
+            println!("  Set dependencies: {:?}", deps_time);
+            println!("  Topological sort: {:?}", topo_time);
+            println!("  Update cells: {:?}", update_time);
+            println!("  Error handling: {:?}", error_time);
+            println!("  TOTAL TIME: {:?}", end_total);
+        }
+        
+        ans
     }
 
     pub fn get_value(&self, row: i32, col: i32) -> i32 {
