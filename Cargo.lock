@@ -704,6 +704,7 @@ dependencies = [
  "charming",
  "csv",
  "fxhash",
+ "lazy_static",
  "modular-bitfield",
  "regex",
  "serde",
