@@ -92,10 +92,9 @@ fn avg_range(x1: usize, y1: usize, x2: usize, y2: usize, row: usize, col: usize,
 }
 
 fn stdev(x1: usize, y1: usize, x2: usize, y2: usize, row: usize, col: usize, arr: &Vec<Vec<Cell>>, tgt: &mut Cell) -> i32 {
-    let mean = avg_range(x1, y1, x2, y2, row, col, arr, tgt);
     let mut sum_of_sq = 0.0;
     let n = (x2 - x1 + 1) * (y2 - y1 + 1);
-    
+    let mut mean=0;
     for i in x1..=x2 {
         for j in y1..=y2 {
             if arr[i][j].is_error {
@@ -103,11 +102,14 @@ fn stdev(x1: usize, y1: usize, x2: usize, y2: usize, row: usize, col: usize, arr
                 return 0;
             }
             
-            sum_of_sq += (arr[i][j].value - mean).pow(2) as f64;
+            sum_of_sq += (arr[i][j].value ).pow(2) as f64;
+            mean+= arr[i][j].value;
         }
     }
     
     sum_of_sq /= n as f64;
+    mean /= n as i32;
+    sum_of_sq -= (mean as f64).powi(2);
     return (sum_of_sq.sqrt()).round() as i32;
 }
 

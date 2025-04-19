@@ -136,9 +136,12 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
         let left = input[..pos].trim();
         let operator = input.chars().nth(pos).unwrap();
         let right = input[pos+1..].trim();
-        
         // Process left operand
         if left.chars().any(is_uppercase_letter) {
+            if !left.chars().nth(0).map_or(false, is_uppercase_letter) {
+                container.flag.set_error(1);
+                return;
+            }
             container.param1 = encode_cell(left.to_string());
             container.flag.set_type1(1);
         } else if let Ok(value) = left.parse::<i32>() {
@@ -164,6 +167,10 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
         
         // Process right operand
         if right.chars().any(is_uppercase_letter) {
+            if !right.chars().nth(0).map_or(false, is_uppercase_letter) {
+                container.flag.set_error(1);
+                return;
+            }
             container.param2 = encode_cell(right.to_string());
             container.flag.set_type2(1);
         } else if let Ok(value) = right.parse::<i32>() {
@@ -235,7 +242,6 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
     
     container.flag.set_type1(1);
     container.flag.set_type2(1);
-    
     // Set function type
     let cmd = match func_name {
         "MIN" => 0,
@@ -248,7 +254,6 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
             return;
         }
     };
-    
     container.flag.set_cmd(cmd);
 }
 
@@ -272,12 +277,6 @@ pub fn parse_expression(input: &str, container: &mut CommandCall) {
         }
     }
     
-    // Check for special functions
-    if trimmed.starts_with("SLEEP") {
-        parse_sleep(trimmed, container);
-        return;
-    }
-    
     // Check for arithmetic operations
     if trimmed.contains('+') || trimmed.contains('-') || trimmed.contains('*') || trimmed.contains('/') {
         Arithmatic(trimmed, container);
@@ -289,6 +288,12 @@ pub fn parse_expression(input: &str, container: &mut CommandCall) {
         rangeoper(trimmed, container);
         return;
     }
+    // Check for special functions
+    if trimmed.starts_with("SLEEP") {
+        parse_sleep(trimmed, container);
+        return;
+    }
+        
     
     // Check if it's a cell reference
     let mut is_cell_ref = true;
@@ -450,4 +455,175 @@ pub fn unparse(cell: Cell) -> String {
         }
         _ => "".to_string(),
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_formula() {
+        let input = "A1 + B2";
+        let result = parse_formula(input);
+        assert_eq!(result.flag.type_(), 1);
+        assert_eq!(result.flag.cmd(), 0);
+        assert_eq!(result.param1, encode_cell("A1".to_string()));
+        assert_eq!(result.param2, encode_cell("B2".to_string()));
+    }
+
+    #[test]
+    fn test_parse_sleep() {
+        let input = "SLEEP(5)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_sleep(input, &mut container);
+        assert_eq!(container.flag.type_(), 2);
+        assert_eq!(container.flag.cmd(), 5);
+        assert_eq!(container.param1, 5);
+    }
+    #[test]
+    fn test_parse_sleep_cell_ref() {
+        let input = "SLEEP(A1)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_sleep(input, &mut container);
+        assert_eq!(container.flag.type_(), 2);
+        assert_eq!(container.flag.cmd(), 5);
+        assert_eq!(container.param1, encode_cell("A1".to_string()));
+    }
+    #[test]
+    fn test_parse_sleep_invalid() {
+        let input = "SLEEP(5A)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_sleep(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+    #[test]
+    fn test_parse_arithmetic() {
+        let input = "A1 + B2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.type_(), 1);
+        assert_eq!(container.flag.cmd(), 0);
+        assert_eq!(container.param1, encode_cell("A1".to_string()));
+        assert_eq!(container.param2, encode_cell("B2".to_string()));
+    }
+    #[test]
+    fn test_parse_range() {
+        let input = "SUM(A1:B2)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.type_(), 2);
+        assert_eq!(container.flag.cmd(), 2);
+        assert_eq!(container.param1, encode_cell("A1".to_string()));
+        assert_eq!(container.param2, encode_cell("B2".to_string()));
+    }
+    #[test]
+    fn test_parse_range_invalid() {
+        let input = "SUM(A1:B2:C3)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+    #[test]
+    fn test_parse_expression() {
+        let input = "A1 + B2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.type_(), 1);
+        assert_eq!(container.flag.cmd(), 0);
+        assert_eq!(container.param1, encode_cell("A1".to_string()));
+        assert_eq!(container.param2, encode_cell("B2".to_string()));
+    }
+    #[test]
+    fn test_convert_to_index() {
+        let cell = "A1".to_string();
+        let (row, col) = convert_to_index(cell);
+        assert_eq!(row, 1);
+        assert_eq!(col, 1);
+    }
+    #[test]
+    fn test_encode_cell() {
+        let cell = "A1".to_string();
+        let encoded = encode_cell(cell);
+        assert_eq!(encoded, 100001);
+    }
+    #[test]
+    fn test_decode_cell() {
+        let encoded = 100001;
+        let decoded = decode_cell(encoded);
+        assert_eq!(decoded, "A1");
+    }
+    #[test]
+    fn test_convert_to_index_int() {
+        let encoded = 100001;
+        let (row, col) = convert_to_index_int(encoded);
+        assert_eq!(row, 1);
+        assert_eq!(col, 1);
+    }
+    #[test]
+    fn test_unparse() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(1);
+        flag.set_cmd(0);
+        flag.set_type1(1);
+        flag.set_type2(1);
+        flag.set_error(0);
+        flag.set_is_div_by_zero(0);
+        flag.set_is_any(0);
+        
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: encode_cell("A1".to_string()),
+                param2: encode_cell("B2".to_string()),
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+        let result = unparse(cell);
+        assert_eq!(result, "A1+B2");
+    }
+    #[test]
+    fn test_unparse_constant() {
+        let cell = Cell {
+            formula: CommandCall {
+                flag: CommandFlag::new(),
+                param1: 42,
+                param2: 0,
+            },
+            value: 42,
+            depend: Vec::new(),
+        };
+        let result = unparse(cell);
+        assert_eq!(result, "42");
+    }
+
 }

@@ -8,7 +8,7 @@ const DEBUG: bool = false;
 pub struct Cell {
     pub value: i32,
     pub formula: CommandCall,
-    pub depend: FxHashSet<usize>,
+    pub depend: Vec<usize>,
 }
 pub enum Error {
     DivByZero,
@@ -39,7 +39,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    depend: FxHashSet::default(),
+                    depend: Vec::new(),
                 };
                 col + 1
             ];
@@ -191,9 +191,12 @@ impl Sheet {
                 self.grid[row][col].value = command.param1;
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                if !(self.grid[param1_row][param1_col]
+                    .depend.contains(&(row * ENCODE_SHIFT + col))){
+                
                 self.grid[param1_row][param1_col]
                     .depend
-                    .insert(row * ENCODE_SHIFT + col);
+                    .push(row * ENCODE_SHIFT + col);}
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -211,27 +214,33 @@ impl Sheet {
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
+                    if !(self.grid[param2_row][param2_col]
+                        .depend
+                        .contains(&(row * ENCODE_SHIFT + col))){
                     self.grid[param2_row][param2_col]
                         .depend
-                        .insert(row * ENCODE_SHIFT + col);
-                    // self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .push(row * ENCODE_SHIFT + col);
+                        .push(row * ENCODE_SHIFT + col);}
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                if !(self.grid[param1_row][param1_col]
+                    .depend
+                    .contains(&(row * ENCODE_SHIFT + col))){
                 self.grid[param1_row][param1_col]
                     .depend
-                    .insert(row * ENCODE_SHIFT + col);
+                    .push(row * ENCODE_SHIFT + col);}   
                 // self.grid[param1_row][param1_col]
                 //     .depend
                 //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
+                    if !(self.grid[param2_row][param2_col]
+                        .depend
+                        .contains(&(row * ENCODE_SHIFT + col))){
                     self.grid[param2_row][param2_col]
                         .depend
-                        .insert(row * ENCODE_SHIFT + col);
+                        .push(row * ENCODE_SHIFT + col);}
                     // self.grid[param2_row][param2_col]
                     //     .depend
                     //     .push(row * ENCODE_SHIFT + col);
@@ -240,9 +249,12 @@ impl Sheet {
         } else {
             if command.flag.cmd()==5 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                if !(self.grid[param1_row][param1_col]
+                    .depend
+                    .contains(&(row * ENCODE_SHIFT + col))){
                 self.grid[param1_row][param1_col]
                     .depend
-                    .insert(row * ENCODE_SHIFT + col);
+                    .push(row * ENCODE_SHIFT + col);}   
             }
             else{
             let t = row * ENCODE_SHIFT + col;
@@ -251,7 +263,9 @@ impl Sheet {
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
                     let depend_vec = &mut self.grid[i][j].depend;
-                    depend_vec.insert(t);
+                    if !depend_vec.contains(&t) {
+                        depend_vec.push(t);
+                    }
                     // self.grid[i][j].depend.push(t);
                 }
             }
@@ -356,20 +370,24 @@ impl Sheet {
         sum
     }
     fn stddev(&self, row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
-        let mean = self.average(row1, row2, col1, col2);
+        let mut mean=0;
         let mut sum = 0;
         let mut count = 0;
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
                 let value = self.grid[i][j].value;
-                sum += (value - mean).pow(2);
+                sum += (value)*(value);
+                mean += value;
                 count += 1;
             }
         }
         if count == 0 {
             return 0;
         }
-        ((sum as f64 / count as f64).sqrt()) as i32
+        let avg = (((mean*mean) as f64) / ((count*count) as f64)) as f64;
+        let mut x=( (sum as f64) / (count as f64) ) as f64;
+        x -= avg;
+        ((x).sqrt()) as i32
     }
 
     fn update_cell(&mut self, list_fpr_update: Vec<usize>) {
@@ -556,34 +574,22 @@ impl Sheet {
     fn remove_old_dependicies(&mut self, row: usize, col: usize, restore_command: CommandCall) {
         // Remove all dependencies from previous formula
         let curr_index = row * ENCODE_SHIFT + col;
-        if DEBUG {
-            println!("curr index {}", curr_index);
-        }
-        if DEBUG {
-            println!("curr index {}", curr_index);
-        }
         let current_command = &self.grid[row][col].formula.clone();
-        if DEBUG {
-            println!("{} {}", current_command.param1, current_command.param2);
-        }
-        if DEBUG {
-            println!("{} {}", current_command.param1, current_command.param2);
-        }
         // Remove dependencies based on command type
         if current_command.flag.type_() == 0 && current_command.flag.type1() == 1 {
             // Cell reference dependency
 
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
             let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-            depend_vec.remove(&curr_index);
+            depend_vec.retain(|&x| x != curr_index);
         } else if current_command.flag.type_() == 1 {
             // Arithmetic operation dependencies
             if current_command.flag.type1() == 1 {
                 // First parameter is a cell reference
                 let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
                 let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-                // depend_vec.retain(|&x| x != curr_index);
-                depend_vec.remove(&curr_index);
+                depend_vec.retain(|&x| x != curr_index);
+                // depend_vec.remove(&curr_index);
                 // let mut new_depend_vec= Vec::new();
                 // for i in self.grid[param1_row][param1_col].depend.iter() {
                 //     if *i != curr_index {
@@ -596,8 +602,8 @@ impl Sheet {
                 // Second parameter is a cell reference
                 let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
                 let depend_vec = &mut self.grid[param2_row][param2_col].depend;
-                // depend_vec.retain(|&x| x != curr_index);
-                depend_vec.remove(&curr_index);
+                depend_vec.retain(|&x| x != curr_index);
+                // depend_vec.remove(&curr_index);
             }
         } else if current_command.flag.type_() == 2 {
             // Range function dependencies
@@ -606,8 +612,8 @@ impl Sheet {
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
                     let depend_vec = &mut self.grid[i][j].depend;
-                    // depend_vec.retain(|&x| x != curr_index);
-                    depend_vec.remove(&curr_index);
+                    depend_vec.retain(|&x| x != curr_index);
+                    // depend_vec.remove(&curr_index);
                 }
             }
         }
@@ -622,33 +628,20 @@ impl Sheet {
         let start_total = time::Instant::now();
         
         // Stage 1: Parse formula
-        let start_parse = time::Instant::now();
         let mut command = parse_formula(&new_formula);
-        command.flag.set_is_any(1);
-        let parse_time = start_parse.elapsed();
-        
+        if command.flag.error() ==0{
+        command.flag.set_is_any(1);        
         // Stage 2: Save old command and set dependencies
-        let start_deps = time::Instant::now();
         let old_command = self.grid[row][col].formula.clone();
-        self.set_dependicies_cell(row, col, command.clone());
-        let deps_time = start_deps.elapsed();
-        
+        self.set_dependicies_cell(row, col, command.clone());        
         // Stage 3: Topological sort
-        let start_topo = time::Instant::now();
-        let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
-        let topo_time = start_topo.elapsed();
-        
+        let topo_vec = self.toposort(row * ENCODE_SHIFT + col);        
         // Stage 4: Update cells
-        let start_update = time::Instant::now();
         if topo_vec.is_empty() {
             self.grid[row][col].formula.flag.set_error(2);
         } else {
             self.update_cell(topo_vec);
         }
-        let update_time = start_update.elapsed();
-        
-        // Stage 5: Error handling
-        let start_error = time::Instant::now();
         let mut ans = CallResult {
             time: start_total.elapsed().as_millis() as f64,
             error: Error::None,
@@ -662,21 +655,16 @@ impl Sheet {
             ans.error = Error::CycleDetected;
             self.remove_old_dependicies(row, col, old_command);
         }
-        let error_time = start_error.elapsed();
-        let end_total = start_total.elapsed();
-        
-        // Print or store timing data
-        if DEBUG { // Force printing regardless of DEBUG setting
-            println!("Performance breakdown for cell [{},{}] formula '{}':", row, col, new_formula);
-            println!("  Parse formula: {:?}", parse_time);
-            println!("  Set dependencies: {:?}", deps_time);
-            println!("  Topological sort: {:?}", topo_time);
-            println!("  Update cells: {:?}", update_time);
-            println!("  Error handling: {:?}", error_time);
-            println!("  TOTAL TIME: {:?}", end_total);
-        }
         
         ans
+    }
+        else{
+            let ans = CallResult {
+                time: start_total.elapsed().as_millis() as f64,
+                error: Error::InvalidInput,
+            };
+            ans
+        }
     }
 
     pub fn get_value(&self, row: i32, col: i32) -> i32 {

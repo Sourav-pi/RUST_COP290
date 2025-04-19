@@ -1,4 +1,3 @@
-use fxhash::FxHashSet as HashSet;
 
 use crate::parse::CommandFlag;
 use crate::{parse::CommandCall, sheet::*};
@@ -27,7 +26,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    depend: HashSet::default(),
+                    depend: Vec::new(),
                 };
             }
         }
@@ -40,7 +39,7 @@ impl Sheet {
                     param1: record.param1,
                     param2: record.param2,
                 },
-                depend: HashSet::default(),
+                depend: Vec::new(), 
             };
             new_cell.value = record.value;
             new_cell.formula.param1 = record.param1;
@@ -79,12 +78,12 @@ impl Sheet {
                 }
             }
             if record.depend.is_empty() {
-                new_cell.depend = HashSet::default();
+                new_cell.depend = Vec::new();
             }
             let depend_parts: Vec<&str> = record.depend.split(",").collect();
             for i in depend_parts {
                 if let Ok(index) = i.parse::<usize>() {
-                    new_cell.depend.insert(index);
+                    new_cell.depend.push(index);
                 }
             }
             self.grid[record.row as usize][record.col as usize] = new_cell;

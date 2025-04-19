@@ -141,11 +141,10 @@ fn main() {
 
                 // println!("This is a normal input: {}this", trimmed);
                 let (scroll_row, scroll_col) = convert_to_index(parts[1].to_string());
-
-                if scroll_row as i32 <= int1
-                    && scroll_col as i32 <= int2
-                    && scroll_row as i32 >= 1
-                    && scroll_col as i32 >= 1
+                if ((scroll_row as i32) < int1)
+                    && ((scroll_col as i32) < int2)
+                    && (scroll_row as i32 >= 1)
+                    && (scroll_col as i32 >= 1)
                 {
                     rowi = scroll_row as i32;
                     coli = scroll_col as i32;
