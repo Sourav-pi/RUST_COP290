@@ -238,6 +238,13 @@ impl Sheet {
                 }
             }
         } else {
+            if command.flag.cmd()==5 {
+                let (param1_row, param1_col) = convert_to_index_int(command.param1);
+                self.grid[param1_row][param1_col]
+                    .depend
+                    .insert(row * ENCODE_SHIFT + col);
+            }
+            else{
             let t = row * ENCODE_SHIFT + col;
             let (param1_row, param1_col) = convert_to_index_int(command.param1);
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
@@ -248,6 +255,7 @@ impl Sheet {
                     // self.grid[i][j].depend.push(t);
                 }
             }
+        }
         }
 
         self.grid[row][col].formula = command;
@@ -531,10 +539,16 @@ impl Sheet {
                     self.grid[row][col].value =
                         self.stddev(param1_row, param2_row, param1_col, param2_col);
                 } else if self.grid[row][col].formula.flag.cmd() == 5 {
-                    let time_millis =
-                        time::Duration::from_millis(self.grid[param1_row][param1_col].value as u64);
-                    thread::sleep(time_millis);
-                    self.grid[row][col].value = self.grid[param1_row][param1_col].value;
+                    if self.grid[row][col].formula.flag.type1()==1{
+                    let time_secs = time::Duration::from_secs(self.grid[param1_row][param1_col].value as u64);
+                    thread::sleep(time_secs);
+                    self.grid[row][col].value = self.grid[param1_row][param1_col].value;}
+                    else{
+                        self.grid[row][col].value = self.grid[row][col].formula.param1;
+                        let time_secs = time::Duration::from_secs(self.grid[row][col].value as u64);
+                        thread::sleep(time_secs);
+                        
+                    }
                 }
             }
         }
@@ -636,7 +650,7 @@ impl Sheet {
         // Stage 5: Error handling
         let start_error = time::Instant::now();
         let mut ans = CallResult {
-            time: start_total.elapsed().as_nanos() as f64,
+            time: start_total.elapsed().as_millis() as f64,
             error: Error::None,
         };
         
