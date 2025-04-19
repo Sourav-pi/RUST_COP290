@@ -1,6 +1,21 @@
-[package]
-name = "RUST_COP290_Spreadsheet"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "cli",
+    "cores",
+    "gui",
+    "app"
+]
 
-[dependencies]
+resolver = "2"
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
