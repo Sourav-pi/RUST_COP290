@@ -606,7 +606,7 @@ mod tests {
                 param2: encode_cell("B2".to_string()),
             },
             value: 0,
-            depend: Vec::new(),
+            // depend: Vec::new(),
         };
         let result = unparse(cell);
         assert_eq!(result, "A1+B2");
@@ -620,7 +620,7 @@ mod tests {
                 param2: 0,
             },
             value: 42,
-            depend: Vec::new(),
+            // depend: Vec::new(),
         };
         let result = unparse(cell);
         assert_eq!(result, "42");
