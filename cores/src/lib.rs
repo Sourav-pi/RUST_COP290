@@ -1,8 +1,8 @@
-mod make_graphs;
-mod parse;
-mod read_csv;
-mod sheet;
-mod write_csv;
+pub mod make_graphs;
+pub mod parse;
+pub mod read_csv;
+pub mod sheet;
+pub mod write_csv;
 pub use parse::convert_to_index;
 pub use sheet::Sheet;
 // pub use sheet::SheetError;

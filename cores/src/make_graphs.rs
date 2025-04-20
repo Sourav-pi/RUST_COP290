@@ -1,3 +1,13 @@
+//! Provides functionality for generating various chart types from spreadsheet data.
+//!
+//! This module extends the Sheet struct with methods to create:
+//! - Line graphs
+//! - Bar graphs
+//! - Pie charts
+//! - Scatter plots
+//!
+//! Each graph is generated as a JSON string compatible with visualization libraries.
+
 use crate::parse::convert_to_index;
 use crate::sheet::Sheet;
 use charming::{
@@ -8,8 +18,21 @@ use charming::{
 };
 use std::{cmp::max, vec};
 
+/// Represents a cell range with start and end coordinates.
+///
+/// Format is ((start_row, start_col), (end_row, end_col))
 type Range = ((usize, usize), (usize, usize));
 
+/// Parses a range expression (e.g., "A1:B5") into start and end cell coordinates.
+///
+/// The range must be either a single row or a single column.
+///
+/// # Parameters
+/// * `range` - A string slice containing the range expression (e.g., "A1:B5")
+///
+/// # Returns
+/// * `Ok(Range)` - Successfully parsed range with start and end coordinates
+/// * `Err(String)` - Error message if the range is invalid
 fn parse_range(range: &str,row: usize, col:usize) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
@@ -39,13 +62,32 @@ fn parse_range(range: &str,row: usize, col:usize) -> Result<Range, String> {
     }
 }
 
+/// Parses a comma-separated list of labels into a vector of strings.
+///
+/// # Parameters
+/// * `labels` - A string slice containing comma-separated labels
+///
+/// # Returns
+/// A vector of trimmed label strings
 fn parse_lables(labels: &str) -> Vec<String> {
     if labels.is_empty() {
         return Vec::new();
     }
     labels.split(',').map(|s| s.trim().to_string()).collect()
 }
+
 impl Sheet {
+    /// Creates a line graph from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the X-axis (empty for automatic numbering)
+    /// * `y_lable` - Label for the Y-axis
+    /// * `title` - Title of the graph
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
     pub fn line_graph(
         &self,
         range: &str,
@@ -78,6 +120,17 @@ impl Sheet {
             .to_string())
     }
 
+    /// Creates a bar graph from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the X-axis (empty for automatic numbering)
+    /// * `y_lable` - Label for the Y-axis
+    /// * `title` - Title of the graph
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
     pub fn bar_graph(
         &self,
         range: &str,
@@ -109,6 +162,17 @@ impl Sheet {
             .series(Bar::new().data(values))
             .to_string())
     }
+
+    /// Creates a pie chart from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the pie slices (empty for automatic numbering)
+    /// * `title` - Title of the chart
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
     pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
         let (start, end) = parse_range(range,self.row,self.col)?;
         let mut x_labels = parse_lables(x_labels);
@@ -157,6 +221,18 @@ impl Sheet {
             .to_string())
     }
 
+    /// Creates a scatter plot from the specified ranges of cells.
+    ///
+    /// # Parameters
+    /// * `rangex` - The cell range to use as X-axis data points (e.g., "A1:A10")
+    /// * `rangey` - The cell range to use as Y-axis data points (e.g., "B1:B10")
+    /// * `title` - Title of the chart
+    /// * `x_name` - Label for the X-axis
+    /// * `y_name` - Label for the Y-axis
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the ranges are invalid
     pub fn scatter_graph(
         &self,
         rangex: &str,
@@ -226,8 +302,7 @@ mod tests {
         test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
         test_sheet.update_cell_data(5, 1, String::from("-5"));
         test_sheet.update_cell_data(6, 1, String::from("6"));
-        let result =
-            test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
+        let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
         assert!(result.is_ok());
     }
 

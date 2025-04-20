@@ -1,19 +1,28 @@
+//! Error display component for the spreadsheet application.
+//!
+//! This module provides a component for displaying error messages, warnings,
+//! information, and success notifications to the user.
+
 use dioxus::prelude::*;
 
-// Define error types/severity levels
+/// Define error types/severity levels for different notifications
 #[derive(Clone, PartialEq)]
 #[allow(unused)]
 pub enum ErrorType {
+    /// Error notification - for critical issues that prevent operation
     Error,
+    /// Warning notification - for potential issues that don't prevent operation
     Warning,
+    /// Information notification - for general information
     Info,
+    /// Success notification - for successful operations
     Success,
 }
 
-// Signal to store active errors
+/// Signal to store active errors with message, type and timeout
 pub type ErrorContext = Signal<Option<(String, ErrorType, Option<f64>)>>;
 
-// Style for overlay that captures clicks outside
+/// Style for overlay that captures clicks outside the error display
 const OVERLAY_STYLE: &str = r#"
     position: fixed;
     top: 0;
@@ -24,7 +33,7 @@ const OVERLAY_STYLE: &str = r#"
     background-color: rgba(0, 0, 0, 0.1);
 "#;
 
-// Styles for different error types
+/// Base style for error container
 const ERROR_CONTAINER_STYLE: &str = r#"
     position: fixed;
     bottom: 20px;
@@ -42,31 +51,35 @@ const ERROR_CONTAINER_STYLE: &str = r#"
     transition: opacity 0.3s ease;
 "#;
 
+/// Style for error notifications
 const ERROR_STYLE: &str = r#"
     background-color: #f8d7da;
     border: 1px solid #f5c2c7;
     color: #842029;
 "#;
 
+/// Style for warning notifications
 const WARNING_STYLE: &str = r#"
     background-color: #fff3cd;
     border: 1px solid #ffecb5;
     color: #664d03;
 "#;
 
+/// Style for information notifications
 const INFO_STYLE: &str = r#"
     background-color: #cff4fc;
     border: 1px solid #b6effb;
     color: #055160;
 "#;
 
+/// Style for success notifications
 const SUCCESS_STYLE: &str = r#"
     background-color: #d1e7dd;
     border: 1px solid #badbcc;
     color: #0f5132;
 "#;
 
-// Close button style
+/// Close button style
 const CLOSE_BUTTON_STYLE: &str = r#"
     background: none;
     border: none;
@@ -76,7 +89,29 @@ const CLOSE_BUTTON_STYLE: &str = r#"
     margin-left: 10px;
 "#;
 
-// Error display component
+/// Shows an error message with the specified type and optional timeout
+///
+/// # Parameters
+/// * `error_ctx` - The error context signal to update
+/// * `message` - The message to display
+/// * `error_type` - The type of notification (error, warning, etc.)
+/// * `timeout` - Optional timeout in seconds after which to hide the message
+pub fn show_error(
+    error_ctx: &mut ErrorContext,
+    message: &str,
+    error_type: ErrorType,
+    timeout: Option<f64>,
+) {
+    error_ctx.set(Some((message.to_string(), error_type, timeout)));
+}
+
+/// Error display component that shows messages to the user
+///
+/// This component manages displaying error messages, warnings, information,
+/// and success notifications. It handles:
+/// - Displaying the appropriate styling based on message type
+/// - Auto-dismissing messages after their timeout
+/// - Allowing users to manually dismiss messages
 #[component]
 pub fn ErrorDisplay() -> Element {
     let mut error_ctx = use_context::<ErrorContext>();
@@ -122,14 +157,4 @@ pub fn ErrorDisplay() -> Element {
     } else {
         rsx! { div {} }
     }
-}
-
-// Helper function to show an error
-pub fn show_error(
-    error_ctx: &mut ErrorContext,
-    message: &str,
-    error_type: ErrorType,
-    timeout_seconds: Option<f64>,
-) {
-    error_ctx.set(Some((message.to_string(), error_type, timeout_seconds)));
 }
