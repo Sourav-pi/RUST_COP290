@@ -10,17 +10,17 @@ use dioxus::prelude::*;
 fn column_to_letter(column: usize) -> String {
     let mut result = String::new();
     let mut temp = column;
-    
+
     loop {
         let remainder = temp % 26;
         result.insert(0, (b'A' + remainder as u8) as char);
-        temp = temp / 26;
+        temp /= 26;
         if temp == 0 {
             break;
         }
         temp -= 1;
     }
-    
+
     result
 }
 

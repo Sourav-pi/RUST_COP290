@@ -40,14 +40,14 @@ impl Serialize for CsvStore {
     {
         // We'll output a flat record with seven fields
         let mut state = serializer.serialize_struct("Cell", 7)?;
-        
+
         // Serialize position information
         state.serialize_field("row", &self.row)?;
         state.serialize_field("col", &self.col)?;
-        
+
         // Serialize the cell value
         state.serialize_field("value", &self.data.value)?;
-        
+
         // Format the nested CommandFlag into a string
         let flag_str = format!(
             "type:{},cmd:{},type1:{},type2:{},error:{},div_by_zero:{}",
@@ -95,7 +95,7 @@ impl Sheet {
     /// # CSV Format
     /// The CSV file will have the following columns:
     /// - row: Row index (0-based)
-    /// - col: Column index (0-based) 
+    /// - col: Column index (0-based)
     /// - value: The calculated cell value
     /// - flag: String encoding of the CommandFlag bitfield (comma-separated key-value pairs)
     /// - param1: First parameter of the cell formula
@@ -106,7 +106,7 @@ impl Sheet {
         let num_rows = self.grid.len();
         let num_cols = if num_rows > 0 { self.grid[0].len() } else { 0 };
         let mut wtr = csv::Writer::from_path(file_path)?;
-        
+
         // Write only non-empty cells to the CSV file
         for row in 0..num_rows {
             for col in 0..num_cols {
@@ -114,7 +114,7 @@ impl Sheet {
                 if self.grid[row][col].formula.flag.is_any() == 0 {
                     continue;
                 }
-                
+
                 // Create a CsvStore for serialization
                 let cell = &self.grid[row][col];
                 let csv_data = CsvStore {
@@ -122,12 +122,12 @@ impl Sheet {
                     col: col as i32,
                     data: cell.clone(),
                 };
-                
+
                 // Serialize and write the cell to CSV
                 wtr.serialize(csv_data)?;
             }
         }
-        
+
         // Ensure data is written to disk
         wtr.flush()?;
         Ok(())

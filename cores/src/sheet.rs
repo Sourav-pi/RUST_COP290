@@ -101,11 +101,10 @@ impl Sheet {
     ///
     /// # Parameters
     /// * `no_of_row` - Number of rows to add
-    /// Adds additional columns to the spreadsheet.
+    ///     Adds additional columns to the spreadsheet.
     ///
     /// # Parameters
     /// * `no_of_col` - Number of columns to add
-
     #[allow(dead_code)]
     pub fn copy_row(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
         // Save original state of destination row in case we need to rollback
@@ -408,7 +407,7 @@ impl Sheet {
         let avg = ((mean * mean) as f64) / ((count * count) as f64);
         let mut x = (sum as f64) / (count as f64);
         x -= avg;
-        ((x).sqrt()) as i32
+        ((x).sqrt()).round() as i32
     }
 
     fn update_cell(&mut self, list_fpr_update: Vec<usize>) {
@@ -852,5 +851,28 @@ mod tests {
         assert!(test_sheet.get_value(2, 1) == 5);
         assert!(test_sheet.get_value(3, 1) == 6);
         assert!(test_sheet.get_value(5, 2) == 10);
+    }
+
+    #[test]
+    fn test_values() {
+        let mut test_sheet = Sheet::new(10, 10);
+        test_sheet.update_cell_data(1, 1, String::from("5+60"));
+        test_sheet.update_cell_data(2, 1, String::from("-5*70"));
+        test_sheet.update_cell_data(2, 2, String::from("35/7"));
+        test_sheet.update_cell_data(5, 2, String::from("35-90"));
+        assert!(test_sheet.get_value(1, 1) == 65);
+        assert!(test_sheet.get_value(2, 1) == -350);
+        assert!(test_sheet.get_value(2, 2) == 5);
+        assert!(test_sheet.get_value(5, 2) == -55);
+
+        test_sheet.update_cell_data(6, 3, String::from("5"));
+        test_sheet.update_cell_data(1, 1, String::from("5+C6"));
+        test_sheet.update_cell_data(2, 1, String::from("-5*C6"));
+        test_sheet.update_cell_data(2, 2, String::from("35/C6"));
+        test_sheet.update_cell_data(5, 2, String::from("35-C6"));
+        assert!(test_sheet.get_value(1, 1) == 10);
+        assert!(test_sheet.get_value(2, 1) == -25);
+        assert!(test_sheet.get_value(2, 2) == 7);
+        assert!(test_sheet.get_value(5, 2) == 30);
     }
 }

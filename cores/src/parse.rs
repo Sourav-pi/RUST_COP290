@@ -1,5 +1,5 @@
 //! This module provides parsing functionality for spreadsheet formulas.
-//! 
+//!
 //! It converts text formulas into structured command representations that can be
 //! executed by the spreadsheet engine. The parser handles various formula types:
 //! - Simple values (e.g., "42")
@@ -26,17 +26,17 @@ use crate::sheet::Cell;
 #[allow(clippy::identity_op)]
 pub struct CommandFlag {
     /// Command type: 0 = value/cell, 1 = arithmetic, 2 = range function
-    pub type_: B2,          // 2 bits
+    pub type_: B2, // 2 bits
     /// Operation code (depends on type_):
     /// - For arithmetic: 0 = add, 1 = subtract, 2 = multiply, 3 = divide
     /// - For range functions: 0 = MIN, 1 = MAX, 2 = SUM, 3 = AVG, 4 = STDEV, 5 = SLEEP
-    pub cmd: B3,            // 3 bits
+    pub cmd: B3, // 3 bits
     /// Parameter 1 type: 0 = value, 1 = cell reference
-    pub type1: B1,          // 1 bit
+    pub type1: B1, // 1 bit
     /// Parameter 2 type: 0 = value, 1 = cell reference
-    pub type2: B1,          // 1 bit
+    pub type2: B1, // 1 bit
     /// Error code: 0 = no error, 1 = invalid input, 2 = cycle detected
-    pub error: B2,          // 2 bits
+    pub error: B2, // 2 bits
     /// Division by zero flag: 1 = division by zero occurred
     pub is_div_by_zero: B1, // 1 bit
     /// Reserved bits for future use
@@ -47,15 +47,14 @@ pub struct CommandFlag {
 ///
 /// This contains all the information needed to execute a formula operation
 /// including the operation type, parameters, and any flags.
-#[derive(Clone, serde::Serialize)]
-#[derive(Debug)]
+#[derive(Clone, serde::Serialize, Debug)]
 pub struct CommandCall {
     /// Flag bits indicating the command type and attributes
     pub flag: CommandFlag, // 16 bits
     /// First parameter - either a direct value or an encoded cell reference
-    pub param1: i32,       // 4 bytes
+    pub param1: i32, // 4 bytes
     /// Second parameter - either a direct value or an encoded cell reference
-    pub param2: i32,       // 4 bytes
+    pub param2: i32, // 4 bytes
 }
 
 // Utility functions for character checking
@@ -751,5 +750,16 @@ mod tests {
         };
         let result = unparse(cell);
         assert_eq!(result, "42");
+    }
+    #[test]
+    fn test_invalid_range() {
+        let input = "SUM(A1:9)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
     }
 }

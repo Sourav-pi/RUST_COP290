@@ -33,7 +33,7 @@ type Range = ((usize, usize), (usize, usize));
 /// # Returns
 /// * `Ok(Range)` - Successfully parsed range with start and end coordinates
 /// * `Err(String)` - Error message if the range is invalid
-fn parse_range(range: &str,row: usize, col:usize) -> Result<Range, String> {
+fn parse_range(range: &str, row: usize, col: usize) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
         return Err("Invalid range format".to_string());
@@ -95,7 +95,7 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-        let (start, end) = parse_range(range,self.row,self.col)?;
+        let (start, end) = parse_range(range, self.row, self.col)?;
         let label_x: Vec<String> = if x_labels.is_empty() {
             let temp_range = max(end.0 - start.0 + 1, end.1 - start.1 + 1);
             let mut temp_vec: Vec<String> = Vec::new();
@@ -138,7 +138,7 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-        let (start, end) = parse_range(range,self.row,self.col)?;
+        let (start, end) = parse_range(range, self.row, self.col)?;
         let label_x = if x_labels.is_empty() {
             let temp_range = max(end.0 - start.0 + 1, end.1 - start.1 + 1);
             let mut temp_vec: Vec<String> = Vec::new();
@@ -174,7 +174,7 @@ impl Sheet {
     /// * `Ok(String)` - JSON string representation of the chart
     /// * `Err(String)` - Error message if the range is invalid
     pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
-        let (start, end) = parse_range(range,self.row,self.col)?;
+        let (start, end) = parse_range(range, self.row, self.col)?;
         let mut x_labels = parse_lables(x_labels);
         let mut values: Vec<i32> = Vec::new();
         let mut cnt = 0;
@@ -241,8 +241,8 @@ impl Sheet {
         x_name: &str,
         y_name: &str,
     ) -> Result<String, String> {
-        let (start1, end1) = parse_range(rangex,self.row,self.col)?;
-        let (start2, end2) = parse_range(rangey,self.row,self.col)?;
+        let (start1, end1) = parse_range(rangex, self.row, self.col)?;
+        let (start2, end2) = parse_range(rangey, self.row, self.col)?;
 
         let diff1 = (end1.0 - start1.0) as i32;
         let diff2 = (end1.1 - start1.1) as i32;
@@ -302,7 +302,8 @@ mod tests {
         test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
         test_sheet.update_cell_data(5, 1, String::from("-5"));
         test_sheet.update_cell_data(6, 1, String::from("6"));
-        let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
+        let result =
+            test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
         assert!(result.is_ok());
     }
 
@@ -333,7 +334,7 @@ mod tests {
     }
     #[test]
     fn test_parse_range_valid_row() {
-        let result = parse_range("A1:A5",100,100);
+        let result = parse_range("A1:A5", 100, 100);
         assert!(result.is_ok());
         let ((start_row, start_col), (end_row, end_col)) = result.unwrap();
         assert_eq!(start_row, 1);
@@ -344,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_parse_range_valid_column() {
-        let result = parse_range("A1:C1",100,100);
+        let result = parse_range("A1:C1", 100, 100);
         assert!(result.is_ok());
         let ((start_row, start_col), (end_row, end_col)) = result.unwrap();
         assert_eq!(start_row, 1);
@@ -355,28 +356,28 @@ mod tests {
 
     #[test]
     fn test_parse_range_invalid_format() {
-        let result = parse_range("A1B5",100,100);
+        let result = parse_range("A1B5", 100, 100);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid range format");
     }
 
     #[test]
     fn test_parse_range_empty_parts() {
-        let result = parse_range("A1:",100,100);
+        let result = parse_range("A1:", 100, 100);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Range cannot be empty");
     }
 
     #[test]
     fn test_parse_range_invalid_cell() {
-        let result = parse_range("XYZ:A5",100,100);
+        let result = parse_range("XYZ:A5", 100, 100);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid cell reference");
     }
 
     #[test]
     fn test_parse_range_invalid_direction() {
-        let result = parse_range("C5:A1",100,100);
+        let result = parse_range("C5:A1", 100, 100);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Invalid range");
     }

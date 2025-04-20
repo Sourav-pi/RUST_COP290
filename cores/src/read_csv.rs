@@ -56,7 +56,7 @@ impl Sheet {
     /// - depend: Comma-separated list of cell indices that depend on this cell
     pub fn read_file(&mut self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         let mut rdr = csv::Reader::from_path(file_path)?;
-        
+
         // Reset the current sheet state
         for i in 0..self.row {
             for j in 0..self.col {
@@ -71,7 +71,7 @@ impl Sheet {
                 };
             }
         }
-        
+
         // Read and process each record from the CSV file
         for result in rdr.deserialize() {
             let record: TempRecord = result?;
@@ -121,7 +121,7 @@ impl Sheet {
                     }
                 }
             }
-            
+
             // Parse and set cell dependencies
             if record.depend.is_empty() {
                 new_cell.depend = Vec::new();
@@ -133,7 +133,7 @@ impl Sheet {
                     }
                 }
             }
-            
+
             // Update the cell in the grid
             self.grid[record.row as usize][record.col as usize] = new_cell;
         }
