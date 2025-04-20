@@ -2,7 +2,7 @@
 
 use dioxus::desktop::{Config, WindowBuilder};
 
-mod components;
+pub mod components;
 use components::Spreadsheet;
 use dioxus::prelude::*;
 pub fn run() {

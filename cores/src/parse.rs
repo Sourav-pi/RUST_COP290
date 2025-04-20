@@ -1,3 +1,13 @@
+//! This module provides parsing functionality for spreadsheet formulas.
+//! 
+//! It converts text formulas into structured command representations that can be
+//! executed by the spreadsheet engine. The parser handles various formula types:
+//! - Simple values (e.g., "42")
+//! - Cell references (e.g., "A1")
+//! - Arithmetic operations (e.g., "A1+B2")
+//! - Range functions (e.g., "SUM(A1:B5)")
+//! - Special functions (e.g., "SLEEP(5)")
+
 #![allow(non_snake_case)]
 #![allow(unused_braces)]
 #![allow(clippy::identity_op)]
@@ -7,49 +17,90 @@ use std::str;
 
 use crate::sheet::Cell;
 
+/// Bitfield representing the type and attributes of a spreadsheet formula command.
+///
+/// This structure efficiently stores various flags about a command in a single 16-bit value.
 #[bitfield]
 #[repr(u16)]
 #[derive(Clone, Debug, serde::Serialize, Default)]
 #[allow(clippy::identity_op)]
 pub struct CommandFlag {
+    /// Command type: 0 = value/cell, 1 = arithmetic, 2 = range function
     pub type_: B2,          // 2 bits
+    /// Operation code (depends on type_):
+    /// - For arithmetic: 0 = add, 1 = subtract, 2 = multiply, 3 = divide
+    /// - For range functions: 0 = MIN, 1 = MAX, 2 = SUM, 3 = AVG, 4 = STDEV, 5 = SLEEP
     pub cmd: B3,            // 3 bits
+    /// Parameter 1 type: 0 = value, 1 = cell reference
     pub type1: B1,          // 1 bit
+    /// Parameter 2 type: 0 = value, 1 = cell reference
     pub type2: B1,          // 1 bit
+    /// Error code: 0 = no error, 1 = invalid input, 2 = cycle detected
     pub error: B2,          // 2 bits
+    /// Division by zero flag: 1 = division by zero occurred
     pub is_div_by_zero: B1, // 1 bit
+    /// Reserved bits for future use
     pub is_any: B6,
 }
 
+/// A structure representing a parsed formula command.
+///
+/// This contains all the information needed to execute a formula operation
+/// including the operation type, parameters, and any flags.
 #[derive(Clone, serde::Serialize)]
 #[derive(Debug)]
 pub struct CommandCall {
+    /// Flag bits indicating the command type and attributes
     pub flag: CommandFlag, // 16 bits
+    /// First parameter - either a direct value or an encoded cell reference
     pub param1: i32,       // 4 bytes
+    /// Second parameter - either a direct value or an encoded cell reference
     pub param2: i32,       // 4 bytes
 }
 
 // Utility functions for character checking
+
+/// Checks if a character is a digit (0-9).
 #[inline(always)]
 fn is_digit(c: char) -> bool {
     c >= '0' && c <= '9'
 }
 
+/// Checks if a character is an uppercase letter (A-Z).
 #[inline(always)]
 fn is_uppercase_letter(c: char) -> bool {
     c >= 'A' && c <= 'Z'
 }
 
+/// Checks if a character is an arithmetic operator (+, -, *, /).
 #[inline(always)]
 fn is_operator(c: char) -> bool {
     c == '+' || c == '-' || c == '*' || c == '/'
 }
 
+/// Checks if a character is a sign (+ or -).
 #[inline(always)]
 fn is_sign(c: char) -> bool {
     c == '+' || c == '-'
 }
 
+/// Parses a formula string into a structured CommandCall object.
+///
+/// This function serves as the main entry point for the formula parser.
+/// It analyzes the input string and converts it to the appropriate command structure.
+///
+/// # Parameters
+/// * `input` - A string slice containing the formula to parse
+///
+/// # Returns
+/// A CommandCall structure representing the parsed formula
+///
+/// # Example
+/// ```
+/// let command = parse_formula("A1+B2");
+/// assert_eq!(command.flag.type_(), 1); // Arithmetic operation
+/// assert_eq!(command.flag.cmd(), 0);   // Addition
+/// ```
 pub fn parse_formula(input: &str) -> CommandCall {
     let mut cell = CommandCall {
         flag: CommandFlag::new(),
@@ -61,11 +112,27 @@ pub fn parse_formula(input: &str) -> CommandCall {
     cell
 }
 
+/// Parses a SLEEP function and populates the CommandCall structure.
+///
+/// The SLEEP function can take either a direct value or a cell reference
+/// as its parameter.
+///
+/// # Parameters
+/// * `input` - A string slice containing the SLEEP function (e.g., "SLEEP(5)" or "SLEEP(A1)")
+/// * `container` - The CommandCall structure to populate
+///
+/// # Example
+/// ```
+/// let mut command = CommandCall { flag: CommandFlag::new(), param1: 0, param2: 0 };
+/// parse_sleep("SLEEP(5)", &mut command);
+/// assert_eq!(command.flag.type_(), 2);
+/// assert_eq!(command.flag.cmd(), 5);
+/// ```
 pub fn parse_sleep(input: &str, container: &mut CommandCall) {
     container.flag.set_type_(2);
     container.flag.set_cmd(5);
 
-    // Check if input starts with "SLEEP(" and ends with ")"
+    // Check if input starts with "SLEEP(") and ends with ")"
     if input.starts_with("SLEEP(") && input.ends_with(")") {
         // Extract the part between parentheses
         let sleep_time = &input[6..input.len() - 1].trim();
@@ -77,16 +144,16 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
         
         for c in sleep_time.chars() {
             if is_uppercase_letter(c) {
-            if has_digit {
+                if has_digit {
+                    is_cell_ref = false;
+                    break;
+                }
+                has_letter = true;
+            } else if is_digit(c) {
+                has_digit = true;
+            } else {
                 is_cell_ref = false;
                 break;
-            }
-            has_letter = true;
-            } else if is_digit(c) {
-            has_digit = true;
-            } else {
-            is_cell_ref = false;
-            break;
             }
         }
         
@@ -99,11 +166,29 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
         } else {
             container.flag.set_error(1);
         }
-        } else {
+    } else {
         container.flag.set_error(1);
-        }
+    }
 }
 
+/// Parses an arithmetic expression and populates the CommandCall structure.
+///
+/// Handles expressions like "A1+B2", "5*C3", etc. The function identifies
+/// the operator and operands, then sets the appropriate flags and parameters.
+///
+/// # Parameters
+/// * `input` - A string slice containing the arithmetic expression
+/// * `container` - The CommandCall structure to populate
+///
+/// # Example
+/// ```
+/// let mut command = CommandCall { flag: CommandFlag::new(), param1: 0, param2: 0 };
+/// Arithmatic("5+A1", &mut command);
+/// assert_eq!(command.flag.type_(), 1);
+/// assert_eq!(command.flag.cmd(), 0);    // Addition
+/// assert_eq!(command.flag.type1(), 0);  // param1 is a value
+/// assert_eq!(command.flag.type2(), 1);  // param2 is a cell reference
+/// ```
 pub fn Arithmatic(input: &str, container: &mut CommandCall) {
     container.flag.set_type_(1);
     
@@ -184,6 +269,21 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
     }
 }
 
+/// Parses a range operation (e.g., "SUM(A1:B5)") and populates the CommandCall structure.
+///
+/// This handles functions that operate on a range of cells, such as MIN, MAX, SUM, AVG, and STDEV.
+///
+/// # Parameters
+/// * `input` - A string slice containing the range function expression
+/// * `container` - The CommandCall structure to populate
+///
+/// # Example
+/// ```
+/// let mut command = CommandCall { flag: CommandFlag::new(), param1: 0, param2: 0 };
+/// rangeoper("SUM(A1:B5)", &mut command);
+/// assert_eq!(command.flag.type_(), 2);
+/// assert_eq!(command.flag.cmd(), 2);    // SUM function
+/// ```
 pub fn rangeoper(input: &str, container: &mut CommandCall) {
     container.flag.set_type_(2);
     
@@ -236,7 +336,6 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
         container.flag.set_type1(0);
         container.flag.set_type2(0);
         container.flag.set_cmd(0);
-
         return;
     }
     
@@ -257,6 +356,26 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
     container.flag.set_cmd(cmd);
 }
 
+/// Parses any formula expression and determines its type.
+///
+/// This function serves as the dispatcher for different types of expressions:
+/// - Simple values
+/// - Cell references
+/// - Arithmetic operations
+/// - Range functions
+/// - Special functions
+///
+/// # Parameters
+/// * `input` - A string slice containing the expression to parse
+/// * `container` - The CommandCall structure to populate
+///
+/// # Example
+/// ```
+/// let mut command = CommandCall { flag: CommandFlag::new(), param1: 0, param2: 0 };
+/// parse_expression("42", &mut command);
+/// assert_eq!(command.param1, 42);
+/// assert_eq!(command.flag.type_(), 0);  // Value type
+/// ```
 pub fn parse_expression(input: &str, container: &mut CommandCall) {
     let trimmed = input.trim();
     
@@ -326,6 +445,20 @@ pub fn parse_expression(input: &str, container: &mut CommandCall) {
     container.flag.set_error(1);
 }
 
+/// Converts a cell reference string (e.g., "A1") to row and column indices.
+///
+/// # Parameters
+/// * `cell` - The cell reference string to convert
+///
+/// # Returns
+/// A tuple of (row, column) indices, where both are 1-based
+///
+/// # Example
+/// ```
+/// let (row, col) = convert_to_index("B3".to_string());
+/// assert_eq!(row, 3);
+/// assert_eq!(col, 2);
+/// ```
 pub fn convert_to_index(cell: String) -> (usize, usize) {
     let mut col_str = String::new();
     let mut row_str = String::new();
@@ -361,14 +494,43 @@ pub fn convert_to_index(cell: String) -> (usize, usize) {
     }
 }
 
+/// Shift value used for encoding cell references into a single integer.
+///
+/// This constant determines how many columns can be represented in a sheet.
 pub const ENCODE_SHIFT: usize = 100000;
 
+/// Encodes a cell reference (e.g., "A1") into a single integer value.
+///
+/// # Parameters
+/// * `cell` - The cell reference string to encode
+///
+/// # Returns
+/// An integer encoding of the cell reference
+///
+/// # Example
+/// ```
+/// let encoded = encode_cell("A1".to_string());
+/// assert_eq!(encoded, 100001); // 1 * ENCODE_SHIFT + 1
+/// ```
 pub fn encode_cell(cell: String) -> i32 {
     let (row, col) = convert_to_index(cell);
     let encoded = row * (ENCODE_SHIFT) + col;
     encoded as i32
 }
 
+/// Decodes an encoded cell reference back to a string (e.g., "A1").
+///
+/// # Parameters
+/// * `encoded` - The encoded cell value to decode
+///
+/// # Returns
+/// The string representation of the cell reference
+///
+/// # Example
+/// ```
+/// let decoded = decode_cell(100001);
+/// assert_eq!(decoded, "A1");
+/// ```
 pub fn decode_cell(encoded: i32) -> String {
     let mut col = (encoded % (ENCODE_SHIFT as i32)) as usize;
     let row = (encoded / (ENCODE_SHIFT as i32)) as usize;
@@ -391,11 +553,40 @@ pub fn decode_cell(encoded: i32) -> String {
     cell
 }
 
+/// Converts an encoded cell reference to row and column indices.
+///
+/// # Parameters
+/// * `encode` - The encoded cell value
+///
+/// # Returns
+/// A tuple of (row, column) indices
+///
+/// # Example
+/// ```
+/// let (row, col) = convert_to_index_int(100001);
+/// assert_eq!(row, 1);
+/// assert_eq!(col, 1);
+/// ```
 pub fn convert_to_index_int(encode: i32) -> (usize, usize) {
     let inp = decode_cell(encode);
     convert_to_index(inp)
 }
 
+/// Converts a Cell structure back to its formula string representation.
+///
+/// This is essentially the inverse of the parse_formula function.
+///
+/// # Parameters
+/// * `cell` - The Cell structure to convert
+///
+/// # Returns
+/// A string representation of the cell's formula
+///
+/// # Example
+/// ```
+/// let formula_str = unparse(cell);
+/// assert_eq!(formula_str, "A1+B2");
+/// ```
 #[allow(dead_code)]
 pub fn unparse(cell: Cell) -> String {
     match cell.formula.flag.type_() {
@@ -456,7 +647,6 @@ pub fn unparse(cell: Cell) -> String {
         _ => "".to_string(),
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -4,31 +4,72 @@ use std::{thread, time};
 
 const DEBUG: bool = false;
 
+/// Constant used for encoding cell indices
+pub const ENCODE_SHIFT: usize = 10000;
+
+/// A cell in the spreadsheet.
+///
+/// Each cell holds a value, a formula, and a list of cells that depend on it.
 #[derive(Clone)]
 pub struct Cell {
+    /// The current calculated value of the cell
     pub value: i32,
+    /// The formula assigned to the cell
     pub formula: CommandCall,
+    /// List of cells that depend on this cell's value
     pub depend: Vec<usize>,
 }
+
+/// Error types that can occur during spreadsheet operations.
+#[derive(Debug, PartialEq)]
 pub enum Error {
+    /// Division by zero error
     DivByZero,
+    /// Invalid input error when parsing formula
     InvalidInput,
+    /// Cyclic dependency detected
     CycleDetected,
+    /// No error
     None,
 }
 
+/// Result of a cell update operation.
 #[allow(dead_code)]
 pub struct CallResult {
+    /// Time taken to execute the operation (in milliseconds)
     pub time: f64,
+    /// Error that occurred during the operation, if any
     pub error: Error,
 }
-#[allow(dead_code)]
+
+/// A structure representing a spreadsheet with cells that can contain values and formulas.
+///
+/// The spreadsheet consists of a grid of cells, each capable of storing a value,
+/// a formula, and dependencies on other cells. Operations performed on the spreadsheet
+/// ensure that all dependencies are properly maintained and cycles are detected.
 pub struct Sheet {
+    /// The grid of cells in the spreadsheet, represented as a 2D vector.
     pub grid: Vec<Vec<Cell>>,
+    /// Number of rows in the spreadsheet.
     pub row: usize,
+    /// Number of columns in the spreadsheet.
     pub col: usize,
 }
+
 impl Sheet {
+    /// Creates a new spreadsheet with the specified dimensions.
+    ///
+    /// # Parameters
+    /// * `row` - Number of rows in the spreadsheet
+    /// * `col` - Number of columns in the spreadsheet
+    ///
+    /// # Returns
+    /// A new `Sheet` instance with all cells initialized to zero.
+    ///
+    /// # Example
+    /// ```
+    /// let sheet = Sheet::new(10, 10); // Creates a 10x10 spreadsheet
+    /// ```
     pub fn new(row: usize, col: usize) -> Self {
         let grid: Vec<Vec<Cell>> = vec![
             vec![
@@ -48,11 +89,28 @@ impl Sheet {
         Self { grid, row, col }
     }
 
+    /// Returns the formula string for a specific cell.
+    ///
+    /// # Parameters
+    /// * `row` - Row index of the cell
+    /// * `col` - Column index of the cell
+    ///
+    /// # Returns
+    /// A string representation of the cell's formula.
     #[allow(dead_code)]
     pub fn get_formula(&self, row: usize, col: usize) -> String {
         unparse(self.grid[row][col].clone())
     }
 
+    /// Adds additional rows to the spreadsheet.
+    ///
+    /// # Parameters
+    /// * `no_of_row` - Number of rows to add
+    ///
+    /// # Example
+    /// ```
+    /// sheet.add_row(5); // Adds 5 rows to the spreadsheet
+    /// ```
     // pub fn add_row(&mut self ,no_of_row:usize) {
     //     for _ in 0..no_of_row {
     //         let mut new_row: Vec<Cell> = Vec::new();
@@ -68,12 +126,19 @@ impl Sheet {
     //             });
     //         }
     //         self.grid.push(new_row);
-
     //     }
     //     self.row+=no_of_row;
-
     // }
 
+    /// Adds additional columns to the spreadsheet.
+    ///
+    /// # Parameters
+    /// * `no_of_col` - Number of columns to add
+    ///
+    /// # Example
+    /// ```
+    /// sheet.add_col(3); // Adds 3 columns to the spreadsheet
+    /// ```
     // pub fn add_col(&mut self,no_of_col:usize) {
     //     for i in 0..self.row {
     //         for _ in 0..no_of_col {

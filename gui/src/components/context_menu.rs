@@ -1,15 +1,32 @@
+//! Context menu component for the spreadsheet application.
+//!
+//! This module provides context menus that appear when right-clicking on
+//! cells, rows, or columns. It supports operations like copy, paste, and
+//! other context-specific actions.
+
 use super::error_display::{show_error, ErrorContext, ErrorType};
 use super::spreadsheet::*;
 use cores::Error;
 use dioxus::prelude::*;
 
+/// Defines the type of context menu to display
 #[derive(Clone, Copy, PartialEq)]
 pub enum MenuType {
+    /// Row context menu (appears when right-clicking a row header)
     Row,
+    /// Column context menu (appears when right-clicking a column header)
     Col,
+    /// Cell context menu (appears when right-clicking a cell)
     Cell,
 }
 
+/// The context menu component that provides copy/paste functionality for cells, rows, and columns.
+///
+/// This component displays different menu items based on the menu type (row, column, or cell).
+/// It supports operations like copying and pasting cells, rows, or columns.
+///
+/// The menu appears at the coordinates specified by the context menu signal and disappears
+/// when an action is performed or the user clicks elsewhere.
 #[component]
 #[allow(unused_braces)]
 pub fn ContextMenu() -> Element {
@@ -52,7 +69,6 @@ pub fn ContextMenu() -> Element {
                                         // Use the Sheet's copy_row method with error handling
                                         match sheet_locked.copy_row(source_row as usize, row as usize) {
                                             Ok(_) => {
-                                                // Update sheet version to trigger rerender
                                                 sheet_version.set(sheet_version.cloned() + 1);
                                             },
                                             Err(Error::CycleDetected) => {

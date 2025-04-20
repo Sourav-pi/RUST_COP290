@@ -1,3 +1,13 @@
+//! Provides functionality for generating various chart types from spreadsheet data.
+//!
+//! This module extends the Sheet struct with methods to create:
+//! - Line graphs
+//! - Bar graphs
+//! - Pie charts
+//! - Scatter plots
+//!
+//! Each graph is generated as a JSON string compatible with visualization libraries.
+
 use crate::parse::convert_to_index;
 use crate::sheet::Sheet;
 use charming::{
@@ -8,8 +18,28 @@ use charming::{
 };
 use std::{cmp::max, vec};
 
+/// Represents a cell range with start and end coordinates.
+///
+/// Format is ((start_row, start_col), (end_row, end_col))
 type Range = ((usize, usize), (usize, usize));
 
+/// Parses a range expression (e.g., "A1:B5") into start and end cell coordinates.
+///
+/// The range must be either a single row or a single column.
+///
+/// # Parameters
+/// * `range` - A string slice containing the range expression (e.g., "A1:B5")
+///
+/// # Returns
+/// * `Ok(Range)` - Successfully parsed range with start and end coordinates
+/// * `Err(String)` - Error message if the range is invalid
+///
+/// # Examples
+/// ```
+/// let range = parse_range("A1:A10")?; // Valid column range
+/// let range = parse_range("B2:E2")?;  // Valid row range
+/// let range = parse_range("A1:C3");   // Error: not a single row or column
+/// ```
 fn parse_range(range: &str) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
@@ -34,13 +64,43 @@ fn parse_range(range: &str) -> Result<Range, String> {
     }
 }
 
+/// Parses a comma-separated list of labels into a vector of strings.
+///
+/// # Parameters
+/// * `labels` - A string slice containing comma-separated labels
+///
+/// # Returns
+/// A vector of trimmed label strings
+///
+/// # Examples
+/// ```
+/// let labels = parse_lables("Jan,Feb,Mar");
+/// assert_eq!(labels, vec!["Jan", "Feb", "Mar"]);
+/// ```
 fn parse_lables(labels: &str) -> Vec<String> {
     if labels.is_empty() {
         return Vec::new();
     }
     labels.split(',').map(|s| s.trim().to_string()).collect()
 }
+
 impl Sheet {
+    /// Creates a line graph from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the X-axis (empty for automatic numbering)
+    /// * `y_lable` - Label for the Y-axis
+    /// * `title` - Title of the graph
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
+    ///
+    /// # Examples
+    /// ```
+    /// let chart_json = sheet.line_graph("A1:A10", "Jan,Feb,Mar", "Y Axis", "Line Graph")?;
+    /// ```
     pub fn line_graph(
         &self,
         range: &str,
@@ -73,6 +133,22 @@ impl Sheet {
             .to_string())
     }
 
+    /// Creates a bar graph from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the X-axis (empty for automatic numbering)
+    /// * `y_lable` - Label for the Y-axis
+    /// * `title` - Title of the graph
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
+    ///
+    /// # Examples
+    /// ```
+    /// let chart_json = sheet.bar_graph("A1:A10", "Jan,Feb,Mar", "Y Axis", "Bar Graph")?;
+    /// ```
     pub fn bar_graph(
         &self,
         range: &str,
@@ -105,6 +181,22 @@ impl Sheet {
             .series(Bar::new().data(values))
             .to_string())
     }
+
+    /// Creates a pie chart from the specified range of cells.
+    ///
+    /// # Parameters
+    /// * `range` - The cell range to use as data points (e.g., "A1:A10")
+    /// * `x_labels` - Comma-separated labels for the pie slices (empty for automatic numbering)
+    /// * `title` - Title of the chart
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the range is invalid
+    ///
+    /// # Examples
+    /// ```
+    /// let chart_json = sheet.pie_graph("A1:A10", "Jan,Feb,Mar", "Pie Chart")?;
+    /// ```
     pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
         let (start, end) = parse_range(range)?;
         let mut x_labels = parse_lables(x_labels);
@@ -153,6 +245,23 @@ impl Sheet {
             .to_string())
     }
 
+    /// Creates a scatter plot from the specified ranges of cells.
+    ///
+    /// # Parameters
+    /// * `rangex` - The cell range to use as X-axis data points (e.g., "A1:A10")
+    /// * `rangey` - The cell range to use as Y-axis data points (e.g., "B1:B10")
+    /// * `title` - Title of the chart
+    /// * `x_name` - Label for the X-axis
+    /// * `y_name` - Label for the Y-axis
+    ///
+    /// # Returns
+    /// * `Ok(String)` - JSON string representation of the chart
+    /// * `Err(String)` - Error message if the ranges are invalid
+    ///
+    /// # Examples
+    /// ```
+    /// let chart_json = sheet.scatter_graph("A1:A10", "B1:B10", "Scatter Plot", "X Axis", "Y Axis")?;
+    /// ```
     pub fn scatter_graph(
         &self,
         rangex: &str,
@@ -213,42 +322,42 @@ mod tests {
         assert!(result.is_ok());
     }
 
-#[test]
-fn test_scatter_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_scatter_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
+        assert!(result.is_ok());
+    }
 
-#[test]
-fn test_bar_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.bar_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Bar Graph");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_bar_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result = test_sheet.bar_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Bar Graph");
+        assert!(result.is_ok());
+    }
 
-#[test]
-fn test_pie_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_pie_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
+        assert!(result.is_ok());
+    }
 }

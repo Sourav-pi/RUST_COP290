@@ -1,3 +1,9 @@
+//! GUI components for the spreadsheet application.
+//!
+//! This module contains all UI components used in the GUI version of the
+//! spreadsheet application. The main component is `Spreadsheet`, which
+//! composes the other components to create the complete interface.
+
 mod spreadsheet;
 pub use spreadsheet::Spreadsheet;
 

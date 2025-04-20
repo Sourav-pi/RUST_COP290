@@ -1,24 +1,53 @@
-use super::spreadsheet::{SelectedCellContext, SheetContext, SheetVersionContext};
-use crate::components::row::column_to_letter;
-use dioxus::events::Key;
+//! Formula bar component for the spreadsheet application.
+//!
+//! This module provides a formula bar component that allows viewing and editing
+//! formulas for the currently selected cell.
+
+use super::spreadsheet::*;
 use dioxus::prelude::*;
 
-const FORMULA_BAR_STYLE: &str = "display: flex;
-                                height: 30px;
-                                background-color: rgb(42, 42, 42);
-                                margin: 0px;
-                                padding: 0px;
-                                width: 100%;";
+/// Converts a column index to alphabetic representation (e.g. 0->A, 25->Z, 26->AA)
+fn column_to_letter(column: usize) -> String {
+    let mut result = String::new();
+    let mut temp = column;
+    
+    loop {
+        let remainder = temp % 26;
+        result.insert(0, (b'A' + remainder as u8) as char);
+        temp = temp / 26;
+        if temp == 0 {
+            break;
+        }
+        temp -= 1;
+    }
+    
+    result
+}
 
+/// Style for the formula bar container
+const FORMULA_BAR_STYLE: &str = "
+    width: 100%;
+    height: 40px;
+    background-color: rgb(42, 42, 42);
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+";
+
+/// The Formula Bar component for editing cell formulas
+///
+/// This component displays and allows editing of the formula in the currently
+/// selected cell. It syncs with the spreadsheet state and updates when the
+/// selected cell changes.
 #[component]
 pub fn FormulaBar() -> Element {
-    // Consume the contexts
-
+    // Context signals used by the formula bar
     let sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
     let selected_cell = use_context::<SelectedCellContext>();
     let mut formula = use_signal(String::new);
 
+    // Effect to update formula when selected cell changes
     use_effect(move || {
         let _ = sheetversion.cloned();
 
@@ -38,6 +67,7 @@ pub fn FormulaBar() -> Element {
         }
     });
 
+    // Handle formula submission when Enter key is pressed
     let on_submit = move |e: Event<KeyboardData>| {
         if e.key() == Key::Enter {
             if let Ok(mut sheet_locked) = sheet.cloned().lock() {
@@ -49,9 +79,10 @@ pub fn FormulaBar() -> Element {
                 );
                 sheetversion.set(sheetversion.cloned() + 1);
             }
-        };
+        }
     };
 
+    // Handle formula update when input loses focus
     let on_blur = move |_| {
         if let Ok(mut sheet_locked) = sheet.cloned().lock() {
             // Update the cell value in the Sheet object
@@ -69,24 +100,15 @@ pub fn FormulaBar() -> Element {
             style: FORMULA_BAR_STYLE,
             input {
                 style: "color: white; width: 7%; text-align: center; background-color: rgb(42, 42, 42); font-size: 20px;",
-                value: "{column_to_letter(selected_cell.cloned().1)}{selected_cell.cloned().0}",
                 readonly: true,
+                value: "{column_to_letter(selected_cell.cloned().1 as usize)}{selected_cell.cloned().0}"
             }
             input {
-                class: "formula-input",
-                style: "height: 24px; font-size: 20px; border: none; margin: 0px; width: 93%; outline: none; box-shadow: none; margin: 2px 0px;",
-                placeholder: "Enter formula here...",
+                style: "margin-left: 10px; padding: 5px; width: 90%; background-color: white; border: none;",
                 value: "{formula}",
-                oninput: move |e| {
-                    formula.set(e.value().clone());
-                },
-                onkeydown: on_submit,
-                onblur : on_blur,
-                // onkeydown: move |e| {
-                //     if e.key() == Key::Enter {
-
-                //     }
-                // },
+                oninput: move |evt| formula.set(evt.value().clone()),
+                onblur: on_blur,
+                onkeydown: on_submit
             }
         }
     }
