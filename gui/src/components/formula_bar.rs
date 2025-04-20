@@ -104,7 +104,7 @@ pub fn FormulaBar() -> Element {
                 value: "{column_to_letter(selected_cell.cloned().1 as usize)}{selected_cell.cloned().0}"
             }
             input {
-                style: "margin-left: 10px; padding: 5px; width: 90%; background-color: white; border: none;",
+                style: "margin-left: 10px; padding: 5px; width: 91%; background-color: white; border: none; height: 55%;",
                 value: "{formula}",
                 oninput: move |evt| formula.set(evt.value().clone()),
                 onblur: on_blur,

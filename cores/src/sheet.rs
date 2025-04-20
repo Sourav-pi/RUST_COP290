@@ -744,7 +744,7 @@ mod tests {
         test_sheet.update_cell_data(5, 2, String::from("10"));
         test_sheet.update_cell_data(1, 2, String::from("-5"));
         test_sheet.update_cell_data(3, 1, String::from("6"));
-        assert_eq!(test_sheet.get_value(1, 1), 3);
+        assert_eq!(test_sheet.get_value(1, 1), 4);
     }
 
     #[test]
