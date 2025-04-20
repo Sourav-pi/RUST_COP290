@@ -10,7 +10,7 @@ use std::{cmp::max, vec};
 
 type Range = ((usize, usize), (usize, usize));
 
-fn parse_range(range: &str) -> Result<Range, String> {
+fn parse_range(range: &str,row: usize, col:usize) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
         return Err("Invalid range format".to_string());
@@ -25,6 +25,11 @@ fn parse_range(range: &str) -> Result<Range, String> {
     if start_tuple == (0, 0) || end_tuple == (0, 0) {
         return Err("Invalid cell reference".to_string());
     }
+
+    if start_tuple.0 > row || start_tuple.1 > col || end_tuple.0 > row || end_tuple.1 > col {
+        return Err("Cell reference out of bounds".to_string());
+    }
+
     if start_tuple.0 == end_tuple.0 && start_tuple.1 <= end_tuple.1 {
         Ok((start_tuple, end_tuple))
     } else if start_tuple.0 <= end_tuple.0 && start_tuple.1 == end_tuple.1 {
@@ -48,7 +53,7 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-        let (start, end) = parse_range(range)?;
+        let (start, end) = parse_range(range,self.row,self.col)?;
         let label_x: Vec<String> = if x_labels.is_empty() {
             let temp_range = max(end.0 - start.0 + 1, end.1 - start.1 + 1);
             let mut temp_vec: Vec<String> = Vec::new();
@@ -80,7 +85,7 @@ impl Sheet {
         y_lable: &str,
         title: &str,
     ) -> Result<String, String> {
-        let (start, end) = parse_range(range)?;
+        let (start, end) = parse_range(range,self.row,self.col)?;
         let label_x = if x_labels.is_empty() {
             let temp_range = max(end.0 - start.0 + 1, end.1 - start.1 + 1);
             let mut temp_vec: Vec<String> = Vec::new();
@@ -105,7 +110,7 @@ impl Sheet {
             .to_string())
     }
     pub fn pie_graph(&self, range: &str, x_labels: &str, title: &str) -> Result<String, String> {
-        let (start, end) = parse_range(range)?;
+        let (start, end) = parse_range(range,self.row,self.col)?;
         let mut x_labels = parse_lables(x_labels);
         let mut values: Vec<i32> = Vec::new();
         let mut cnt = 0;
@@ -160,8 +165,8 @@ impl Sheet {
         x_name: &str,
         y_name: &str,
     ) -> Result<String, String> {
-        let (start1, end1) = parse_range(rangex)?;
-        let (start2, end2) = parse_range(rangey)?;
+        let (start1, end1) = parse_range(rangex,self.row,self.col)?;
+        let (start2, end2) = parse_range(rangey,self.row,self.col)?;
 
         let diff1 = (end1.0 - start1.0) as i32;
         let diff2 = (end1.1 - start1.1) as i32;
@@ -250,5 +255,120 @@ mod tests {
         test_sheet.update_cell_data(6, 1, String::from("6"));
         let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
         assert!(result.is_ok());
+    }
+    #[test]
+    fn test_parse_range_valid_row() {
+        let result = parse_range("A1:A5",100,100);
+        assert!(result.is_ok());
+        let ((start_row, start_col), (end_row, end_col)) = result.unwrap();
+        assert_eq!(start_row, 1);
+        assert_eq!(start_col, 1);
+        assert_eq!(end_row, 5);
+        assert_eq!(end_col, 1);
+    }
+
+    #[test]
+    fn test_parse_range_valid_column() {
+        let result = parse_range("A1:C1",100,100);
+        assert!(result.is_ok());
+        let ((start_row, start_col), (end_row, end_col)) = result.unwrap();
+        assert_eq!(start_row, 1);
+        assert_eq!(start_col, 1);
+        assert_eq!(end_row, 1);
+        assert_eq!(end_col, 3);
+    }
+
+    #[test]
+    fn test_parse_range_invalid_format() {
+        let result = parse_range("A1B5",100,100);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid range format");
+    }
+
+    #[test]
+    fn test_parse_range_empty_parts() {
+        let result = parse_range("A1:",100,100);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Range cannot be empty");
+    }
+
+    #[test]
+    fn test_parse_range_invalid_cell() {
+        let result = parse_range("XYZ:A5",100,100);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid cell reference");
+    }
+
+    #[test]
+    fn test_parse_range_invalid_direction() {
+        let result = parse_range("C5:A1",100,100);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Invalid range");
+    }
+
+    // Tests for parse_lables function
+    #[test]
+    fn test_parse_labels_empty() {
+        let result = parse_lables("");
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_parse_labels_single() {
+        let result = parse_lables("Label1");
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0], "Label1");
+    }
+
+    #[test]
+    fn test_parse_labels_multiple() {
+        let result = parse_lables("Label1,Label2,Label3");
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], "Label1");
+        assert_eq!(result[1], "Label2");
+        assert_eq!(result[2], "Label3");
+    }
+
+    #[test]
+    fn test_parse_labels_with_spaces() {
+        let result = parse_lables(" Label1 , Label2 , Label3 ");
+        assert_eq!(result.len(), 3);
+        assert_eq!(result[0], "Label1");
+        assert_eq!(result[1], "Label2");
+        assert_eq!(result[2], "Label3");
+    }
+
+    // Edge case tests for graph functions
+    #[test]
+    fn test_line_graph_empty_labels() {
+        let mut test_sheet = Sheet::new(3, 3);
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("20"));
+        test_sheet.update_cell_data(1, 3, String::from("30"));
+        let result = test_sheet.line_graph("A1:C1", "", "Y Axis", "Line Graph");
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_bar_graph_invalid_range() {
+        let test_sheet = Sheet::new(3, 3);
+        let result = test_sheet.bar_graph("A5:C10", "", "Y Axis", "Bar Graph");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_pie_graph_invalid_non_linear_range() {
+        let test_sheet = Sheet::new(3, 3);
+        let result = test_sheet.pie_graph("A1:C3", "", "Pie Graph");
+        println!("{:?}", result);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_scatter_graph_mismatched_ranges() {
+        let test_sheet = Sheet::new(3, 3);
+        let result = test_sheet.scatter_graph("A1:A3", "B1:B5", "Scatter", "X", "Y");
+        println!("{:?}", result);
+        assert!(result.is_err());
     }
 }
