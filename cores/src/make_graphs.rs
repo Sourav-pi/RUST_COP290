@@ -81,17 +81,16 @@ impl Sheet {
         title: &str,
     ) -> Result<String, String> {
         let (start, end) = parse_range(range)?;
-        let label_x;
-        if x_labels.is_empty() {
+        let label_x = if x_labels.is_empty() {
             let temp_range = max(end.0 - start.0 + 1, end.1 - start.1 + 1);
             let mut temp_vec: Vec<String> = Vec::new();
             for i in 1..(temp_range + 1) {
                 temp_vec.push(format!("{}", i));
             }
-            label_x = temp_vec;
+            temp_vec
         } else {
-            label_x = parse_lables(x_labels);
-        }
+            parse_lables(x_labels)
+        };
         let mut values = Vec::new();
         for i in start.0..=end.0 {
             for j in start.1..=end.1 {
@@ -213,42 +212,43 @@ mod tests {
         assert!(result.is_ok());
     }
 
-#[test]
-fn test_scatter_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_scatter_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result =
+            test_sheet.scatter_graph("A1:A6", "B1:B6", "Scatter Graph", "X Axis", "Y Axis");
+        assert!(result.is_ok());
+    }
 
-#[test]
-fn test_bar_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.bar_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Bar Graph");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_bar_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result = test_sheet.bar_graph("A1:A6", "A2,A3,A4,A5,A6", "Y Axis", "Bar Graph");
+        assert!(result.is_ok());
+    }
 
-#[test]
-fn test_pie_graph() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(5, 1, String::from("-5"));
-    test_sheet.update_cell_data(6, 1, String::from("6"));
-    let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
-    assert!(result.is_ok());
-}
+    #[test]
+    fn test_pie_graph() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(4, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(5, 1, String::from("-5"));
+        test_sheet.update_cell_data(6, 1, String::from("6"));
+        let result = test_sheet.pie_graph("A1:A6", "A2,A3,A4,A5,A6", "Pie Graph");
+        assert!(result.is_ok());
+    }
 }

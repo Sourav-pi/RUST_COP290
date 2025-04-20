@@ -192,11 +192,13 @@ impl Sheet {
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
                 if !(self.grid[param1_row][param1_col]
-                    .depend.contains(&(row * ENCODE_SHIFT + col))){
-                
-                self.grid[param1_row][param1_col]
                     .depend
-                    .push(row * ENCODE_SHIFT + col);}
+                    .contains(&(row * ENCODE_SHIFT + col)))
+                {
+                    self.grid[param1_row][param1_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);
+                }
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -216,19 +218,23 @@ impl Sheet {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
                     if !(self.grid[param2_row][param2_col]
                         .depend
-                        .contains(&(row * ENCODE_SHIFT + col))){
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);}
+                        .contains(&(row * ENCODE_SHIFT + col)))
+                    {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
                 if !(self.grid[param1_row][param1_col]
                     .depend
-                    .contains(&(row * ENCODE_SHIFT + col))){
-                self.grid[param1_row][param1_col]
-                    .depend
-                    .push(row * ENCODE_SHIFT + col);}   
+                    .contains(&(row * ENCODE_SHIFT + col)))
+                {
+                    self.grid[param1_row][param1_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);
+                }
                 // self.grid[param1_row][param1_col]
                 //     .depend
                 //     .push(row * ENCODE_SHIFT + col);
@@ -237,26 +243,28 @@ impl Sheet {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
                     if !(self.grid[param2_row][param2_col]
                         .depend
-                        .contains(&(row * ENCODE_SHIFT + col))){
-                    self.grid[param2_row][param2_col]
-                        .depend
-                        .push(row * ENCODE_SHIFT + col);}
+                        .contains(&(row * ENCODE_SHIFT + col)))
+                    {
+                        self.grid[param2_row][param2_col]
+                            .depend
+                            .push(row * ENCODE_SHIFT + col);
+                    }
                     // self.grid[param2_row][param2_col]
                     //     .depend
                     //     .push(row * ENCODE_SHIFT + col);
                 }
             }
-        } else {
-            if command.flag.cmd()==5 {
-                let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                if !(self.grid[param1_row][param1_col]
-                    .depend
-                    .contains(&(row * ENCODE_SHIFT + col))){
+        } else if command.flag.cmd() == 5 {
+            let (param1_row, param1_col) = convert_to_index_int(command.param1);
+            if !(self.grid[param1_row][param1_col]
+                .depend
+                .contains(&(row * ENCODE_SHIFT + col)))
+            {
                 self.grid[param1_row][param1_col]
                     .depend
-                    .push(row * ENCODE_SHIFT + col);}   
+                    .push(row * ENCODE_SHIFT + col);
             }
-            else{
+        } else {
             let t = row * ENCODE_SHIFT + col;
             let (param1_row, param1_col) = convert_to_index_int(command.param1);
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
@@ -269,7 +277,6 @@ impl Sheet {
                     // self.grid[i][j].depend.push(t);
                 }
             }
-        }
         }
 
         self.grid[row][col].formula = command;
@@ -370,13 +377,13 @@ impl Sheet {
         sum
     }
     fn stddev(&self, row1: usize, row2: usize, col1: usize, col2: usize) -> i32 {
-        let mut mean=0;
+        let mut mean = 0;
         let mut sum = 0;
         let mut count = 0;
         for i in row1..(row2 + 1) {
             for j in col1..(col2 + 1) {
                 let value = self.grid[i][j].value;
-                sum += (value)*(value);
+                sum += (value) * (value);
                 mean += value;
                 count += 1;
             }
@@ -384,8 +391,8 @@ impl Sheet {
         if count == 0 {
             return 0;
         }
-        let avg = (((mean*mean) as f64) / ((count*count) as f64)) as f64;
-        let mut x=( (sum as f64) / (count as f64) ) as f64;
+        let avg = ((mean * mean) as f64) / ((count * count) as f64);
+        let mut x = (sum as f64) / (count as f64);
         x -= avg;
         ((x).sqrt()) as i32
     }
@@ -557,15 +564,16 @@ impl Sheet {
                     self.grid[row][col].value =
                         self.stddev(param1_row, param2_row, param1_col, param2_col);
                 } else if self.grid[row][col].formula.flag.cmd() == 5 {
-                    if self.grid[row][col].formula.flag.type1()==1{
-                    let time_secs = time::Duration::from_secs(self.grid[param1_row][param1_col].value as u64);
-                    thread::sleep(time_secs);
-                    self.grid[row][col].value = self.grid[param1_row][param1_col].value;}
-                    else{
+                    if self.grid[row][col].formula.flag.type1() == 1 {
+                        let time_secs = time::Duration::from_secs(
+                            self.grid[param1_row][param1_col].value as u64,
+                        );
+                        thread::sleep(time_secs);
+                        self.grid[row][col].value = self.grid[param1_row][param1_col].value;
+                    } else {
                         self.grid[row][col].value = self.grid[row][col].formula.param1;
                         let time_secs = time::Duration::from_secs(self.grid[row][col].value as u64);
                         thread::sleep(time_secs);
-                        
                     }
                 }
             }
@@ -626,44 +634,42 @@ impl Sheet {
     pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
         // Overall timing
         let start_total = time::Instant::now();
-        
+
         // Stage 1: Parse formula
         let mut command = parse_formula(&new_formula);
-        if command.flag.error() ==0{
-        command.flag.set_is_any(1);        
-        // Stage 2: Save old command and set dependencies
-        let old_command = self.grid[row][col].formula.clone();
-        self.set_dependicies_cell(row, col, command.clone());        
-        // Stage 3: Topological sort
-        let topo_vec = self.toposort(row * ENCODE_SHIFT + col);        
-        // Stage 4: Update cells
-        if topo_vec.is_empty() {
-            self.grid[row][col].formula.flag.set_error(2);
+        if command.flag.error() == 0 {
+            command.flag.set_is_any(1);
+            // Stage 2: Save old command and set dependencies
+            let old_command = self.grid[row][col].formula.clone();
+            self.set_dependicies_cell(row, col, command.clone());
+            // Stage 3: Topological sort
+            let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
+            // Stage 4: Update cells
+            if topo_vec.is_empty() {
+                self.grid[row][col].formula.flag.set_error(2);
+            } else {
+                self.update_cell(topo_vec);
+            }
+            let mut ans = CallResult {
+                time: start_total.elapsed().as_millis() as f64,
+                error: Error::None,
+            };
+
+            if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
+                ans.error = Error::DivByZero;
+            } else if self.grid[row][col].formula.flag.error() == 1 {
+                ans.error = Error::InvalidInput;
+            } else if self.grid[row][col].formula.flag.error() == 2 {
+                ans.error = Error::CycleDetected;
+                self.remove_old_dependicies(row, col, old_command);
+            }
+
+            ans
         } else {
-            self.update_cell(topo_vec);
-        }
-        let mut ans = CallResult {
-            time: start_total.elapsed().as_millis() as f64,
-            error: Error::None,
-        };
-        
-        if self.grid[row][col].formula.flag.is_div_by_zero() == 1 {
-            ans.error = Error::DivByZero;
-        } else if self.grid[row][col].formula.flag.error() == 1 {
-            ans.error = Error::InvalidInput;
-        } else if self.grid[row][col].formula.flag.error() == 2 {
-            ans.error = Error::CycleDetected;
-            self.remove_old_dependicies(row, col, old_command);
-        }
-        
-        ans
-    }
-        else{
-            let ans = CallResult {
+            CallResult {
                 time: start_total.elapsed().as_millis() as f64,
                 error: Error::InvalidInput,
-            };
-            ans
+            }
         }
     }
 
@@ -675,119 +681,162 @@ impl Sheet {
 #[cfg(test)]
 mod tests {
     use super::*;
-#[test]
-fn test_avg() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("AVG(A2:D5)"));
-    test_sheet.update_cell_data(2, 2, String::from("500"));
-    println!("{}", test_sheet.get_value(1, 1));
-}
-#[test]
-fn test_sum() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("SUM(A2:D5)"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 52);
-}
-#[test]
-fn test_max() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("MAX(A2:D5)"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 11);
-}
-#[test]
-fn test_min() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("MIN(A2:D5)"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 0);
-}
+    #[test]
+    fn test_avg() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("AVG(A2:D5)"));
+        test_sheet.update_cell_data(2, 2, String::from("500"));
+        println!("{}", test_sheet.get_value(1, 1));
+    }
+    #[test]
+    fn test_sum() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("SUM(A2:D5)"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 52);
+    }
+    #[test]
+    fn test_max() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("MAX(A2:D5)"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 11);
+    }
+    #[test]
+    fn test_min() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("MIN(A2:D5)"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 0);
+    }
 
-#[test]
-fn test_stdev() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("STDEV(A2:D5)"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 3);
-}
+    #[test]
+    fn test_stdev() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("STDEV(A2:D5)"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 3);
+    }
 
-#[test]
-fn test_multiply() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2*B2"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 55);
-}
+    #[test]
+    fn test_multiply() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2*B2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 55);
+    }
 
-#[test]
-fn test_divide() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2/B2"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert_eq!(test_sheet.get_value(1, 1), 0);
-}
+    #[test]
+    fn test_divide() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2/B2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert_eq!(test_sheet.get_value(1, 1), 0);
+    }
 
-#[test]
-fn test_large_cell() {
-    let mut test_sheet = Sheet::new(703, 703);
-    test_sheet.update_cell_data(1, 1, String::from("ZZ29"));
-    test_sheet.update_cell_data(29, 702, String::from("29"));
-    println!("{}", test_sheet.get_value(1, 1));
-    assert!(test_sheet.get_value(1, 1) == 29);
-}
-#[test]
-fn check_cycle() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2"));
-    test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
-    test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
-    test_sheet.update_cell_data(5, 2, String::from("10"));
-    test_sheet.update_cell_data(1, 2, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-}
-#[test]
-fn error_detected1() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
-    test_sheet.update_cell_data(2, 1, String::from("90"));
-    test_sheet.update_cell_data(3, 1, String::from("50"));
-    test_sheet.update_cell_data(3, 1, String::from("A1+A2"));
-    test_sheet.update_cell_data(3, 1, String::from("-5"));
-    test_sheet.update_cell_data(3, 1, String::from("6"));
-    assert!(test_sheet.get_value(1, 1) == 96);
-}
-#[test]
-fn boundry_check() {
-    let mut test_sheet = Sheet::new(6, 6);
-    test_sheet.update_cell_data(0, 1, String::from("45"));
-    test_sheet.update_cell_data(0, 0, String::from("45"));
-    test_sheet.update_cell_data(1, 0, String::from("45"));
-    assert!(test_sheet.get_value(0, 0) == 45);
-    // test_sheet.update_cell_data(0, 6, String::from ("45"));
-}
+    #[test]
+    fn test_large_cell() {
+        let mut test_sheet = Sheet::new(703, 703);
+        test_sheet.update_cell_data(1, 1, String::from("ZZ29"));
+        test_sheet.update_cell_data(29, 702, String::from("29"));
+        println!("{}", test_sheet.get_value(1, 1));
+        assert!(test_sheet.get_value(1, 1) == 29);
+    }
+    #[test]
+    fn check_cycle() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+    }
+    #[test]
+    fn error_detected1() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(1, 1, String::from("A2+A3"));
+        test_sheet.update_cell_data(2, 1, String::from("90"));
+        test_sheet.update_cell_data(3, 1, String::from("50"));
+        test_sheet.update_cell_data(3, 1, String::from("A1+A2"));
+        test_sheet.update_cell_data(3, 1, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        assert!(test_sheet.get_value(1, 1) == 96);
+    }
+    #[test]
+    fn boundry_check() {
+        let mut test_sheet = Sheet::new(6, 6);
+        test_sheet.update_cell_data(0, 1, String::from("45"));
+        test_sheet.update_cell_data(0, 0, String::from("45"));
+        test_sheet.update_cell_data(1, 0, String::from("45"));
+        assert!(test_sheet.get_value(0, 0) == 45);
+        // test_sheet.update_cell_data(0, 6, String::from ("45"));
+    }
+
+    #[test]
+    fn test_copy_col() {
+        let mut test_sheet = Sheet::new(10, 10);
+        test_sheet.update_cell_data(1, 1, String::from("A2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        let _ = test_sheet.copy_col(1, 3);
+
+        assert!(test_sheet.get_value(1, 3) == 5);
+        assert!(test_sheet.get_value(2, 3) == 5);
+        assert!(test_sheet.get_value(3, 3) == 6);
+
+        assert!(test_sheet.get_value(1, 2) == -5);
+        assert!(test_sheet.get_value(2, 2) == 11);
+        assert!(test_sheet.get_value(3, 2) == 0);
+        assert!(test_sheet.get_value(4, 2) == 0);
+        assert!(test_sheet.get_value(5, 2) == 10);
+
+        assert!(test_sheet.get_value(1, 1) == 5);
+        assert!(test_sheet.get_value(2, 1) == 5);
+        assert!(test_sheet.get_value(3, 1) == 6);
+    }
+
+    #[test]
+    fn test_copy_cell() {
+        let mut test_sheet = Sheet::new(10, 10);
+        test_sheet.update_cell_data(1, 1, String::from("A2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(2, 2, String::from("A2+A3"));
+        test_sheet.update_cell_data(5, 2, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(3, 1, String::from("6"));
+        let _ = test_sheet.copy_cell(1, 1, 2, 2);
+        assert!(test_sheet.get_value(2, 2) == 5);
+        assert!(test_sheet.get_value(1, 1) == 5);
+        assert!(test_sheet.get_value(2, 1) == 5);
+        assert!(test_sheet.get_value(3, 1) == 6);
+        assert!(test_sheet.get_value(5, 2) == 10);
+    }
 }

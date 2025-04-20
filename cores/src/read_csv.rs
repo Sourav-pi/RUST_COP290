@@ -1,4 +1,3 @@
-
 use crate::parse::CommandFlag;
 use crate::{parse::CommandCall, sheet::*};
 use serde::{self, Deserialize};
@@ -19,7 +18,7 @@ impl Sheet {
         let mut rdr = csv::Reader::from_path(file_path)?;
         for i in 0..self.row {
             for j in 0..self.col {
-                self.grid[i as usize][j as usize] = Cell {
+                self.grid[i][j] = Cell {
                     value: 0,
                     formula: CommandCall {
                         flag: CommandFlag::new(),
@@ -39,7 +38,7 @@ impl Sheet {
                     param1: record.param1,
                     param2: record.param2,
                 },
-                depend: Vec::new(), 
+                depend: Vec::new(),
             };
             new_cell.value = record.value;
             new_cell.formula.param1 = record.param1;
@@ -89,7 +88,7 @@ impl Sheet {
             self.grid[record.row as usize][record.col as usize] = new_cell;
         }
         Ok(())
-}
+    }
 }
 
 // #[test]
