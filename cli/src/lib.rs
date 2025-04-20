@@ -212,3 +212,37 @@ pub fn run() {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cores::Sheet;
+    use cores::convert_to_index;
+
+    #[test]
+    fn test_column_to_letter() {
+        assert_eq!(column_to_letter(1), "A");
+        assert_eq!(column_to_letter(26), "Z");
+        assert_eq!(column_to_letter(27), "AA");
+        assert_eq!(column_to_letter(28), "AB");
+        assert_eq!(column_to_letter(52), "AZ");
+        assert_eq!(column_to_letter(53), "BA");
+    }
+
+    #[test]
+    fn test_convert_to_index() {
+        let (row, col) = convert_to_index("A1".to_string());
+        assert_eq!(row, 1);
+        assert_eq!(col, 1);
+    }
+    #[test]
+    fn test_display_sheet() {
+        let mut sheet = Sheet::new(20, 20);
+        sheet.grid[1][1].value = 9;
+        sheet.grid[1][2].value = 8;
+        sheet.grid[1][3].value = 7;
+        sheet.grid[1][4].value = 6;
+        sheet.grid[1][5].value = 5;
+        display_sheet(&sheet, 20, 20, 1, 1);
+    }
+}
