@@ -90,7 +90,7 @@ pub fn Row(props: RowProps) -> Element {
             let mouse_x = e.client_coordinates().x;
 
             // Set the context menu data with mouse position and column number
-            context_menu.set(Some((mouse_x, mouse_y, col_num, 0, MenuType::Col)));
+            context_menu.set(Some((mouse_x, mouse_y, 0, col_num, MenuType::Col)));
 
             println!("Right-clicked on column {}", col_num);
         }
