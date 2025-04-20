@@ -156,10 +156,7 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
                 has_letter = true;
             } else if is_digit(c) {
                 has_digit = true;
-                has_digit = true;
             } else {
-                is_cell_ref = false;
-                break;
                 is_cell_ref = false;
                 break;
             }
@@ -175,9 +172,7 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
             container.flag.set_error(1);
         }
     } else {
-    } else {
         container.flag.set_error(1);
-    }
     }
 }
 

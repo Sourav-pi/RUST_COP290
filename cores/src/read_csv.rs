@@ -148,7 +148,6 @@ impl Sheet {
         }
         Ok(())
     }
-    }
 }
 
 // Test code is commented out, but could be documented as well if needed
