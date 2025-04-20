@@ -1,8 +1,5 @@
 use crate::parse::*;
-use fxhash::FxHashMap;
 use fxhash::FxHashSet;
-use std::cell;
-use std::default;
 use std::{thread, time};
 
 const DEBUG: bool = false;
@@ -11,7 +8,7 @@ const DEBUG: bool = false;
 pub struct Cell {
     pub value: i32,
     pub formula: CommandCall,
-    // pub depend: Vec<usize>,
+    pub depend: Vec<usize>,
 }
 pub enum Error {
     DivByZero,
@@ -30,7 +27,6 @@ pub struct Sheet {
     pub grid: Vec<Vec<Cell>>,
     pub row: usize,
     pub col: usize,
-    pub dep_map:FxHashMap<usize,Vec<usize>>,
 }
 impl Sheet {
     pub fn new(row: usize, col: usize) -> Self {
@@ -43,14 +39,13 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    // depend: Vec::new(),
+                    depend: Vec::new(),
                 };
                 col + 1
             ];
             row + 1
         ];
-
-        Self { grid, row, col, dep_map:FxHashMap::default() }
+        Self { grid, row, col }
     }
 
     #[allow(dead_code)]
@@ -101,35 +96,12 @@ impl Sheet {
     pub fn copy_row(&mut self, copy_from: usize, copy_to: usize) -> Result<(), Error> {
         // Save original state of destination row in case we need to rollback
         let original_row: Vec<Cell> = self.grid[copy_to].clone();
-        let mut original_row_depend_map:FxHashMap<usize,Vec<usize>> = FxHashMap::default() ;
-        for i in 0..self.col {
-            original_row_depend_map.insert(copy_to*ENCODE_SHIFT+i, vec![]);
-            if let Some(vec1)= self.dep_map.get(&(copy_to*ENCODE_SHIFT+i)){
-                for j in vec1.iter(){
-                    original_row_depend_map.get_mut(&(copy_to*ENCODE_SHIFT+i)).unwrap().push(*j);
-                }
-            }
-        }
-
 
         // Perform the copy operation
         for i in 0..self.col {
             self.grid[copy_to][i].value = self.grid[copy_from][i].value;
             self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
-            self.dep_map.insert(copy_to*ENCODE_SHIFT+i, vec![]);
-            let mut temp_vec=vec![];
-            if let Some(vec1)= self.dep_map.get(&(copy_from*ENCODE_SHIFT+i)){
-                for j in vec1.iter(){
-                    temp_vec.push(*j);
-                    // if !.contains(j){
-                    //     vec.push(*j);
-                    // }
-                }
-            }
-            self.dep_map.insert(copy_to*ENCODE_SHIFT+i,temp_vec);
-            
-
-            // self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
+            self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
         }
 
         // Check for cycles for each cell in the row
@@ -141,14 +113,6 @@ impl Sheet {
             if topo_sort.is_empty() {
                 // Rollback all changes to prevent corrupted state
                 self.grid[copy_to] = original_row;
-                for i in 0..self.col {
-                    self.dep_map.insert(copy_to*ENCODE_SHIFT+i, vec![]);
-                    if let Some(vec1)= original_row_depend_map.get(&(copy_to*ENCODE_SHIFT+i)){
-                        for j in vec1.iter(){
-                            self.dep_map.get_mut(&(copy_to*ENCODE_SHIFT+i)).unwrap().push(*j);
-                        }
-                    }
-                }
                 return Err(Error::CycleDetected);
             }
         }
@@ -163,22 +127,12 @@ impl Sheet {
         for i in 0..self.row {
             original_col.push(self.grid[i][copy_to].clone());
         }
-        let mut original_col_depend_map:FxHashMap<usize,Vec<usize>> = FxHashMap::default() ;
-        for i in 0..self.row {
-            original_col_depend_map.insert(i*ENCODE_SHIFT+copy_to, vec![]);
-            if let Some(vec1)= self.dep_map.get(&(i*ENCODE_SHIFT+copy_to)){
-                for j in vec1.iter(){
-                    original_col_depend_map.get_mut(&(i*ENCODE_SHIFT+copy_to)).unwrap().push(*j);
-                }
-            }
-        }
 
         // Perform the copy operation
         for i in 0..self.row {
             self.grid[i][copy_to].value = self.grid[i][copy_from].value;
             self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
-            // self.grid[i][copy_to].depend = self.grid[i][copy_from].depend.clone();
-
+            self.grid[i][copy_to].depend = self.grid[i][copy_from].depend.clone();
         }
 
         // Check for cycles for each cell in the column
@@ -191,15 +145,6 @@ impl Sheet {
                 // Rollback all changes to prevent corrupted state
                 for (i, item) in original_col.iter().enumerate().take(self.row) {
                     self.grid[i][copy_to] = item.clone();
-
-                }
-                for i in 0..self.row {
-                    self.dep_map.insert(i*ENCODE_SHIFT+copy_to, vec![]);
-                    if let Some(vec1)= original_col_depend_map.get(&(i*ENCODE_SHIFT+copy_to)){
-                        for j in vec1.iter(){
-                            self.dep_map.get_mut(&(i*ENCODE_SHIFT+copy_to)).unwrap().push(*j);
-                        }
-                    }
                 }
                 return Err(Error::CycleDetected);
             }
@@ -218,19 +163,13 @@ impl Sheet {
     ) -> Result<(), Error> {
         // Save original state of destination cell
         let original_cell = self.grid[copy_to_row][copy_to_col].clone();
-        let mut orignal_cell_depend_vec:Vec<usize> = vec![];
-        if let Some(vec1)= self.dep_map.get(&(copy_to_row*ENCODE_SHIFT+copy_to_col)){
-            for j in vec1.iter(){
-                orignal_cell_depend_vec.push(*j);
-            }
-        }
 
         // Perform the copy operation
         self.grid[copy_to_row][copy_to_col].value = self.grid[copy_from_row][copy_from_col].value;
         self.grid[copy_to_row][copy_to_col].formula =
             self.grid[copy_from_row][copy_from_col].formula.clone();
-        // self.grid[copy_to_row][copy_to_col].depend =
-        //     self.grid[copy_from_row][copy_from_col].depend.clone();
+        self.grid[copy_to_row][copy_to_col].depend =
+            self.grid[copy_from_row][copy_from_col].depend.clone();
 
         // Check for cycles
         let cell_index = copy_to_row * ENCODE_SHIFT + copy_to_col;
@@ -240,9 +179,6 @@ impl Sheet {
         if topo_sort.is_empty() {
             // Restore the original cell state
             self.grid[copy_to_row][copy_to_col] = original_cell;
-            // Restore the original dependencies
-            self.dep_map.insert(copy_to_row*ENCODE_SHIFT+copy_to_col, orignal_cell_depend_vec);
-            
             return Err(Error::CycleDetected);
         }
 
@@ -255,23 +191,12 @@ impl Sheet {
                 self.grid[row][col].value = command.param1;
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                let cell1=param1_row*ENCODE_SHIFT+param1_col;
-                if !self.dep_map.contains_key(&(cell1)){
-                    self.dep_map.insert(cell1, vec![]);
-
-                }
-                if let Some(vec)= self.dep_map.get_mut(&(cell1)){
-                    if !vec.contains(&(row*ENCODE_SHIFT+col)){
-                        vec.push(row*ENCODE_SHIFT+col);
-                    }
-                }
-                //self.dep_map.get_mut(&(cell1)).unwrap().push(row*ENCODE_SHIFT+col);
-                // if !(self.grid[param1_row][param1_col]
-                //     .depend.contains(&(row * ENCODE_SHIFT + col))){
+                if !(self.grid[param1_row][param1_col]
+                    .depend.contains(&(row * ENCODE_SHIFT + col))){
                 
-                // self.grid[param1_row][param1_col]
-                //     .depend
-                //     .push(row * ENCODE_SHIFT + col);}
+                self.grid[param1_row][param1_col]
+                    .depend
+                    .push(row * ENCODE_SHIFT + col);}
             }
         } else if command.flag.type_() == 1 {
             if command.flag.type1() == 0 {
@@ -289,65 +214,33 @@ impl Sheet {
                     }
                 } else {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    let cell2=param2_row*ENCODE_SHIFT+param2_col;
-                    if !self.dep_map.contains_key(&(cell2)){
-                        self.dep_map.insert(cell2, vec![]);
-
-                    }
-                    if let Some(vec)= self.dep_map.get_mut(&(cell2)){
-                        if !vec.contains(&(row*ENCODE_SHIFT+col)){
-                            vec.push(row*ENCODE_SHIFT+col);
-                        }
-                    }
-                    // self.dep_map.get_mut(&(cell2)).unwrap().push(row*ENCODE_SHIFT+col);
-                    // if !(self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .contains(&(row * ENCODE_SHIFT + col))){
-                    // self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .push(row * ENCODE_SHIFT + col);}
+                    if !(self.grid[param2_row][param2_col]
+                        .depend
+                        .contains(&(row * ENCODE_SHIFT + col))){
+                    self.grid[param2_row][param2_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);}
                 }
             } else if command.flag.type1() == 1 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                let cell1=param1_row*ENCODE_SHIFT+param1_col;
-                if !self.dep_map.contains_key(&(cell1)){
-                    self.dep_map.insert(cell1, vec![]);
-
-                }
-                if let Some(vec)= self.dep_map.get_mut(&(cell1)){
-                    if !vec.contains(&(row*ENCODE_SHIFT+col)){
-                        vec.push(row*ENCODE_SHIFT+col);
-                    }
-                }
-                //self.dep_map.get_mut(&(cell1)).unwrap().push(row*ENCODE_SHIFT+col);
-                // if !(self.grid[param1_row][param1_col]
-                //     .depend
-                //     .contains(&(row * ENCODE_SHIFT + col))){
-                // self.grid[param1_row][param1_col]
-                //     .depend
-                //     .push(row * ENCODE_SHIFT + col);}   
+                if !(self.grid[param1_row][param1_col]
+                    .depend
+                    .contains(&(row * ENCODE_SHIFT + col))){
+                self.grid[param1_row][param1_col]
+                    .depend
+                    .push(row * ENCODE_SHIFT + col);}   
                 // self.grid[param1_row][param1_col]
                 //     .depend
                 //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
-                    let cell2=param2_row*ENCODE_SHIFT+param2_col;
-                    if !self.dep_map.contains_key(&(cell2)){
-                        self.dep_map.insert(cell2, vec![]);
-
-                    }
-                    if let Some(vec)= self.dep_map.get_mut(&(cell2)){
-                        if !vec.contains(&(row*ENCODE_SHIFT+col)){
-                            vec.push(row*ENCODE_SHIFT+col);
-                        }
-                    }
-                    // if !(self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .contains(&(row * ENCODE_SHIFT + col))){
-                    // self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .push(row * ENCODE_SHIFT + col);}
+                    if !(self.grid[param2_row][param2_col]
+                        .depend
+                        .contains(&(row * ENCODE_SHIFT + col))){
+                    self.grid[param2_row][param2_col]
+                        .depend
+                        .push(row * ENCODE_SHIFT + col);}
                     // self.grid[param2_row][param2_col]
                     //     .depend
                     //     .push(row * ENCODE_SHIFT + col);
@@ -356,22 +249,12 @@ impl Sheet {
         } else {
             if command.flag.cmd()==5 {
                 let (param1_row, param1_col) = convert_to_index_int(command.param1);
-                let cell1=param1_row*ENCODE_SHIFT+param1_col;
-                if !self.dep_map.contains_key(&(cell1)){
-                    self.dep_map.insert(cell1, vec![]);
-
-                }
-                if let Some(vec)= self.dep_map.get_mut(&(cell1)){
-                    if !vec.contains(&(row*ENCODE_SHIFT+col)){
-                        vec.push(row*ENCODE_SHIFT+col);
-                    }
-                }
-                // if !(self.grid[param1_row][param1_col]
-                //     .depend
-                //     .contains(&(row * ENCODE_SHIFT + col))){
-                // self.grid[param1_row][param1_col]
-                //     .depend
-                //     .push(row * ENCODE_SHIFT + col);}   
+                if !(self.grid[param1_row][param1_col]
+                    .depend
+                    .contains(&(row * ENCODE_SHIFT + col))){
+                self.grid[param1_row][param1_col]
+                    .depend
+                    .push(row * ENCODE_SHIFT + col);}   
             }
             else{
             let t = row * ENCODE_SHIFT + col;
@@ -379,20 +262,10 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
-                    let cell_index = i * ENCODE_SHIFT + j;
-                    if !self.dep_map.contains_key(&(cell_index)){
-                        self.dep_map.insert(cell_index, vec![]);
-
+                    let depend_vec = &mut self.grid[i][j].depend;
+                    if !depend_vec.contains(&t) {
+                        depend_vec.push(t);
                     }
-                    if let Some(vec)= self.dep_map.get_mut(&(cell_index)){
-                        if !vec.contains(&t){
-                            vec.push(t);
-                        }
-                    }
-                    // let depend_vec = &mut self.grid[i][j].depend;
-                    // if !depend_vec.contains(&t) {
-                    //     depend_vec.push(t);
-                    // }
                     // self.grid[i][j].depend.push(t);
                 }
             }
@@ -441,17 +314,9 @@ impl Sheet {
         let row = cell / ENCODE_SHIFT;
         let mut is_cycle = false;
         stack.insert(cell);
-        match self.dep_map.get(&cell) {
-            Some(dependencies) => {
-                for &dep in dependencies {
-                    is_cycle = is_cycle || self.dfs(dep, visited, stack, result);
-                }
-            }
-            None => {}
+        for &dep in &self.grid[row][col].depend {
+            is_cycle = is_cycle || self.dfs(dep, visited, stack, result);
         }
-        // for &dep in &self.grid[row][col].depend {
-        //     is_cycle = is_cycle || self.dfs(dep, visited, stack, result);
-        // }
         stack.remove(&cell);
         result.push(cell);
         is_cycle
@@ -715,23 +580,15 @@ impl Sheet {
             // Cell reference dependency
 
             let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
-            let cell1=param1_row*ENCODE_SHIFT+param1_col;
-            if let Some(vec)= self.dep_map.get_mut(&(cell1)){
-                vec.retain(|&x| x != curr_index);
-            }
-            // let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-            // depend_vec.retain(|&x| x != curr_index);
+            let depend_vec = &mut self.grid[param1_row][param1_col].depend;
+            depend_vec.retain(|&x| x != curr_index);
         } else if current_command.flag.type_() == 1 {
             // Arithmetic operation dependencies
             if current_command.flag.type1() == 1 {
                 // First parameter is a cell reference
                 let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
-                let cell1=param1_row*ENCODE_SHIFT+param1_col;
-                if let Some(vec)= self.dep_map.get_mut(&(cell1)){
-                    vec.retain(|&x| x != curr_index);
-                }
-                // let depend_vec = &mut self.grid[param1_row][param1_col].depend;
-                // depend_vec.retain(|&x| x != curr_index);
+                let depend_vec = &mut self.grid[param1_row][param1_col].depend;
+                depend_vec.retain(|&x| x != curr_index);
                 // depend_vec.remove(&curr_index);
                 // let mut new_depend_vec= Vec::new();
                 // for i in self.grid[param1_row][param1_col].depend.iter() {
@@ -744,12 +601,8 @@ impl Sheet {
             if current_command.flag.type2() == 1 {
                 // Second parameter is a cell reference
                 let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
-                let cell2=param2_row*ENCODE_SHIFT+param2_col;
-                if let Some(vec)= self.dep_map.get_mut(&(cell2)){
-                    vec.retain(|&x| x != curr_index);
-                }
-                // let depend_vec = &mut self.grid[param2_row][param2_col].depend;
-                // depend_vec.retain(|&x| x != curr_index);
+                let depend_vec = &mut self.grid[param2_row][param2_col].depend;
+                depend_vec.retain(|&x| x != curr_index);
                 // depend_vec.remove(&curr_index);
             }
         } else if current_command.flag.type_() == 2 {
@@ -758,13 +611,9 @@ impl Sheet {
             let (param2_row, param2_col) = convert_to_index_int(current_command.param2);
             for i in param1_row..(param2_row + 1) {
                 for j in param1_col..(param2_col + 1) {
-                    let cell_index = i * ENCODE_SHIFT + j;
-                    if let Some(vec)= self.dep_map.get_mut(&(cell_index)){
-                        vec.retain(|&x| x != curr_index);
-                    }
-                    // let depend_vec = &mut self.grid[i][j].depend;
-                    // depend_vec.retain(|&x| x != curr_index);
-                    // // depend_vec.remove(&curr_index);
+                    let depend_vec = &mut self.grid[i][j].depend;
+                    depend_vec.retain(|&x| x != curr_index);
+                    // depend_vec.remove(&curr_index);
                 }
             }
         }
@@ -784,7 +633,7 @@ impl Sheet {
         command.flag.set_is_any(1);        
         // Stage 2: Save old command and set dependencies
         let old_command = self.grid[row][col].formula.clone();
-        self.remove_old_dependicies(row, col, command.clone());        
+        self.set_dependicies_cell(row, col, command.clone());        
         // Stage 3: Topological sort
         let topo_vec = self.toposort(row * ENCODE_SHIFT + col);        
         // Stage 4: Update cells

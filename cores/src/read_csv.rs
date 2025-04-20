@@ -26,7 +26,7 @@ impl Sheet {
                         param1: 0,
                         param2: 0,
                     },
-                    // depend: Vec::new(),
+                    depend: Vec::new(),
                 };
             }
         }
@@ -39,7 +39,7 @@ impl Sheet {
                     param1: record.param1,
                     param2: record.param2,
                 },
-                // depend: Vec::new(), 
+                depend: Vec::new(), 
             };
             new_cell.value = record.value;
             new_cell.formula.param1 = record.param1;
@@ -78,12 +78,12 @@ impl Sheet {
                 }
             }
             if record.depend.is_empty() {
-                // new_cell.depend = Vec::new();
+                new_cell.depend = Vec::new();
             }
             let depend_parts: Vec<&str> = record.depend.split(",").collect();
             for i in depend_parts {
                 if let Ok(index) = i.parse::<usize>() {
-                    // new_cell.depend.push(index);
+                    new_cell.depend.push(index);
                 }
             }
             self.grid[record.row as usize][record.col as usize] = new_cell;

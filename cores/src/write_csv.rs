@@ -35,14 +35,14 @@ impl Serialize for CsvStore {
         state.serialize_field("param2", &self.data.formula.param2)?;
 
         // Convert the dependency vector into a comma-separated string.
-        // let depend_str = self
-        //     .data
-        //     .depend
-        //     .iter()
-        //     .map(|d| d.to_string())
-        //     .collect::<Vec<_>>()
-        //     .join(",");
-        // state.serialize_field("depend", &depend_str)?;
+        let depend_str = self
+            .data
+            .depend
+            .iter()
+            .map(|d| d.to_string())
+            .collect::<Vec<_>>()
+            .join(",");
+        state.serialize_field("depend", &depend_str)?;
 
         state.end()
     }
