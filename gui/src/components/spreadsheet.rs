@@ -1,7 +1,6 @@
 use cores::Sheet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
-use std::vec::Vec;
 
 use super::context_menu::{ContextMenu, MenuType};
 use super::error_display::ErrorDisplay;

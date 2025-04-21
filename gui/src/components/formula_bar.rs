@@ -9,7 +9,7 @@ use dioxus::prelude::*;
 /// Converts a column index to alphabetic representation (e.g. 0->A, 25->Z, 26->AA)
 fn column_to_letter(column: usize) -> String {
     let mut result = String::new();
-    let mut temp = column;
+    let mut temp = column-1;
 
     loop {
         let remainder = temp % 26;

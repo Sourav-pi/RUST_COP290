@@ -125,7 +125,7 @@ pub fn run_help(args: Vec<String>) {
                 coli as usize,
             );
         }
-        print!("[{time}] ({}) > ", massage);
+        print!("[{}] ({}) > ", (time/1000.0),massage);
         massage = "ok";
         io::stdout().flush().unwrap();
 
