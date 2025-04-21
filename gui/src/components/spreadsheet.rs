@@ -62,7 +62,7 @@ pub fn Spreadsheet() -> Element {
     let max_start_col: MaxStartColContext = use_signal(|| 1);
     let sheet_version: SheetVersionContext = use_signal(|| 0);
     let error_ctx: ErrorContext = use_signal(|| None);
-    let mut filename = "new_file.xlsx".to_string();
+    let mut filename = "new_file.ss".to_string();
     if let Some(file) = current_file.cloned() {
         filename = file.file_name().unwrap().to_str().unwrap().to_string();
     }

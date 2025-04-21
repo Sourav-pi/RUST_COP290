@@ -4,12 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-cores = { path = "../cores" }  # Use the core library
-
-[dev-dependencies]
-tempfile = "3.3.0"
-mockall = "0.13.1"
-mockito = "1.2.0"
+cores = { path = "../cores" }
 
 [lib]
 name = "cli"

@@ -7,3 +7,4 @@ run:
 
 clean:
 	cargo clean
+	rm -rf temp/*

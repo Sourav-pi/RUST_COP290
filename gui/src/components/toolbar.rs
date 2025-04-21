@@ -125,7 +125,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
               let path = std::env::current_dir().unwrap();
 
               let res = rfd::FileDialog::new()
-                  .add_filter("spreadsheet", &["csv"])
+                  .add_filter("spreadsheet", &["ss"])
                   .set_directory(&path)
                   .pick_file();
 
@@ -157,8 +157,8 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
       button { style: BUTTON_STYLE,
           onclick: move |_| {
               let path = std::env::current_dir().unwrap();
-              let res = rfd::FileDialog::new().add_filter("spreadsheet", &["csv"])
-              .set_file_name("new_sheet.csv")
+              let res = rfd::FileDialog::new().add_filter("spreadsheet", &["ss"])
+              .set_file_name("new_sheet.ss")
               .set_directory(&path)
               .save_file();
               // println!("The user choose: {:#?}", res);
