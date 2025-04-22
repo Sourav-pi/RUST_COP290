@@ -85,6 +85,18 @@ pub fn ContextMenu() -> Element {
                             },
                             "Paste Row"
                         }
+                        div {
+                            style: {"padding: 8px 16px; cursor: pointer; &:hover { background-color: #f0f0f0; }"},
+                            onclick: move |_| {
+                                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                                    sheet_locked.clear_row(row as usize);
+                                    sheet_version.set(sheet_version.cloned() + 1);
+                                    }
+                                context_menu.set(None);
+
+                            },
+                            "Clear Row"
+                        }
                     }
                 }
             }
@@ -132,6 +144,17 @@ pub fn ContextMenu() -> Element {
                                 context_menu.set(None);
                             },
                             "Paste Column"
+                        }
+                        div {
+                            style: {"padding: 8px 16px; cursor: pointer; &:hover { background-color: #f0f0f0; }"},
+                            onclick: move |_| {
+                                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                                    sheet_locked.clear_col(col as usize);
+                                    sheet_version.set(sheet_version.cloned() + 1);
+                                    }
+                                context_menu.set(None);
+                            },
+                            "Clear Column"
                         }
                     }
                 }
@@ -184,6 +207,19 @@ pub fn ContextMenu() -> Element {
                                 context_menu.set(None);
                             },
                             "Paste Cell"
+                        }
+
+                        div {
+                            style: {"padding: 8px 16px; cursor: pointer; &:hover { background-color: #f0f0f0; }"},
+                            onclick: move |_| {
+                                if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                                    sheet_locked.clear_cell(row as usize, col as usize);
+                                    sheet_version.set(sheet_version.cloned() + 1);
+                                    }
+                                context_menu.set(None);
+
+                            },
+                            "Clear Cell"
                         }
                     }
                 }

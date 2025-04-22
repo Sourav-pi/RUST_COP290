@@ -41,8 +41,8 @@ pub enum GraphType {
 
 #[component]
 pub fn Spreadsheet() -> Element {
-    let num_rows = 999;
-    let num_cols = 18278;
+    let num_rows = 1000;
+    let num_cols = 18279;
 
     // Create the signals for context
     let selected_cell: SelectedCellContext = use_signal(|| (1, 1));

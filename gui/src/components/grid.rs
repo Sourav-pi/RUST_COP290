@@ -270,7 +270,7 @@ pub fn Grid(props: GridProps) -> Element {
                 // Page info display
                 div {
                     style: PAGE_INFO_STYLE,
-                    "Rows: {start_row}-{end_row} / {props.num_rows}, Cols: {start_col}-{end_col} / {props.num_cols}"
+                    "Rows: {start_row}-{end_row} / {props.num_rows -1 }, Cols: {start_col}-{end_col} / {props.num_cols -1}"
                 }
 
                 // Navigation buttons

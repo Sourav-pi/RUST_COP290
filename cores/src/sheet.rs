@@ -198,6 +198,25 @@ impl Sheet {
         Ok(())
     }
 
+    pub fn clear_row(&mut self, row: usize) {
+        // Clear the entire row
+        for col in 0..self.col {
+            self.clear_cell(row, col);
+        }
+    }
+
+    pub fn clear_col(&mut self, col: usize) {
+        // Clear the entire column
+        for row in 0..self.row {
+            self.clear_cell(row, col);
+        }
+    }
+
+    pub fn clear_cell(&mut self, row: usize, col: usize) {
+        // Clear the cell's value and formula
+        self.update_cell_data(row, col, "0".to_string());
+    }
+
     fn set_dependicies_cell(&mut self, row: usize, col: usize, command: CommandCall) {
         if command.flag.type_() == 0 {
             if command.flag.type1() == 0 {

@@ -1,11 +1,15 @@
 use super::error_display::{show_error, ErrorContext, ErrorType};
 use super::spreadsheet::*;
 use cores::convert_to_index;
+use cores::Sheet;
 use dioxus::prelude::*;
+use std::sync::Arc;
+use std::sync::Mutex;
 
 const OPEN_ICON: Asset = asset!("assets/open.png");
 const SAVE_ICON: Asset = asset!("assets/save.png");
 const VISUALIZE_ICON: Asset = asset!("assets/visualize.png");
+const NEWFILE_ICON: Asset = asset!("assets/newfile.png");
 
 const TOOLBAR_STYLE: &str = "
     height: 50px;
@@ -67,7 +71,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
     let mut search_term = use_signal(String::new);
     let mut selected_cell = use_context::<SelectedCellContext>();
     let mut error_ctx = use_context::<ErrorContext>();
-    let sheet = use_context::<SheetContext>();
+    let mut sheet = use_context::<SheetContext>();
     let mut sheetversion = use_context::<SheetVersionContext>();
 
     rsx! {
@@ -118,8 +122,19 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
               "GO"
           }
       }
+      button { style: BUTTON_STYLE,
 
-      // Existing buttons
+        img {
+            src: "{NEWFILE_ICON}",
+            alt: "New File",
+            style: "width: 30px; height: 30px;",
+            onclick: move |_| {
+                let new_sheet = Sheet::new(1000, 18279);
+                sheet.set(Arc::new(Mutex::new(new_sheet)));
+                sheetversion.set(0);
+            }
+        }
+    },
       button { style: BUTTON_STYLE,
           onclick: move |_| {
               let path = std::env::current_dir().unwrap();
