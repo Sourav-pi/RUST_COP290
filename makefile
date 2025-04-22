@@ -5,6 +5,9 @@ run:
 	# rename cli to spreadsheet
 	mv target/release/cli target/release/spreadsheet
 
+create_doc:
+	cargo doc --document-private-items --no-deps
+
 clean:
 	cargo clean
 	rm -rf temp/*

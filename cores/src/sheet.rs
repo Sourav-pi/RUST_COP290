@@ -673,7 +673,7 @@ impl Sheet {
             command.flag.set_is_any(1);
             // Stage 2: Save old command and set dependencies
             let old_command = self.grid[row][col].formula.clone();
-            self.set_dependicies_cell(row, col, command.clone());
+            self.remove_old_dependicies(row, col, command.clone());
             // Stage 3: Topological sort
             let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
             // Stage 4: Update cells
