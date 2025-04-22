@@ -267,9 +267,6 @@ impl Sheet {
                         .depend
                         .push(row * ENCODE_SHIFT + col);
                 }
-                // self.grid[param1_row][param1_col]
-                //     .depend
-                //     .push(row * ENCODE_SHIFT + col);
                 if command.flag.type2() == 0 {
                 } else if command.flag.type2() == 1 {
                     let (param2_row, param2_col) = convert_to_index_int(command.param2);
@@ -281,9 +278,6 @@ impl Sheet {
                             .depend
                             .push(row * ENCODE_SHIFT + col);
                     }
-                    // self.grid[param2_row][param2_col]
-                    //     .depend
-                    //     .push(row * ENCODE_SHIFT + col);
                 }
             }
         } else if command.flag.cmd() == 5 {
@@ -306,7 +300,6 @@ impl Sheet {
                     if !depend_vec.contains(&t) {
                         depend_vec.push(t);
                     }
-                    // self.grid[i][j].depend.push(t);
                 }
             }
         }
@@ -326,9 +319,6 @@ impl Sheet {
             }
             return vec![];
         }
-        // while let Some(cell) = stack.pop() {
-        //     result.push(cell);
-        // }
 
         result.reverse();
         result
@@ -499,11 +489,8 @@ impl Sheet {
                             self.grid[row][col].value = self.grid[row][col].formula.param1
                                 / self.grid[param2_row][param2_col].value;
                         }
-                        // self.grid[row][col].value=self.grid[row][col].formula.param1/self.grid[param2_row][param2_col].value;
                     }
                 } else if self.grid[row][col].formula.flag.type1() == 1 {
-                    // let param1_row=(self.grid[row][col].formula.param1%1000) as usize;
-                    // let param1_col: usize=(self.grid[row][col].formula.param1/1000) as usize;
                     let (param1_row, param1_col) =
                         convert_to_index_int(self.grid[row][col].formula.param1);
                     if self.grid[param1_row][param1_col]
@@ -629,14 +616,6 @@ impl Sheet {
                 let (param1_row, param1_col) = convert_to_index_int(current_command.param1);
                 let depend_vec = &mut self.grid[param1_row][param1_col].depend;
                 depend_vec.retain(|&x| x != curr_index);
-                // depend_vec.remove(&curr_index);
-                // let mut new_depend_vec= Vec::new();
-                // for i in self.grid[param1_row][param1_col].depend.iter() {
-                //     if *i != curr_index {
-                //         new_depend_vec.push(*i);
-                //     }
-                // }
-                // self.grid[param1_row][param1_col].depend=new_depend_vec;
             }
             if current_command.flag.type2() == 1 {
                 // Second parameter is a cell reference

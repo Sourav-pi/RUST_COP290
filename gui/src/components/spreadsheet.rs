@@ -24,8 +24,6 @@ pub type MaxStartRowContext = Signal<i32>;
 pub type MaxStartColContext = Signal<i32>;
 pub type ErrorContext = super::error_display::ErrorContext;
 
-// Add these context definitions
-
 // Just track which row/column/cell was last copied
 pub type CopiedRowContext = Signal<Option<i32>>; // row index
 pub type CopiedColContext = Signal<Option<i32>>; // column index
