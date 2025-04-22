@@ -1,6 +1,13 @@
 use super::spreadsheet::SheetContext;
 use dioxus::prelude::*;
 
+const ERROR_STYLE: &str = r#"
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 200px;
+
+"#;
 // Common style for input containers
 const INPUT_CONTAINER_STYLE: &str = r#"
     display: flex;
@@ -67,7 +74,7 @@ pub fn LineChartForm() -> Element {
                 chart_json.set(json);
             } else {
                 println!("Error generating chart: {}", x.err().unwrap());
-                return rsx! { div { "Error generating chart" } };
+                return rsx! { div { style : ERROR_STYLE,"Error generating chart" } };
             }
         }
         let mount_code = format!(
@@ -96,7 +103,7 @@ pub fn LineChartForm() -> Element {
         rsx! {
             div { style: INPUT_CONTAINER_STYLE,
                 div {
-                    div { style: LABEL_STYLE, "Cell Range (e.g., A1:C10)" }
+                    div { style: LABEL_STYLE, "Cell Range (e.g., A1:A10)" }
                     input {
                         style: INPUT_STYLE,
                         placeholder: "Enter cell range",
@@ -165,7 +172,7 @@ pub fn BarChartForm() -> Element {
                 chart_json.set(json);
             } else {
                 println!("Error generating bar chart: {}", x.err().unwrap());
-                return rsx! { div { "Error generating bar chart" } };
+                return rsx! { div {style : ERROR_STYLE, "Error generating bar chart" } };
             }
         }
 
@@ -199,7 +206,7 @@ pub fn BarChartForm() -> Element {
         rsx! {
             div { style: INPUT_CONTAINER_STYLE,
                 div {
-                    div { style: LABEL_STYLE, "Cell Range (e.g., A1:C10)" }
+                    div { style: LABEL_STYLE, "Cell Range (e.g., A1:A10)" }
                     input {
                         style: INPUT_STYLE,
                         placeholder: "Enter cell range",
@@ -262,7 +269,7 @@ pub fn PieChartForm() -> Element {
                 chart_json.set(json);
             } else {
                 println!("Error generating pie chart: {}", x.err().unwrap());
-                return rsx! { div { "Error generating pie chart" } };
+                return rsx! { div {style : ERROR_STYLE, "Error generating pie chart" } };
             }
         }
 
@@ -373,7 +380,7 @@ pub fn ScatterPlotForm() -> Element {
                 chart_json.set(json);
             } else {
                 println!("Error generating scatter plot: {}", x.err().unwrap());
-                return rsx! { div { "Error generating scatter plot" } };
+                return rsx! { div {style : ERROR_STYLE, "Error generating scatter plot" } };
             }
         }
 
