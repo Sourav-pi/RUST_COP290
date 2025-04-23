@@ -110,23 +110,23 @@ impl Sheet {
         // Save original state of destination row in case we need to rollback
         let original_row: Vec<Cell> = self.grid[copy_to].clone();
 
-        // Perform the copy operation
         for i in 0..self.col {
-            self.grid[copy_to][i].value = self.grid[copy_from][i].value;
-            self.grid[copy_to][i].formula = self.grid[copy_from][i].formula.clone();
-            self.grid[copy_to][i].depend = self.grid[copy_from][i].depend.clone();
-        }
-
-        // Check for cycles for each cell in the row
-        for i in 0..self.col {
-            let cell_index = copy_to * ENCODE_SHIFT + i;
-            let topo_sort = self.toposort(cell_index);
-
-            // If empty result from toposort, a cycle was detected
-            if topo_sort.is_empty() {
-                // Rollback all changes to prevent corrupted state
-                self.grid[copy_to] = original_row;
-                return Err(Error::CycleDetected);
+            match self
+                .update_cell_data(copy_to, i, self.get_formula(copy_from, i))
+                .error
+            {
+                Error::None => {}
+                Error::DivByZero => {
+                    self.grid[copy_to][i].formula.flag.set_is_div_by_zero(1);
+                }
+                Error::InvalidInput => {
+                    self.grid[copy_to][i].formula.flag.set_error(1);
+                }
+                Error::CycleDetected => {
+                    // Rollback all changes to prevent corrupted state
+                    self.grid[copy_to] = original_row;
+                    return Err(Error::CycleDetected);
+                }
             }
         }
 
@@ -143,23 +143,24 @@ impl Sheet {
 
         // Perform the copy operation
         for i in 0..self.row {
-            self.grid[i][copy_to].value = self.grid[i][copy_from].value;
-            self.grid[i][copy_to].formula = self.grid[i][copy_from].formula.clone();
-            self.grid[i][copy_to].depend = self.grid[i][copy_from].depend.clone();
-        }
-
-        // Check for cycles for each cell in the column
-        for i in 0..self.row {
-            let cell_index = i * ENCODE_SHIFT + copy_to;
-            let topo_sort = self.toposort(cell_index);
-
-            // If empty result from toposort, a cycle was detected
-            if topo_sort.is_empty() {
-                // Rollback all changes to prevent corrupted state
-                for (i, item) in original_col.iter().enumerate().take(self.row) {
-                    self.grid[i][copy_to] = item.clone();
+            match self
+                .update_cell_data(i, copy_to, self.get_formula(i, copy_from))
+                .error
+            {
+                Error::None => {}
+                Error::DivByZero => {
+                    self.grid[i][copy_to].formula.flag.set_is_div_by_zero(1);
                 }
-                return Err(Error::CycleDetected);
+                Error::InvalidInput => {
+                    self.grid[i][copy_to].formula.flag.set_error(1);
+                }
+                Error::CycleDetected => {
+                    // Rollback all changes to prevent corrupted state
+                    for (i, item) in original_col.iter().enumerate().take(self.row) {
+                        self.grid[i][copy_to] = item.clone();
+                    }
+                    return Err(Error::CycleDetected);
+                }
             }
         }
 
@@ -178,21 +179,32 @@ impl Sheet {
         let original_cell = self.grid[copy_to_row][copy_to_col].clone();
 
         // Perform the copy operation
-        self.grid[copy_to_row][copy_to_col].value = self.grid[copy_from_row][copy_from_col].value;
-        self.grid[copy_to_row][copy_to_col].formula =
-            self.grid[copy_from_row][copy_from_col].formula.clone();
-        self.grid[copy_to_row][copy_to_col].depend =
-            self.grid[copy_from_row][copy_from_col].depend.clone();
-
-        // Check for cycles
-        let cell_index = copy_to_row * ENCODE_SHIFT + copy_to_col;
-        let topo_sort = self.toposort(cell_index);
-
-        // If empty result from toposort, a cycle was detected
-        if topo_sort.is_empty() {
-            // Restore the original cell state
-            self.grid[copy_to_row][copy_to_col] = original_cell;
-            return Err(Error::CycleDetected);
+        match self
+            .update_cell_data(
+                copy_to_row,
+                copy_to_col,
+                self.get_formula(copy_from_row, copy_from_col),
+            )
+            .error
+        {
+            Error::None => {}
+            Error::DivByZero => {
+                self.grid[copy_to_row][copy_to_col]
+                    .formula
+                    .flag
+                    .set_is_div_by_zero(1);
+            }
+            Error::InvalidInput => {
+                self.grid[copy_to_row][copy_to_col]
+                    .formula
+                    .flag
+                    .set_error(1);
+            }
+            Error::CycleDetected => {
+                // Rollback all changes to prevent corrupted state
+                self.grid[copy_to_row][copy_to_col] = original_cell;
+                return Err(Error::CycleDetected);
+            }
         }
 
         Ok(())

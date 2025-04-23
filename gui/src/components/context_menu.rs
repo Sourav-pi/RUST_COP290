@@ -72,10 +72,13 @@ pub fn ContextMenu() -> Element {
                                                 sheet_version.set(sheet_version.cloned() + 1);
                                             },
                                             Err(Error::CycleDetected) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Cannot paste: would create circular reference",
                                                           ErrorType::Error, Some(3.0));
+
                                             },
                                             Err(_) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Error pasting row", ErrorType::Error, Some(3.0));
                                             }
                                         }
@@ -132,10 +135,12 @@ pub fn ContextMenu() -> Element {
                                                 sheet_version.set(sheet_version.cloned() + 1);
                                             },
                                             Err(Error::CycleDetected) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Cannot paste: would create circular reference",
                                                           ErrorType::Error, Some(3.0));
                                             },
                                             Err(_) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Error pasting column", ErrorType::Error, Some(3.0));
                                             }
                                         }
@@ -195,10 +200,12 @@ pub fn ContextMenu() -> Element {
                                                 sheet_version.set(sheet_version.cloned() + 1);
                                             },
                                             Err(Error::CycleDetected) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Cannot paste: would create circular reference",
                                                           ErrorType::Error, Some(3.0));
                                             },
                                             Err(_) => {
+                                                sheet_version.set(sheet_version.cloned() + 1);
                                                 show_error(&mut error_ctx, "Error pasting cell", ErrorType::Error, Some(3.0));
                                             }
                                         }
