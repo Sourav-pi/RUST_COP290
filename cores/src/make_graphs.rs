@@ -33,7 +33,7 @@ type Range = ((usize, usize), (usize, usize));
 /// # Returns
 /// * `Ok(Range)` - Successfully parsed range with start and end coordinates
 /// * `Err(String)` - Error message if the range is invalid
-fn parse_range(range: &str, row: usize, col: usize) -> Result<Range, String> {
+pub fn parse_range(range: &str, row: usize, col: usize) -> Result<Range, String> {
     let parts: Vec<&str> = range.split(':').collect();
     if parts.len() != 2 {
         return Err("Invalid range format".to_string());

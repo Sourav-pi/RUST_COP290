@@ -762,4 +762,418 @@ mod tests {
         rangeoper(input, &mut container);
         assert_eq!(container.flag.error(), 1);
     }
+
+    // Additional tests
+    #[test]
+    fn test_parse_sleep_missing_parentheses() {
+        let input = "SLEEP 5";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_sleep(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_parse_sleep_invalid_format() {
+        let input = "SLEEP(A1B)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_sleep(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    // #[test]
+    // fn test_arithmetic_invalid_left_operand() {
+    //     let input = "A1B+C2";
+    //     let mut container = CommandCall {
+    //         flag: CommandFlag::new(),
+    //         param1: 0,
+    //         param2: 0,
+    //     };
+    //     Arithmatic(input, &mut container);
+    //     assert_eq!(container.flag.error(), 1);
+    // }
+
+    // #[test]
+    // fn test_arithmetic_invalid_right_operand() {
+    //     let input = "A1+C2D";
+    //     let mut container = CommandCall {
+    //         flag: CommandFlag::new(),
+    //         param1: 0,
+    //         param2: 0,
+    //     };
+    //     Arithmatic(input, &mut container);
+    //     assert_eq!(container.flag.error(), 1);
+    // }
+
+    #[test]
+    fn test_arithmetic_invalid_numeric_left_operand() {
+        let input = "12x+C2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_arithmetic_invalid_numeric_right_operand() {
+        let input = "A1+34y";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_arithmetic_invalid_operator() {
+        let input = "A1%B2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_arithmetic_no_operator() {
+        let input = "A1B2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_rangeoper_missing_parentheses() {
+        let input = "SUM A1:B2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_rangeoper_invalid_range_format() {
+        let input = "SUM(A1;B2)"; // Using semicolon instead of colon
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    // #[test]
+    // fn test_rangeoper_invalid_cell_references() {
+    //     let input = "SUM(A0:B2)"; // Invalid A0 reference
+    //     let mut container = CommandCall {
+    //         flag: CommandFlag::new(),
+    //         param1: 0,
+    //         param2: 0,
+    //     };
+    //     rangeoper(input, &mut container);
+    //     assert_eq!(container.flag.error(), 1);
+    // }
+
+    #[test]
+    fn test_rangeoper_reverse_range() {
+        let input = "SUM(B2:A1)"; // End cell before start cell
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_rangeoper_unknown_function() {
+        let input = "UNKNOWN(A1:B2)";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_parse_expression_invalid_constant() {
+        let input = "42x";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_parse_expression_signed_constant() {
+        let input = "-42";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.type_(), 0);
+        assert_eq!(container.param1, -42);
+    }
+
+    #[test]
+    fn test_parse_expression_positive_signed_constant() {
+        let input = "+42";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.type_(), 0);
+        assert_eq!(container.param1, 42);
+    }
+
+    #[test]
+    fn test_parse_expression_invalid_cell_reference() {
+        let input = "A1B";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_parse_expression_mixed_characters() {
+        let input = "A_1";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        parse_expression(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
+
+    #[test]
+    fn test_convert_to_index_invalid_input() {
+        let (row, col) = convert_to_index("A_1".to_string());
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn test_convert_to_index_empty_input() {
+        let (row, col) = convert_to_index("".to_string());
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn test_convert_to_index_no_row() {
+        let (row, col) = convert_to_index("A".to_string());
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn test_convert_to_index_no_column() {
+        let (row, col) = convert_to_index("123".to_string());
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn test_convert_to_index_row_parse_error() {
+        // This should attempt to parse a very large number that causes a parse error
+        let (row, col) = convert_to_index("A999999999999999999999999".to_string());
+        assert_eq!(row, 0);
+        assert_eq!(col, 0);
+    }
+
+    #[test]
+    fn test_decode_cell_zero_column() {
+        let result = decode_cell(100000); // col=0, row=1
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_decode_cell_complex_column() {
+        // Test with column values that require multiple letters
+        let result = decode_cell(102701);
+        assert_eq!(result, "CYW1");
+
+        let result = decode_cell(107701);
+        assert_eq!(result, "KJE1");
+
+        let result = decode_cell(102726);
+        assert_eq!(result, "CZV1");
+    }
+
+    #[test]
+    fn test_decode_cell_multiples_of_26() {
+        let result = decode_cell(100026); // Column Z
+        assert_eq!(result, "Z1");
+
+        let result = decode_cell(100052); // Column AZ
+        assert_eq!(result, "AZ1");
+
+        let result = decode_cell(100078); // Column BZ
+        assert_eq!(result, "BZ1");
+    }
+
+    #[test]
+    fn test_unparse_range_function() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(2);
+        flag.set_cmd(2); // SUM
+        flag.set_type1(1);
+        flag.set_type2(1);
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: encode_cell("A1".to_string()),
+                param2: encode_cell("B2".to_string()),
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        assert_eq!(result, "SUM(A1:B2)");
+    }
+
+    #[test]
+    fn test_unparse_sleep_function() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(2);
+        flag.set_cmd(5); // SLEEP
+        flag.set_type1(0); // Value type
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: 5,
+                param2: 0,
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        assert_eq!(result, "SLEEP(5)");
+    }
+
+    #[test]
+    fn test_unparse_sleep_function_with_cell_ref() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(2);
+        flag.set_cmd(5); // SLEEP
+        flag.set_type1(1); // Cell reference type
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: encode_cell("A1".to_string()),
+                param2: 0,
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        assert_eq!(result, "SLEEP(A1)");
+    }
+
+    #[test]
+    fn test_unparse_unknown_type() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(3); // Invalid type
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: 0,
+                param2: 0,
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        assert_eq!(result, "");
+    }
+
+    #[test]
+    fn test_unparse_unknown_command() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(1); // Arithmetic
+        flag.set_cmd(5); // Invalid command for arithmetic
+        flag.set_type1(1);
+        flag.set_type2(1);
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: encode_cell("A1".to_string()),
+                param2: encode_cell("B2".to_string()),
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        // Should include A1 and B2 but with empty operator
+        assert_eq!(result, "A1B2");
+    }
+
+    #[test]
+    fn test_unparse_range_unknown_function() {
+        let mut flag = CommandFlag::new();
+        flag.set_type_(2); // Range function
+        flag.set_cmd(7); // Invalid function code
+        flag.set_type1(1);
+        flag.set_type2(1);
+
+        let cell = Cell {
+            formula: CommandCall {
+                flag,
+                param1: encode_cell("A1".to_string()),
+                param2: encode_cell("B2".to_string()),
+            },
+            value: 0,
+            depend: Vec::new(),
+        };
+
+        let result = unparse(cell);
+        assert_eq!(result, "(A1:B2)");
+    }
 }

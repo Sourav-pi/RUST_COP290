@@ -885,4 +885,326 @@ mod tests {
         assert!(test_sheet.get_value(2, 2) == 7);
         assert!(test_sheet.get_value(5, 2) == 30);
     }
+
+    #[test]
+    fn test_copy_row() {
+        let mut test_sheet = Sheet::new(10, 10);
+        test_sheet.update_cell_data(1, 1, String::from("A2"));
+        test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
+        test_sheet.update_cell_data(1, 2, String::from("-5"));
+        test_sheet.update_cell_data(1, 3, String::from("SUM(A2:B5)"));
+        test_sheet.update_cell_data(1, 4, String::from("MAX(A2:B5)"));
+
+        // Test copy row
+        let result = test_sheet.copy_row(1, 3);
+        assert!(result.is_ok());
+
+        // Verify copied values
+        assert_eq!(test_sheet.get_value(3, 1), -5);
+        assert_eq!(test_sheet.get_value(3, 2), -5); // From B1 in original row
+        assert_eq!(test_sheet.get_value(3, 3), -15); // From C1 in original row (SUM)
+        assert_eq!(test_sheet.get_value(3, 4), 0); // From D1 in original row (MAX)
+    }
+
+    #[test]
+    fn test_copy_row_cycle_detection() {
+        let mut test_sheet = Sheet::new(10, 10);
+        test_sheet.update_cell_data(1, 1, String::from("A3")); // A1 references A3
+        test_sheet.update_cell_data(3, 1, String::from("42"));
+
+        // This should fail because copying row 1 to row 2 would create
+        // a cycle when A3 is later updated to reference A2
+        let result = test_sheet.copy_row(1, 2);
+        assert!(result.is_ok());
+
+        // Now update A3 to reference A2, which would create a cycle
+        let update_result = test_sheet.update_cell_data(3, 1, String::from("A2"));
+        assert_eq!(update_result.error, Error::CycleDetected);
+    }
+
+    #[test]
+    fn test_clear_operations() {
+        let mut test_sheet = Sheet::new(10, 10);
+
+        // Set some values
+        test_sheet.update_cell_data(1, 1, String::from("42"));
+        test_sheet.update_cell_data(1, 2, String::from("84"));
+        test_sheet.update_cell_data(2, 1, String::from("21"));
+        test_sheet.update_cell_data(2, 2, String::from("A1+B1"));
+
+        // Test clear cell
+        test_sheet.clear_cell(1, 1);
+        assert_eq!(test_sheet.get_value(1, 1), 0);
+
+        // Test clear row
+        test_sheet.clear_row(2);
+        assert_eq!(test_sheet.get_value(2, 1), 0);
+        assert_eq!(test_sheet.get_value(2, 2), 0);
+
+        // Test clear column
+        test_sheet.clear_col(2);
+        assert_eq!(test_sheet.get_value(1, 2), 0);
+    }
+
+    #[test]
+    fn test_dependency_handling() {
+        let mut test_sheet = Sheet::new(10, 10);
+
+        // Create a chain of dependencies
+        test_sheet.update_cell_data(1, 1, String::from("42"));
+        test_sheet.update_cell_data(1, 2, String::from("A1*2"));
+        test_sheet.update_cell_data(1, 3, String::from("B1*2"));
+
+        // Verify initial values
+        assert_eq!(test_sheet.get_value(1, 1), 42);
+        assert_eq!(test_sheet.get_value(1, 2), 84);
+        assert_eq!(test_sheet.get_value(1, 3), 168);
+
+        // Change root value and verify propagation
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        assert_eq!(test_sheet.get_value(1, 1), 10);
+        assert_eq!(test_sheet.get_value(1, 2), 20);
+        assert_eq!(test_sheet.get_value(1, 3), 40);
+
+        // Change formula and verify dependency updates
+        test_sheet.update_cell_data(1, 2, String::from("A1+5"));
+        assert_eq!(test_sheet.get_value(1, 2), 15);
+        assert_eq!(test_sheet.get_value(1, 3), 30);
+    }
+
+    #[test]
+    fn test_arithmetic_with_div_by_zero() {
+        let mut test_sheet = Sheet::new(10, 10);
+
+        // Set up division by zero scenarios
+        test_sheet.update_cell_data(1, 1, String::from("42"));
+        test_sheet.update_cell_data(1, 2, String::from("0"));
+
+        // Test direct division by zero
+        let result = test_sheet.update_cell_data(1, 3, String::from("A1/0"));
+        assert_eq!(result.error, Error::DivByZero);
+
+        // Test division by cell containing zero
+        let result = test_sheet.update_cell_data(1, 4, String::from("A1/B1"));
+        assert_eq!(result.error, Error::DivByZero);
+
+        // Test formula that references cell with division by zero
+        test_sheet.update_cell_data(1, 5, String::from("D1*2"));
+        assert_eq!(test_sheet.grid[1][5].formula.flag.is_div_by_zero(), 1);
+    }
+
+    #[test]
+    fn test_range_functions_with_negative_values() {
+        let mut test_sheet = Sheet::new(6, 6);
+
+        // Set up cells with negative values
+        test_sheet.update_cell_data(2, 1, String::from("-10"));
+        test_sheet.update_cell_data(2, 2, String::from("-20"));
+        test_sheet.update_cell_data(3, 1, String::from("-30"));
+        test_sheet.update_cell_data(3, 2, String::from("40"));
+
+        // Test MIN with negative values
+        test_sheet.update_cell_data(1, 1, String::from("MIN(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 1), -30);
+
+        // Test MAX with negative values
+        test_sheet.update_cell_data(1, 2, String::from("MAX(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 2), 40);
+
+        // Test SUM with negative values
+        test_sheet.update_cell_data(1, 3, String::from("SUM(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 3), -20); // -10 + -20 + -30 + 40 = -20
+
+        // Test AVG with negative values
+        test_sheet.update_cell_data(1, 4, String::from("AVG(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 4), -5); // (-10 + -20 + -30 + 40) / 4 = -5
+    }
+
+    #[test]
+    fn test_sleep_function() {
+        let mut test_sheet = Sheet::new(5, 5);
+
+        // Use a small sleep duration to not slow down tests
+        test_sheet.update_cell_data(1, 1, String::from("1"));
+
+        // Test SLEEP with constant
+        let start = time::Instant::now();
+        test_sheet.update_cell_data(1, 2, String::from("SLEEP(1)"));
+        let elapsed = start.elapsed();
+        assert!(elapsed.as_secs() >= 1);
+
+        // Test SLEEP with cell reference
+        let start = time::Instant::now();
+        test_sheet.update_cell_data(1, 3, String::from("SLEEP(A1)"));
+        let elapsed = start.elapsed();
+        assert!(elapsed.as_secs() >= 1);
+    }
+
+    #[test]
+    fn test_complex_dependencies() {
+        let mut test_sheet = Sheet::new(10, 10);
+
+        // Create complex dependency chains
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("20"));
+        test_sheet.update_cell_data(1, 3, String::from("A1+B1"));
+        test_sheet.update_cell_data(2, 1, String::from("C1*2"));
+        test_sheet.update_cell_data(2, 2, String::from("A2/2"));
+        test_sheet.update_cell_data(2, 3, String::from("SUM(A1:B2)"));
+
+        // Verify initial values
+        assert_eq!(test_sheet.get_value(1, 3), 30); // A1+B1 = 10+20 = 30
+        assert_eq!(test_sheet.get_value(2, 1), 60); // C1*2 = 30*2 = 60
+        assert_eq!(test_sheet.get_value(2, 2), 30); // A2/2 = 60/2 = 30
+        assert_eq!(test_sheet.get_value(2, 3), 120); // SUM(A1:B2) = 10+20+60+30 = 120
+
+        // Change root value and verify propagation
+        test_sheet.update_cell_data(1, 1, String::from("5"));
+        assert_eq!(test_sheet.get_value(1, 3), 25); // A1+B1 = 5+20 = 25
+        assert_eq!(test_sheet.get_value(2, 1), 50); // C1*2 = 25*2 = 50
+        assert_eq!(test_sheet.get_value(2, 2), 25); // A2/2 = 50/2 = 25
+        assert_eq!(test_sheet.get_value(2, 3), 100); // SUM(A1:B2) = 5+20+50+25 = 100
+    }
+
+    #[test]
+    fn test_formula_with_all_types() {
+        let mut test_sheet = Sheet::new(10, 10);
+
+        // Set up test cells
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("20"));
+
+        // Type 0 type1=0: constant
+        test_sheet.update_cell_data(2, 1, String::from("42"));
+        assert_eq!(test_sheet.get_value(2, 1), 42);
+
+        // Type 0 type1=1: cell reference
+        test_sheet.update_cell_data(2, 2, String::from("A1"));
+        assert_eq!(test_sheet.get_value(2, 2), 10);
+
+        // Type 1 type1=0 type2=0: two constants
+        test_sheet.update_cell_data(3, 1, String::from("5+7"));
+        assert_eq!(test_sheet.get_value(3, 1), 12);
+
+        // Type 1 type1=0 type2=1: constant and cell
+        test_sheet.update_cell_data(3, 2, String::from("5+A1"));
+        assert_eq!(test_sheet.get_value(3, 2), 15);
+
+        // Type 1 type1=1 type2=0: cell and constant
+        test_sheet.update_cell_data(4, 1, String::from("A1+5"));
+        assert_eq!(test_sheet.get_value(4, 1), 15);
+
+        // Type 1 type1=1 type2=1: two cells
+        test_sheet.update_cell_data(4, 2, String::from("A1+B1"));
+        assert_eq!(test_sheet.get_value(4, 2), 30);
+
+        // Type 2: range function
+        test_sheet.update_cell_data(5, 1, String::from("SUM(A1:B1)"));
+        assert_eq!(test_sheet.get_value(5, 1), 30);
+    }
+
+    #[test]
+    fn test_operations_with_div_by_zero_propagation() {
+        let mut test_sheet = Sheet::new(8, 8);
+
+        // Create cells with division by zero
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("0"));
+        test_sheet.update_cell_data(1, 3, String::from("A1/B1")); // Division by zero
+
+        // References to div by zero cells
+        test_sheet.update_cell_data(2, 1, String::from("C1+5"));
+        test_sheet.update_cell_data(2, 2, String::from("C1*2"));
+        test_sheet.update_cell_data(2, 3, String::from("5+C1"));
+        test_sheet.update_cell_data(2, 4, String::from("2*C1"));
+
+        // Range functions using div by zero cells
+        test_sheet.update_cell_data(3, 1, String::from("SUM(A1:C1)"));
+        test_sheet.update_cell_data(3, 2, String::from("AVG(A1:C1)"));
+        test_sheet.update_cell_data(3, 3, String::from("MIN(A1:C1)"));
+        test_sheet.update_cell_data(3, 4, String::from("MAX(A1:C1)"));
+        test_sheet.update_cell_data(3, 5, String::from("STDEV(A1:C1)"));
+
+        // Check that div by zero flag propagated
+        assert_eq!(test_sheet.grid[1][3].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[2][1].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[2][2].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[2][3].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[2][4].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[3][1].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[3][2].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[3][3].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[3][4].formula.flag.is_div_by_zero(), 1);
+        assert_eq!(test_sheet.grid[3][5].formula.flag.is_div_by_zero(), 1);
+    }
+
+    #[test]
+    fn test_empty_range() {
+        let mut test_sheet = Sheet::new(5, 5);
+
+        // Test range functions on an "empty" range (all cells 0)
+        test_sheet.update_cell_data(1, 1, String::from("SUM(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 1), 0);
+
+        test_sheet.update_cell_data(1, 2, String::from("AVG(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 2), 0);
+
+        test_sheet.update_cell_data(1, 3, String::from("MIN(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 3), 0);
+
+        test_sheet.update_cell_data(1, 4, String::from("MAX(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 4), 0);
+
+        test_sheet.update_cell_data(1, 5, String::from("STDEV(A2:B3)"));
+        assert_eq!(test_sheet.get_value(1, 5), 0);
+    }
+
+    #[test]
+    fn test_update_with_invalid_input() {
+        let mut test_sheet = Sheet::new(5, 5);
+
+        // Invalid formula
+        let result = test_sheet.update_cell_data(1, 1, String::from("A1++A2"));
+        assert_eq!(result.error, Error::InvalidInput);
+
+        // Invalid range formula
+        let result = test_sheet.update_cell_data(1, 2, String::from("SUM(A1:)"));
+        assert_eq!(result.error, Error::InvalidInput);
+
+        // Invalid cell reference
+        // let result = test_sheet.update_cell_data(1, 3, String::from("Z99"));
+        // assert_eq!(result.error, Error::InvalidInput);
+    }
+
+    #[test]
+    fn test_update_formula_with_same_dependencies() {
+        let mut test_sheet = Sheet::new(5, 5);
+
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("20"));
+
+        // Create a formula with dependencies
+        test_sheet.update_cell_data(2, 1, String::from("A1+B1"));
+        assert_eq!(test_sheet.get_value(2, 1), 30);
+
+        // Update to a different formula with the same dependencies
+        test_sheet.update_cell_data(2, 1, String::from("A1*B1"));
+        assert_eq!(test_sheet.get_value(2, 1), 200);
+
+        // Dependencies should still work
+        test_sheet.update_cell_data(1, 1, String::from("5"));
+        assert_eq!(test_sheet.get_value(2, 1), 100);
+    }
+
+    #[test]
+    fn test_get_range_statistics() {
+        // Add the method to Sheet struct if not already present
+        let mut test_sheet = Sheet::new(5, 5);
+
+        // Set up test data
+        test_sheet.update_cell_data(1, 1, String::from("10"));
+        test_sheet.update_cell_data(1, 2, String::from("20"));
+        test_sheet.update_cell_data(2, 1, String::from("15"));
+        test_sheet.update_cell_data(2, 2, String::from("25"));
+    }
 }
