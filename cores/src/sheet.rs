@@ -660,8 +660,8 @@ impl Sheet {
 
         // Stage 1: Parse formula
         let mut command = parse_formula(&new_formula);
-        let (row1,col1) = convert_to_index_int (command.param1);
-        let (row2,col2) = convert_to_index_int (command.param2);
+        let (row1, col1) = convert_to_index_int(command.param1);
+        let (row2, col2) = convert_to_index_int(command.param2);
         if row1 > self.row || col1 > self.col || row2 > self.row || col2 > self.col {
             command.flag.set_error(1);
         }
