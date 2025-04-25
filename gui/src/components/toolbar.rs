@@ -10,6 +10,8 @@ const OPEN_ICON: Asset = asset!("assets/open.png");
 const SAVE_ICON: Asset = asset!("assets/save.png");
 const VISUALIZE_ICON: Asset = asset!("assets/visualize.png");
 const NEWFILE_ICON: Asset = asset!("assets/newfile.png");
+const LOAD_CSV_ICON: Asset = asset!("assets/load_csv.png");
+const SAVE_CSV_ICON: Asset = asset!("assets/save_csv.png");
 
 const TOOLBAR_STYLE: &str = "
     height: 50px;
@@ -182,7 +184,7 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
                   // Save the current sheet to the selected file
                   if let Ok(sheet_locked) = sheet.cloned().lock() {
                       // Update the cell value in the Sheet object
-                      let write_result = sheet_locked.write_csv(&file_path);
+                      let write_result = sheet_locked.write_file(&file_path);
                       sheetversion.set(sheetversion.cloned() + 1);
                       if let Err(e) = write_result {
                           show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
@@ -213,6 +215,68 @@ pub fn Toolbar(props: ToolbarProps) -> Element {
               style: "width: 30px; height: 30px;"
           }
       },
+      button { style: BUTTON_STYLE,
+        onclick: move |_| {
+        let path = std::env::current_dir().unwrap();
+
+        let res = rfd::FileDialog::new()
+            .add_filter("csv", &["csv"])
+            .set_directory(&path)
+            .pick_file();
+
+        if let Some(file) = &res {
+            cur_file.set(Some(file.clone()));
+            let file_path = file.as_path().to_string_lossy().to_string();
+            if let Ok(mut sheet_locked) = sheet.cloned().lock() {
+                let write_result = sheet_locked.read_csv_file(&file_path);
+                sheetversion.set(sheetversion.cloned() + 1);
+                if let Err(e) = write_result {
+                    show_error(&mut error_ctx, &format!("Error reading from file: {}", e), ErrorType::Error, Some(5.0));
+                } else {
+                    show_error(&mut error_ctx, "File loaded successfully", ErrorType::Success, Some(5.0));
+                    sheetversion.set(sheetversion.cloned() + 1);
+                }
+            }
+        }
+    },
+
+        img {
+            src: "{LOAD_CSV_ICON}",
+            alt: "Visualize",
+            style: "width: 30px; height: 30px;"
+        }
+    },
+      button { style: BUTTON_STYLE,
+        onclick: move |_| {
+            let path = std::env::current_dir().unwrap();
+            let res = rfd::FileDialog::new().add_filter("csv", &["csv"])
+            .set_file_name("new_sheet.csv")
+            .set_directory(&path)
+            .save_file();
+            // println!("The user choose: {:#?}", res);
+            if let Some(file) = &res {
+                let file_path = file.as_path().to_string_lossy().to_string();
+                // Save the current sheet to the selected file
+                if let Ok(sheet_locked) = sheet.cloned().lock() {
+                    // Update the cell value in the Sheet object
+                    let write_result = sheet_locked.write_csv_file(&file_path);
+                    sheetversion.set(sheetversion.cloned() + 1);
+                    if let Err(e) = write_result {
+                        show_error(&mut error_ctx, &format!("Error writing to file: {}", e), ErrorType::Error, Some(5.0));
+                    } else {
+                        show_error(&mut error_ctx, "File saved successfully", ErrorType::Success, Some(5.0));
+                        sheetversion.set(sheetversion.cloned() + 1);
+                    }
+                }
+            }
+        },
+
+        img {
+            src: "{SAVE_CSV_ICON}",
+            alt: "Visualize",
+            style: "width: 30px; height: 30px;"
+        }
+    },
       }
     }
 }

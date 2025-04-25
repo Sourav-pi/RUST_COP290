@@ -101,7 +101,7 @@ impl Sheet {
     /// - param1: First parameter of the cell formula
     /// - param2: Second parameter of the cell formula
     /// - depend: Comma-separated list of cell indices that depend on this cell
-    pub fn write_csv(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn write_file(&self, file_path: &str) -> Result<(), Box<dyn std::error::Error>> {
         // Get the dimensions
         let num_rows = self.grid.len();
         let num_cols = if num_rows > 0 { self.grid[0].len() } else { 0 };
@@ -141,7 +141,7 @@ fn test_write_csv() {
     test_sheet.update_cell_data(2, 2, String::from("500"));
     test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
     println!("{}", test_sheet.get_value(1, 1));
-    let res = test_sheet.write_csv("./temp/temp.csv");
+    let res = test_sheet.write_file("./temp/temp.csv");
     match res {
         Ok(_) => println!("CSV file written successfully."),
         Err(e) => println!("Error writing CSV file: {}", e),
