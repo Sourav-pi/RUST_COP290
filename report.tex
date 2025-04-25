@@ -84,7 +84,36 @@
 \begin{document}
 
 \maketitle
-
+\subsection*{GUI Features}
+\begin{itemize}
+    \item \textbf{Cell Navigation}: Click on cells or use arrow keys to navigate (it auto-scrolls when you reach the edge of sheet)
+    \item \textbf{Formula Entry}: Type directly into the formula bar at the top and press enter to apply
+    \item \textbf{Edit Cell}: Click a cell to edit directly and press enter to apply
+    \item \textbf{Create Chart}: Click the chart icon in the toolbar, select chart type and data range. The lables are optional and can be left empty.
+    \item \textbf{File Operations}: Use toolbar buttons to (in order) :
+    \begin{itemize}
+    \item New spreadsheet : clears all the current values and formulas
+    \item Open spreadsheet : opens custom .ss files with formulas preserved
+    \item Save spreadsheet : saves custom .ss files with formulas preserved
+    \item Graph : To draw graphs
+    \item Open csv : opens csv files
+    \item Save csv : saves as csv files (only values)
+    \end{itemize}
+    
+    \item \textbf{Navigation Controls}: Use buttons in the bottom-right to navigate large spreadsheets
+    \item \textbf{Go-to cell}: Write a valid cell in the search bar at the top to go to that cell (it will come into view if it is outside current frame)
+    \item \textbf{Context Menu}: Right-click on cells, rows header, or columns header for additional options : 
+    \begin{itemize}
+    \item Copy cell
+    \item Paste cell
+    \item Copy column
+    \item Paste column
+    \item Copy row
+    \item Paste row
+    \item Clear column
+    \item Clear row
+    \end{itemize}
+\end{itemize}
 \section{Design and Software Architecture}
 The Rust Spreadsheet Application is designed as a modular, multi-crate workspace that follows modern Rust architecture principles. The system is structured around a core spreadsheet engine with separate frontend interfaces for different use cases.
 

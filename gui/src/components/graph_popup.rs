@@ -60,7 +60,7 @@ const OVERLAY_STYLE: &str = r#"
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 900;
 "#;
 
 const POPUP_STYLE: &str = r#"

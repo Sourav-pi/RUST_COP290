@@ -1,13 +1,7 @@
+use super::error_display::{show_error, ErrorContext, ErrorType};
 use super::spreadsheet::SheetContext;
 use dioxus::prelude::*;
 
-const ERROR_STYLE: &str = r#"
-    color: red;
-    font-weight: bold;
-    text-align: center;
-    margin-top: 200px;
-
-"#;
 // Common style for input containers
 const INPUT_CONTAINER_STYLE: &str = r#"
     display: flex;
@@ -60,6 +54,7 @@ pub fn LineChartForm() -> Element {
     let point_labels = use_signal(String::new);
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
+    let mut error_ctx = use_context::<ErrorContext>();
 
     if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
@@ -73,8 +68,15 @@ pub fn LineChartForm() -> Element {
             if let Ok(json) = x {
                 chart_json.set(json);
             } else {
-                println!("Error generating chart: {}", x.err().unwrap());
-                return rsx! { div { style : ERROR_STYLE,"Error generating chart" } };
+                show_graph.set(false);
+                range.set(String::new());
+                show_error(
+                    &mut error_ctx,
+                    &format!("Error generating chart: {}", x.err().unwrap()),
+                    ErrorType::Error,
+                    Some(5.0),
+                );
+                return rsx! {};
             }
         }
         let mount_code = format!(
@@ -158,6 +160,7 @@ pub fn BarChartForm() -> Element {
     let mut bar_labels = use_signal(String::new);
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
+    let mut error_ctx = use_context::<ErrorContext>();
 
     if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
@@ -171,8 +174,15 @@ pub fn BarChartForm() -> Element {
             if let Ok(json) = x {
                 chart_json.set(json);
             } else {
-                println!("Error generating bar chart: {}", x.err().unwrap());
-                return rsx! { div {style : ERROR_STYLE, "Error generating bar chart" } };
+                show_graph.set(false);
+                range.set(String::new());
+                show_error(
+                    &mut error_ctx,
+                    &format!("Error generating bar chart: {}", x.err().unwrap()),
+                    ErrorType::Error,
+                    Some(5.0),
+                );
+                return rsx! {};
             }
         }
 
@@ -259,6 +269,7 @@ pub fn PieChartForm() -> Element {
     let mut slice_labels = use_signal(String::new);
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
+    let mut error_ctx = use_context::<ErrorContext>();
 
     if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
@@ -268,8 +279,15 @@ pub fn PieChartForm() -> Element {
             if let Ok(json) = x {
                 chart_json.set(json);
             } else {
-                println!("Error generating pie chart: {}", x.err().unwrap());
-                return rsx! { div {style : ERROR_STYLE, "Error generating pie chart" } };
+                show_graph.set(false);
+                range.set(String::new());
+                show_error(
+                    &mut error_ctx,
+                    &format!("Error generating pie chart: {}", x.err().unwrap()),
+                    ErrorType::Error,
+                    Some(5.0),
+                );
+                return rsx! {};
             }
         }
 
@@ -365,6 +383,7 @@ pub fn ScatterPlotForm() -> Element {
     let mut title = use_signal(String::new);
     let sheet = use_context::<SheetContext>();
     let mut chart_json = use_signal(String::new);
+    let mut error_ctx = use_context::<ErrorContext>();
 
     if show_graph.cloned() {
         if let Ok(sheet_locked) = sheet.cloned().lock() {
@@ -379,8 +398,16 @@ pub fn ScatterPlotForm() -> Element {
             if let Ok(json) = x {
                 chart_json.set(json);
             } else {
-                println!("Error generating scatter plot: {}", x.err().unwrap());
-                return rsx! { div {style : ERROR_STYLE, "Error generating scatter plot" } };
+                show_graph.set(false);
+                x_range.set(String::new());
+                y_range.set(String::new());
+                show_error(
+                    &mut error_ctx,
+                    &format!("Error generating scatter plot: {}", x.err().unwrap()),
+                    ErrorType::Error,
+                    Some(5.0),
+                );
+                return rsx! {};
             }
         }
 
