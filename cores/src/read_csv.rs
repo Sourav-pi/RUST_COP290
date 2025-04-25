@@ -148,13 +148,13 @@ fn test_read_csv() {
     test_sheet.update_cell_data(2, 2, String::from("500"));
     test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
     println!("{}", test_sheet.get_value(1, 1));
-    let res = test_sheet.write_csv("../temp/temp.csv");
+    let res = test_sheet.write_csv("./temp/temp.csv");
     match res {
         Ok(_) => println!("CSV file written successfully."),
         Err(e) => println!("Error writing CSV file: {}", e),
     }
     let mut new_sheet = Sheet::new(6, 6);
-    let result = new_sheet.read_file("../temp/temp.csv");
+    let result = new_sheet.read_file("./temp/temp.csv");
     match result {
         Ok(()) => println!("CSV file read successfully."),
         Err(e) => println!("Error reading CSV file: {}", e),

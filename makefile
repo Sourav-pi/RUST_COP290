@@ -19,5 +19,4 @@ ext1 :
 
 clean:
 	cargo clean
-	rm -rf temp/*
 
