@@ -49,18 +49,6 @@ impl Sheet {
     /// * `Ok(())` - If the file was successfully written
     /// * `Err(std::io::Error)` - If an I/O error occurred during file creation or writing
     ///
-    /// # Example
-    ///
-    /// ```
-    /// let mut sheet = Sheet::new(10, 10);
-    /// sheet.update_cell_data(1, 1, String::from("42"));
-    /// sheet.update_cell_data(2, 3, String::from("A1*2"));
-    ///
-    /// if let Err(e) = sheet.write_csv_file("spreadsheet_export.csv") {
-    ///     eprintln!("Failed to export spreadsheet: {}", e);
-    /// }
-    /// ```
-    ///
     /// # CSV Format
     ///
     /// The generated CSV file will have the following format:
