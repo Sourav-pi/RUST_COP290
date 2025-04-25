@@ -18,11 +18,12 @@ impl Sheet{
         let file = std::fs::File::open(filename)?;
         let mut reader = csv::Reader::from_reader(file);
         let mut row=1;
+        // Read the header row and skip it
+        let _ = reader.headers()?;
         for result in reader.deserialize(){
-            let record:String = result?;
-            let cell_data: Vec<String> = record.split(',').map(|s| s.to_string()).collect();
+            let cell_data:Vec<String> = result?;
             // Skip the first row if it contains headers
-            for i in 0..cell_data.len(){
+            for i in 1..cell_data.len(){
                 if cell_data[i].len() == 0{
                     continue;
                 }

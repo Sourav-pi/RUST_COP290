@@ -1,26 +1,35 @@
 
 use crate::sheet::Sheet;
 
+fn column_to_letter(col: usize) -> String {
+    let mut result = String::new();
+    let mut c = col;
+    while c > 0 {
+        c -= 1;
+        let letter = (c % 26) as u8 + b'A';
+        result.insert(0, letter as char);
+        c /= 26;
+    }
+    result
+}
+
 impl Sheet {
     pub fn write_csv_file(&self, filename: &str) -> Result<(), std::io::Error> {
         let file = std::fs::File::create(filename)?;
         let mut writer = csv::Writer::from_writer(file);
-
-        for i in 0..self.grid.len() {
-            let mut row_data = String::new();
-            for j in 0..self.grid[i].len() {
-                let csv_data = self.grid[i][j].value.clone();
-                row_data = format!("{},{}", row_data, csv_data);
-            }
-            // Since we're manually building a row, trim the leading comma and write it
-            if !row_data.is_empty() {
-                row_data = row_data[1..].to_string();
-            }
-            writer.write_record(&[row_data])?;
-
-            // A better approach would be:
-            // let row: Vec<String> = self.grid[i].iter().map(|cell| cell.value.clone()).collect();
-            // writer.write_record(&row)?;
+        // Write the header row with column letters
+        let mut header: Vec<String> = Vec::new();
+        header.push("".to_string()); // Empty cell for the first column
+        for i in 0..self.col {
+            let col_letter = column_to_letter(i + 1);
+            header.push(col_letter);
+        }
+        writer.write_record(&header)?;
+        for i in 1..self.grid.len() {
+            // Use the better approach mentioned in the comment
+            let mut row: Vec<String> = self.grid[i].iter().map(|cell| cell.value.to_string()).collect();
+            row[0]=(i).to_string();
+            writer.write_record(&row)?;
         }
         writer.flush()?;
         Ok(())
