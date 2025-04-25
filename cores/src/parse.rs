@@ -103,6 +103,28 @@ pub fn parse_formula(input: &str) -> CommandCall {
     parse_expression(input, &mut cell);
     cell
 }
+pub fn is_valid_cell(input:&str) -> bool {
+    let mut is_cell_ref = true;
+    let mut has_letter = false;
+    let mut has_digit = false;
+
+    for c in input.chars() {
+        if is_uppercase_letter(c) {
+            if has_digit {
+                is_cell_ref = false;
+                break;
+            }
+            has_letter = true;
+        } else if is_digit(c) {
+            has_digit = true;
+        } else {
+            is_cell_ref = false;
+            break;
+        }
+    }
+
+    is_cell_ref && has_letter && has_digit
+}
 
 /// Parses a SLEEP function and populates the CommandCall structure.
 ///
@@ -120,33 +142,9 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
     if input.starts_with("SLEEP(") && input.ends_with(")") {
         // Extract the part between parentheses
         let sleep_time = &input[6..input.len() - 1].trim();
+        let is_cell_ref= is_valid_cell(sleep_time);
 
-        // Check if it's a cell reference
-        let mut is_cell_ref = true;
-        let mut has_letter = false;
-        let mut has_digit = false;
-
-        for c in sleep_time.chars() {
-            if is_uppercase_letter(c) {
-                if has_digit {
-                    is_cell_ref = false;
-                    break;
-                }
-                has_letter = true;
-                if has_digit {
-                    is_cell_ref = false;
-                    break;
-                }
-                has_letter = true;
-            } else if is_digit(c) {
-                has_digit = true;
-            } else {
-                is_cell_ref = false;
-                break;
-            }
-        }
-
-        if is_cell_ref && has_letter && has_digit {
+        if is_cell_ref {
             container.param1 = encode_cell(sleep_time.to_string());
             container.flag.set_type1(1);
         } else if let Ok(value) = sleep_time.parse::<i32>() {
@@ -200,11 +198,8 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
         let operator = input.chars().nth(pos).unwrap();
         let right = input[pos + 1..].trim();
         // Process left operand
-        if left.chars().any(is_uppercase_letter) {
-            if !left.chars().next().is_some_and(is_uppercase_letter) {
-                container.flag.set_error(1);
-                return;
-            }
+        let is_cell_ref = is_valid_cell(left);
+        if is_cell_ref {
             container.param1 = encode_cell(left.to_string());
             container.flag.set_type1(1);
         } else if let Ok(value) = left.parse::<i32>() {
@@ -229,11 +224,8 @@ pub fn Arithmatic(input: &str, container: &mut CommandCall) {
         container.flag.set_cmd(cmd);
 
         // Process right operand
-        if right.chars().any(is_uppercase_letter) {
-            if !right.chars().next().is_some_and(is_uppercase_letter) {
-                container.flag.set_error(1);
-                return;
-            }
+        let is_cell_ref = is_valid_cell(right);
+        if is_cell_ref {
             container.param2 = encode_cell(right.to_string());
             container.flag.set_type2(1);
         } else if let Ok(value) = right.parse::<i32>() {
@@ -281,6 +273,12 @@ pub fn rangeoper(input: &str, container: &mut CommandCall) {
 
     let start_cell = parts[0].trim();
     let end_cell = parts[1].trim();
+    let is_cell_ref_start = is_valid_cell(start_cell);
+    let is_cell_ref_end = is_valid_cell(end_cell);
+    if !is_cell_ref_start || !is_cell_ref_end {
+        container.flag.set_error(1);
+        return;
+    }
 
     // Encode cell references
     container.param1 = encode_cell(start_cell.to_string());
@@ -447,7 +445,12 @@ pub fn convert_to_index(cell: String) -> (usize, usize) {
     for c in col_str.chars() {
         col = col * 26 + (c as usize - 'A' as usize + 1);
     }
-
+    let x=row_str.len();
+    let row_str = row_str.trim_start_matches('0'); // Remove leading zeros
+    let y=row_str.len();
+    if x-y>0{
+        return (0, 0);
+    }
     // Parse row number
     match row_str.parse::<usize>() {
         Ok(row) => (row, col),
@@ -788,29 +791,29 @@ mod tests {
         assert_eq!(container.flag.error(), 1);
     }
 
-    // #[test]
-    // fn test_arithmetic_invalid_left_operand() {
-    //     let input = "A1B+C2";
-    //     let mut container = CommandCall {
-    //         flag: CommandFlag::new(),
-    //         param1: 0,
-    //         param2: 0,
-    //     };
-    //     Arithmatic(input, &mut container);
-    //     assert_eq!(container.flag.error(), 1);
-    // }
+    #[test]
+    fn test_arithmetic_invalid_left_operand() {
+        let input = "A1B+C2";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
 
-    // #[test]
-    // fn test_arithmetic_invalid_right_operand() {
-    //     let input = "A1+C2D";
-    //     let mut container = CommandCall {
-    //         flag: CommandFlag::new(),
-    //         param1: 0,
-    //         param2: 0,
-    //     };
-    //     Arithmatic(input, &mut container);
-    //     assert_eq!(container.flag.error(), 1);
-    // }
+    #[test]
+    fn test_arithmetic_invalid_right_operand() {
+        let input = "A1+C2D";
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        Arithmatic(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
 
     #[test]
     fn test_arithmetic_invalid_numeric_left_operand() {
@@ -838,7 +841,7 @@ mod tests {
 
     #[test]
     fn test_arithmetic_invalid_operator() {
-        let input = "A1%B2";
+        let input = "A1+B2C";
         let mut container = CommandCall {
             flag: CommandFlag::new(),
             param1: 0,
@@ -884,17 +887,17 @@ mod tests {
         assert_eq!(container.flag.error(), 1);
     }
 
-    // #[test]
-    // fn test_rangeoper_invalid_cell_references() {
-    //     let input = "SUM(A0:B2)"; // Invalid A0 reference
-    //     let mut container = CommandCall {
-    //         flag: CommandFlag::new(),
-    //         param1: 0,
-    //         param2: 0,
-    //     };
-    //     rangeoper(input, &mut container);
-    //     assert_eq!(container.flag.error(), 1);
-    // }
+    #[test]
+    fn test_rangeoper_invalid_cell_references() {
+        let input = "SUM(A0:B2)"; // Invalid A0 reference
+        let mut container = CommandCall {
+            flag: CommandFlag::new(),
+            param1: 0,
+            param2: 0,
+        };
+        rangeoper(input, &mut container);
+        assert_eq!(container.flag.error(), 1);
+    }
 
     #[test]
     fn test_rangeoper_reverse_range() {
