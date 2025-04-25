@@ -3,6 +3,8 @@ pub mod parse;
 pub mod read_csv;
 pub mod sheet;
 pub mod write_csv;
+pub mod write_csv_file;
+pub mod read_csv_file;
 pub use parse::convert_to_index;
 pub use sheet::Sheet;
 // pub use sheet::SheetError;
