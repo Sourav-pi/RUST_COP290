@@ -1,0 +1,545 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\definecolor{GrayCodeBlock}{RGB}{241,241,241}
+\definecolor{BlackText}{RGB}{110,107,94}
+\definecolor{RedTypename}{RGB}{182,86,17}
+\definecolor{GreenString}{RGB}{96,172,57}
+\definecolor{PurpleKeyword}{RGB}{184,84,212}
+\definecolor{GrayComment}{RGB}{170,170,170}
+\definecolor{GoldDocumentation}{RGB}{180,165,45}
+\lstdefinelanguage{rust}
+{
+    columns=fullflexible,
+    keepspaces=true,
+    frame=single,
+    framesep=0pt,
+    framerule=0pt,
+    framexleftmargin=4pt,
+    framexrightmargin=4pt,
+    framextopmargin=5pt,
+    framexbottommargin=3pt,
+    xleftmargin=4pt,
+    xrightmargin=4pt,
+    backgroundcolor=\color{GrayCodeBlock},
+    basicstyle=\ttfamily\color{BlackText},
+    keywords={
+        true,false,
+        unsafe,async,await,move,
+        use,pub,crate,super,self,mod,
+        struct,enum,fn,const,static,let,mut,ref,type,impl,dyn,trait,where,as,
+        break,continue,if,else,while,for,loop,match,return,yield,in
+    },
+    keywordstyle=\color{PurpleKeyword},
+    ndkeywords={
+        bool,u8,u16,u32,u64,u128,i8,i16,i32,i64,i128,char,str,
+        Self,Option,Some,None,Result,Ok,Err,String,Box,Vec,Rc,Arc,Cell,RefCell,HashMap,BTreeMap,
+        macro_rules
+    },
+    ndkeywordstyle=\color{RedTypename},
+    comment=[l][\color{GrayComment}\slshape]{//},
+    morecomment=[s][\color{GrayComment}\slshape]{/*}{*/},
+    morecomment=[l][\color{GoldDocumentation}\slshape]{///},
+    morecomment=[s][\color{GoldDocumentation}\slshape]{/*!}{*/},
+    morecomment=[l][\color{GoldDocumentation}\slshape]{//!},
+    morecomment=[s][\color{RedTypename}]{\#![}{]},
+    morecomment=[s][\color{RedTypename}]{\#[}{]},
+    stringstyle=\color{GreenString},
+    string=[b]"
+}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Spreadsheet Application Documentation}
+\cfoot{\thepage}
+
+% Section Formatting
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+% Code Formatting
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  captionpos=b,
+  language=Rust,
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!60!black},
+  stringstyle=\color{orange}
+}
+
+\title{\textbf{Rust Spreadsheet Application Documentation}}
+\author{Sourav Kumar Patel (2023CS10751) \\ Vishal Kumar (2023CS10816) \\ Vegad Aditya (2023CS10819)}
+
+\begin{document}
+
+\maketitle
+
+\section{Design and Software Architecture}
+The Rust Spreadsheet Application is designed as a modular, multi-crate workspace that follows modern Rust architecture principles. The system is structured around a core spreadsheet engine with separate frontend interfaces for different use cases.
+
+\subsection{Workspace Structure}
+The application is organized in a Rust workspace with multiple crates:
+\begin{itemize}
+    \item \textbf{cores} - The central spreadsheet engine containing all the core logic
+    \item \textbf{cli} - Command-line interface for text-based interaction
+    \item \textbf{gui} - Graphical user interface built with Dioxus
+    \item \textbf{app} - Main application entry point
+\end{itemize}
+
+\subsection{Architectural Patterns}
+We applied several architectural patterns and principles:
+
+\subsubsection{Core-Frontend Separation}
+The core spreadsheet engine is completely separated from the UI components, allowing:
+\begin{itemize}
+    \item Multiple interfaces (CLI and GUI) sharing the same core logic
+    \item Easy testing of core functionality without UI dependencies
+    \item Better maintainability through clear separation of concerns
+\end{itemize}
+
+\subsubsection{Component-Based UI Architecture}
+The GUI is built using Dioxus, a React-like framework for Rust:
+\begin{itemize}
+    \item Component hierarchy for reusability and separation of concerns
+    \item Stateful components with reactive updates
+    \item Context-based state management for sharing data across components
+\end{itemize}
+
+\subsection{Core Module Design}
+The \texttt{cores} crate implements the following key modules:
+\begin{itemize}
+    \item \texttt{sheet.rs} - Core spreadsheet data structure and computation engine
+    \item \texttt{parse.rs} - Formula parsing and expression evaluation
+    \item \texttt{make\_graphs.rs} - Data visualization functionality
+    \item \texttt{read\_csv.rs}/\texttt{write\_csv.rs} - File I/O operations
+\end{itemize}
+
+\subsection{Data Flow Architecture}
+The spreadsheet implements a reactive data flow architecture:
+\begin{enumerate}
+    \item User inputs formulas through CLI or GUI
+    \item Formulas are parsed into structured commands
+    \item Dependencies between cells are tracked
+    \item Changes trigger recalculation of dependent cells using topological sorting
+    \item Results propagate through the dependency graph
+    \item UI updates to reflect new values
+\end{enumerate}
+
+\section{Why Proposed Extensions Could Not Be Implemented}
+
+\subsection{Row/Column Delete Operation}
+Implementing a delete operation for rows or columns presented significant challenges:
+\begin{itemize}
+    \item \textbf{Complex Dependency Management}: Cell dependencies form a directed graph. Deleting a row/column could break the dependency chain, requiring extensive graph restructuring.
+    \item \textbf{Vector Limitations}: Our implementation uses Rust's \texttt{Vec<Vec<Cell>>} for the grid. Removing elements from the middle of vectors would require shifting all subsequent elements, which is an O(n) operation.
+    \item \textbf{Formula Reference Updates}: All cell references in formulas (e.g., A1, B2) would need to be updated to account for the shifted row/column indices.
+    \item \textbf{Cycle Detection Complexity}: If dependency cycles emerged after deletion, we would need to restore the entire spreadsheet state, requiring a complex rollback mechanism.
+\end{itemize}
+
+\begin{lstlisting}[caption={Current dependency tracking mechanism}]
+// Current dependency tracking in set_dependicies_cell function
+let t = row * ENCODE_SHIFT + col;
+let depend_vec = &mut self.grid[i][j].depend;
+if !depend_vec.contains(&t) {
+    depend_vec.push(t);
+}
+\end{lstlisting}
+
+\subsection{Multi-Range Selection in GUI}
+The multi-range selection feature was challenging due to:
+\begin{itemize}
+    \item \textbf{Complex State Management}: Tracking multiple non-contiguous selections requires a more sophisticated state management system.
+    \item \textbf{Event Handling Complexity}: Implementing keyboard modifiers (Ctrl/Shift+click) for multi-selection posed challenges in the Dioxus event handling system.
+    \item \textbf{Rendering Overhead}: Efficiently rendering multiple selection highlights across a large grid without performance degradation.
+\end{itemize}
+
+\subsection{Heatmap in Graph Section}
+With four graph types already implemented (line, bar, pie, scatter):
+\begin{itemize}
+    \item \textbf{Time Constraints}: Prioritization of core functionality over additional visualization types.
+\end{itemize}
+
+\subsection{Multiple Sheets}
+Multiple sheet support would require:
+\begin{itemize}
+    \item \textbf{Significant Architecture Changes}: Adding a new layer of abstraction to manage multiple Sheet instances.
+    \item \textbf{Inter-Sheet Dependencies}: Supporting formulas that reference cells across different sheets.
+    \item \textbf{UI Complexity}: Adding sheet navigation and management controls.
+    \item \textbf{File Format Expansion}: Extending the file format to store multiple sheets.
+\end{itemize}
+Doing all of this in the given time constraint was difficult.
+
+\section{Possibility of Additional Extensions}
+
+\subsection{Sequence Generation Based on Pattern}
+Implementing pattern-based sequence generation would be feasible by:
+\begin{itemize}
+    \item Adding new range function types in the \texttt{CommandFlag} structure
+    \item Implementing pattern detection and generation algorithms
+    \item Extending the formula parser to recognize sequence patterns
+\end{itemize}
+
+\begin{lstlisting}[caption={Potential implementation in parse.rs}]
+// Extend the range function types
+let cmd = match func_name {
+    "MIN" => 0,
+    "MAX" => 1,
+    "SUM" => 2,
+    "AVG" => 3,
+    "STDEV" => 4,
+    "AP" => 6,  // Arithmetic progression
+    "GP" => 7,  // Geometric progression
+    "FACT" => 8, // Factorial sequence
+    _ => {
+        container.flag.set_error(1);
+        return;
+    }
+};
+\end{lstlisting}
+
+\subsection{Supporting Floating Point Numbers}
+Converting to floating-point arithmetic would be straightforward:
+\begin{itemize}
+    \item Change the \texttt{value} field in the \texttt{Cell} struct from \texttt{i32} to \texttt{f64}
+    \item Update arithmetic operations to handle floating-point values
+    \item Modify the formatter for cell display to handle decimal places
+    \item Update parsing to handle decimal notation in formulas
+\end{itemize}
+
+\begin{lstlisting}[caption={Cell structure with floating point support}]
+pub struct Cell {
+    /// The current calculated value of the cell (changed from i32 to f64)
+    pub value: f64,
+    /// The formula assigned to the cell
+    pub formula: CommandCall,
+    /// List of cells that depend on this cell's value
+    pub depend: Vec<usize>,
+}
+\end{lstlisting}
+
+\section{Primary Data Structures}
+The application is built around several key data structures that enable efficient formula processing, dependency tracking, and value calculation.
+
+\subsection{Command and Formula Representation}
+
+\begin{lstlisting}[caption={Core data structures for formulas}]
+pub struct CommandFlag {
+    /// Command type: 0 = value/cell, 1 = arithmetic, 2 = range function
+    pub type_: B2, // 2 bits
+    /// Operation code (depends on type_):
+    /// - For arithmetic: 0 = add, 1 = subtract, 2 = multiply, 3 = divide
+    /// - For range functions: 0 = MIN, 1 = MAX, 2 = SUM, 3 = AVG, 4 = STDEV, 5 = SLEEP
+    pub cmd: B3, // 3 bits
+    /// Parameter 1 type: 0 = value, 1 = cell reference
+    pub type1: B1, // 1 bit
+    /// Parameter 2 type: 0 = value, 1 = cell reference
+    pub type2: B1, // 1 bit
+    /// Error code: 0 = no error, 1 = invalid input, 2 = cycle detected
+    pub error: B2, // 2 bits
+    /// Division by zero flag: 1 = division by zero occurred
+    pub is_div_by_zero: B1, // 1 bit
+    /// Reserved bits for future use
+    pub is_any: B6,
+}
+
+/// A structure representing a parsed formula command.
+#[derive(Clone, serde::Serialize, Debug)]
+pub struct CommandCall {
+    /// Flag bits indicating the command type and attributes
+    pub flag: CommandFlag, // 16 bits
+    /// First parameter - either a direct value or an encoded cell reference
+    pub param1: i32, // 4 bytes
+    /// Second parameter - either a direct value or an encoded cell reference
+    pub param2: i32, // 4 bytes
+}
+\end{lstlisting}
+
+\subsection{Efficient Memory Usage with Bitfields}
+The \texttt{CommandFlag} structure uses bitfields to efficiently store multiple flags in a single 16-bit value:
+\begin{itemize}
+    \item Saves memory by compressing 16 bits of information into a single field
+    \item Enables fast bit manipulation operations for flag checking
+    \item Allows zero-cost abstraction for accessing individual flags
+\end{itemize}
+
+\subsection{Cell and Sheet Structures}
+
+\begin{lstlisting}[caption={Cell and Sheet structures}]
+pub struct Cell {
+    /// The current calculated value of the cell
+    pub value: i32,
+    /// The formula assigned to the cell
+    pub formula: CommandCall,
+    /// List of cells that depend on this cell's value
+    pub depend: Vec<usize>,
+}
+
+pub struct Sheet {
+    /// The grid of cells in the spreadsheet, represented as a 2D vector.
+    pub grid: Vec<Vec<Cell>>,
+    /// Number of rows in the spreadsheet.
+    pub row: usize,
+    /// Number of columns in the spreadsheet.
+    pub col: usize,
+}
+\end{lstlisting}
+
+\subsection{Dependency Tracking}
+Each cell maintains a list of dependent cells, enabling:
+\begin{itemize}
+    \item Efficient propagation of value changes through the spreadsheet
+    \item Cycle detection in formula references
+    \item Topological sorting for update order determination
+\end{itemize}
+
+\subsection{Cell Reference Encoding}
+Cell references are encoded into integer values for efficient storage and manipulation:
+\begin{lstlisting}[caption={Cell reference encoding}]
+pub fn encode_cell(cell_ref: String) -> i32 {
+    // Convert A1 notation to encoded integer format
+    let (row, col) = convert_to_index(cell_ref);
+    if row == 0 || col == 0 {
+        return 0;
+    }
+    (row as i32) * ENCODE_SHIFT + (col as i32)
+}
+\end{lstlisting}
+
+\section{Interfaces Between Software Modules}
+
+\subsection{Core-GUI Interface}
+The GUI interfaces with the core spreadsheet engine through:
+\begin{itemize}
+    \item \textbf{Arc<Mutex<Sheet>>}: Thread-safe reference to the sheet, allowing concurrent access
+    \item \textbf{Context Providers}: Using Dioxus contexts to share sheet state across components
+    \item \textbf{Signal Handlers}: Reactive state updates when the sheet changes
+\end{itemize}
+
+\begin{lstlisting}[caption={Core-GUI interface in spreadsheet component}]
+let sheet: SheetContext = use_signal(|| Arc::new(Mutex::new(Sheet::new(100, 100))));
+provide_context(sheet);
+
+// Usage in child components
+let sheet = use_context::<SheetContext>();
+if let Ok(sheet_locked) = sheet.cloned().lock() {
+    let formula = sheet_locked.get_formula(row, col);
+    // Update UI state
+}
+\end{lstlisting}
+
+\subsection{Formula Processing Pipeline}
+The formula processing pipeline connects multiple modules:
+\begin{enumerate}
+    \item \textbf{User Input} → String formula from GUI/CLI
+    \item \textbf{Parser} → Converts text to \texttt{CommandCall} structure
+    \item \textbf{Dependency Tracker} → Identifies and records cell dependencies
+    \item \textbf{Evaluator} → Calculates results and handles errors
+    \item \textbf{Updater} → Propagates changes to dependent cells
+\end{enumerate}
+
+\begin{lstlisting}[caption={Formula processing interface}]
+pub fn update_cell_data(&mut self, row: usize, col: usize, new_formula: String) -> CallResult {
+    // Stage 1: Parse formula
+    let mut command = parse_formula(&new_formula);
+    
+    // Stage 2: Save old command and set dependencies
+    let old_command = self.grid[row][col].formula.clone();
+    self.remove_old_dependicies(row, col, command.clone());
+    
+    // Stage 3: Topological sort
+    let topo_vec = self.toposort(row * ENCODE_SHIFT + col);
+    
+    // Stage 4: Update cells
+    if topo_vec.is_empty() {
+        self.grid[row][col].formula.flag.set_error(2);
+    } else {
+        self.update_cell(topo_vec);
+    }
+    
+    // Return result with timing information
+    CallResult {
+        time: start_total.elapsed().as_millis() as f64,
+        error: Error::None,
+    }
+}
+\end{lstlisting}
+
+\subsection{Visualization Interface}
+The graph generation system provides a clean interface between data and visualization:
+\begin{itemize}
+    \item Methods like \texttt{line\_graph}, \texttt{bar\_graph}, etc. convert cell ranges to JSON
+    \item Consistent parameter patterns across different graph types
+    \item Error handling for invalid ranges or data
+\end{itemize}
+
+\begin{lstlisting}[caption={Graph interface example}]
+// Interface in Sheet implementation
+pub fn line_graph(
+    &self,
+    range: &str,
+    x_labels: &str,
+    y_lable: &str,
+    title: &str,
+) -> Result<String, String> {
+    // Convert cell range to chart JSON
+}
+
+// Usage in UI component
+if let Ok(sheet_locked) = sheet.cloned().lock() {
+    let x = sheet_locked.line_graph(
+        &range.cloned(),
+        &x_label.cloned(),
+        &y_label.cloned(),
+        &title.cloned(),
+    );
+    if let Ok(json) = x {
+        chart_json.set(json);
+    }
+}
+\end{lstlisting}
+
+\section{Approaches for Encapsulation}
+
+\subsection{Structure-Based Encapsulation}
+We used Rust's module system and struct-based encapsulation:
+\begin{itemize}
+    \item \textbf{Data Structures}: Defined with clear responsibilities and minimal public fields
+    \item \textbf{Implementation Methods}: Functionality encapsulated within impl blocks
+    \item \textbf{Public API}: Carefully controlled through exported functions
+\end{itemize}
+
+\begin{lstlisting}[caption={Encapsulation through method implementation}]
+impl Sheet {
+    // Public API
+    pub fn new(row: usize, col: usize) -> Self {
+        // Implementation details hidden
+    }
+    
+    pub fn get_value(&self, row: i32, col: i32) -> i32 {
+        // Public interface for retrieving cell values
+    }
+    
+    // Private implementation details
+    fn toposort(&self, node: usize) -> Vec<usize> {
+        // Internal algorithm not exposed to users
+    }
+}
+\end{lstlisting}
+
+\subsection{Module-Level Privacy}
+Rust's module system was used to control visibility:
+\begin{itemize}
+    \item \textbf{Public Exports}: Only necessary types and functions exposed
+    \item \textbf{Private Functions}: Helper functions kept module-private
+    \item \textbf{Controlled Dependencies}: Each module has minimal dependencies on others
+\end{itemize}
+
+\subsection{Component Isolation in GUI}
+The GUI encapsulates functionality within isolated components:
+\begin{itemize}
+    \item Each component manages its own state and rendering
+    \item Communication happens through explicit props and contexts
+    \item Components have single responsibilities (e.g., grid, cell, formula bar)
+\end{itemize}
+
+\section{Justification of the Design}
+
+\subsection{Memory Efficiency}
+Several design decisions were made to optimize memory usage:
+\begin{itemize}
+    \item \textbf{BitFields for Flags}: Using the \texttt{CommandFlag} bitfield structure to pack 16 flags into 2 bytes
+    \item \textbf{Integer Encoding}: Encoding cell references as integers instead of strings
+    \item \textbf{Dependency Vectors}: Using \texttt{Vec<usize>} for dependencies instead of more complex structures
+\end{itemize}
+
+\subsection{Performance Considerations}
+Performance was a key factor in our design:
+\begin{itemize}
+    \item \textbf{Topological Sorting}: Ensures efficient update propagation with minimal recalculations
+    \item \textbf{Cell Reference Encoding}: Fast lookups through integer-based cell references
+    \item \textbf{Dependency Tracking}: Direct tracking of forward dependencies for quick propagation
+\end{itemize}
+
+\begin{lstlisting}[caption={Topological sorting for efficient updates}]
+fn toposort(&self, node: usize) -> Vec<usize> {
+    let mut visited = vec![false; (self.row + 1) * (self.col + 1)];
+    let mut temp = vec![false; (self.row + 1) * (self.col + 1)];
+    let mut result: Vec<usize> = Vec::new();
+    
+    if self.is_cyclic_util(node, &mut visited, &mut temp, &mut result) {
+        return Vec::new(); // Detected cycle
+    }
+    
+    result.reverse();
+    result
+}
+\end{lstlisting}
+
+\subsection{Separation of Concerns}
+The clear separation between core engine and UI provides several benefits:
+\begin{itemize}
+    \item \textbf{Testability}: Core logic can be tested independently of UI
+    \item \textbf{Maintainability}: Changes to UI don't affect core logic and vice versa
+    \item \textbf{Flexibility}: Support for both CLI and GUI without code duplication
+\end{itemize}
+
+\subsection{Error Handling Strategy}
+Our error handling design provides good user experience:
+\begin{itemize}
+    \item \textbf{Error Types}: Different error types (DivByZero, CycleDetected, InvalidInput)
+    \item \textbf{Error Propagation}: Errors properly propagate through cell dependencies
+    \item \textbf{UI Feedback}: Clear error messages in both GUI and CLI
+\end{itemize}
+
+\section{Design Modifications}
+
+\subsection{Dependency Tracking Optimization}
+We made significant improvements in dependency tracking:
+\begin{itemize}
+    \item \textbf{Vector vs. HashSet}: Changed from HashSet to Vec for dependency storage
+    \item \textbf{Memory Layout}: Improved cache locality by using contiguous memory in Vec
+    \item \textbf{Performance Impact}: Faster initialization and iteration over dependencies
+\end{itemize}
+
+\begin{lstlisting}[caption={Optimized dependency tracking with Vec}]
+// Before: Using HashSet
+// depend_vec.insert(row * ENCODE_SHIFT + col);
+
+// After: Using Vec with containment check
+let t = row * ENCODE_SHIFT + col;
+if !depend_vec.contains(&t) {
+    depend_vec.push(t);
+}
+\end{lstlisting}
+
+\subsection{Graph Generation Extensions}
+The graphing capabilities were extended to support:
+\begin{itemize}
+    \item Multiple chart types (line, bar, pie, scatter)
+    \item Custom labels and titles
+    \item Different data range selections
+\end{itemize}
+
+\subsection{User Interface Enhancements}
+The UI underwent several improvements:
+\begin{itemize}
+    \item Responsive grid that adjusts to window size
+    \item Navigation controls for large spreadsheets
+    \item Error display 
+    \item Formula bar with interactive editing
+\end{itemize}
+
+\vfill
+
+\end{document}

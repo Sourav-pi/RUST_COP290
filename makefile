@@ -1,4 +1,5 @@
-run:
+REPORT = ./report.tex
+compile_cli:
 	cd cli
 	cargo build --release -p cli
 	cd ..
@@ -17,6 +18,10 @@ test:
 ext1 :
 	cargo run --release -p gui
 
+report:
+	@ pdflatex -quiet $(REPORT) 
+
 clean:
 	cargo clean
 
+.PHONY: all compile_cli docs coverage test ext1 report clean

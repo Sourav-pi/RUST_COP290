@@ -136,7 +136,7 @@ pub fn Grid(props: GridProps) -> Element {
 
     let mut move_down_help = move || {
         let current_row = start_row_ctx.cloned();
-        if current_row < max_start_row {
+        if current_row < max_start_row - 1 {
             start_row_ctx.set(current_row + 1);
         }
     };
@@ -150,7 +150,7 @@ pub fn Grid(props: GridProps) -> Element {
 
     let mut move_right_help = move || {
         let current_col = start_col_ctx.cloned();
-        if current_col < max_start_col {
+        if current_col < max_start_col - 1 {
             start_col_ctx.set(current_col + 1);
         }
     };
