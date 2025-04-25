@@ -1,16 +1,16 @@
-//! CSV File Import Module
+//! .ss File Import Module
 //!
-//! This module provides functionality to import spreadsheet data from CSV files.
+//! This module provides functionality to import spreadsheet data from .ss files.
 //! It allows loading a complete spreadsheet state, including cell values, formulas,
-//! and dependencies from a CSV file.
+//! and dependencies from a .ss file.
 
 use crate::parse::CommandFlag;
 use crate::{parse::CommandCall, sheet::*};
 use serde::{self, Deserialize};
 
-/// Temporary structure for deserializing CSV records.
+/// Temporary structure for deserializing .ss records.
 ///
-/// This structure maps directly to the CSV file columns and is used as an
+/// This structure maps directly to the .ss file columns and is used as an
 /// intermediate step before converting to the Cell structure.
 #[derive(Debug, Deserialize)]
 struct TempRecord {
@@ -32,21 +32,21 @@ struct TempRecord {
 }
 
 impl Sheet {
-    /// Reads spreadsheet data from a CSV file and populates the sheet.
+    /// Reads spreadsheet data from a .ss file and populates the sheet.
     ///
-    /// This method loads a spreadsheet state from a CSV file, including cell values,
+    /// This method loads a spreadsheet state from a .ss file, including cell values,
     /// formulas, and dependencies. It first resets the current sheet state, then
-    /// populates it with the data from the CSV file.
+    /// populates it with the data from the .ss file.
     ///
     /// # Parameters
-    /// * `file_path` - Path to the CSV file to read
+    /// * `file_path` - Path to the .ss file to read
     ///
     /// # Returns
     /// * `Ok(())` - If the file was successfully read and parsed
     /// * `Err(Box<dyn std::error::Error>)` - If any error occurred during reading or parsing
     ///
-    /// # CSV Format
-    /// The CSV file should have the following columns:
+    /// # .ss Format
+    /// The .ss file should have the following columns:
     /// - row: Row index (0-based)
     /// - col: Column index (0-based)
     /// - value: The calculated cell value
@@ -72,7 +72,7 @@ impl Sheet {
             }
         }
 
-        // Read and process each record from the CSV file
+        // Read and process each record from the .ss file
         for result in rdr.deserialize() {
             let record: TempRecord = result?;
             let mut new_cell = Cell {
@@ -142,22 +142,22 @@ impl Sheet {
 }
 
 #[test]
-fn test_read_csv() {
+fn test_read_ss() {
     let mut test_sheet = Sheet::new(6, 6);
     test_sheet.update_cell_data(1, 1, String::from("AVG(A2:D5)"));
     test_sheet.update_cell_data(2, 2, String::from("500"));
     test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
     println!("{}", test_sheet.get_value(1, 1));
-    let res = test_sheet.write_file("./temp/temp.csv");
+    let res = test_sheet.write_file("./temp/temp.ss");
     match res {
-        Ok(_) => println!("CSV file written successfully."),
-        Err(e) => println!("Error writing CSV file: {}", e),
+        Ok(_) => println!("ss file written successfully."),
+        Err(e) => println!("Error writing ss file: {}", e),
     }
     let mut new_sheet = Sheet::new(6, 6);
-    let result = new_sheet.read_file("./temp/temp.csv");
+    let result = new_sheet.read_file("./temp/temp.ss");
     match result {
-        Ok(()) => println!("CSV file read successfully."),
-        Err(e) => println!("Error reading CSV file: {}", e),
+        Ok(()) => println!("ss file read successfully."),
+        Err(e) => println!("Error reading ss file: {}", e),
     }
     assert_eq!(new_sheet.get_value(2, 2), 500);
     assert_eq!(new_sheet.get_value(1, 1), 31);

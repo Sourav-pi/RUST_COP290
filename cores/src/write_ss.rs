@@ -1,17 +1,17 @@
-//! CSV File Export Module
+//! .ss File Export Module
 //!
-//! This module provides functionality to export spreadsheet data to CSV files.
-//! It serializes cell values, formulas, and dependencies into a structured CSV format
+//! This module provides functionality to export spreadsheet data to .ss files.
+//! It serializes cell values, formulas, and dependencies into a structured .ss format
 //! that can later be imported back into the spreadsheet.
 
 use crate::sheet::{Cell, Sheet};
 use serde::ser::{SerializeStruct, Serializer};
 use serde::{self, Serialize};
 
-/// Structure for serializing a spreadsheet cell to CSV format.
+/// Structure for serializing a spreadsheet cell to .ss format.
 ///
 /// This wraps a Cell with its position information (row, column)
-/// for proper serialization into the CSV format.
+/// for proper serialization into the .ss format.
 struct CsvStore {
     /// Row index of the cell (0-based)
     row: i32,
@@ -22,10 +22,10 @@ struct CsvStore {
 }
 
 impl Serialize for CsvStore {
-    /// Implements custom serialization for a cell to CSV format.
+    /// Implements custom serialization for a cell to .ss format.
     ///
     /// This transforms the complex nested structure of a Cell into a flat
-    /// structure suitable for CSV storage, including:
+    /// structure suitable for .ss storage, including:
     /// - Converting CommandFlag bitfields to a string representation
     /// - Converting the dependency list to a comma-separated string
     ///
@@ -79,21 +79,21 @@ impl Serialize for CsvStore {
 }
 
 impl Sheet {
-    /// Exports the spreadsheet data to a CSV file.
+    /// Exports the spreadsheet data to a .ss file.
     ///
     /// This method saves the current spreadsheet state, including cell values,
-    /// formulas, and dependencies to a CSV file. Only non-empty cells (cells with
-    /// any flag set) are exported to keep the CSV file compact.
+    /// formulas, and dependencies to a .ss file. Only non-empty cells (cells with
+    /// any flag set) are exported to keep the .ss file compact.
     ///
     /// # Parameters
-    /// * `file_path` - Path to the CSV file to write
+    /// * `file_path` - Path to the .ss file to write
     ///
     /// # Returns
     /// * `Ok(())` - If the file was successfully written
     /// * `Err(Box<dyn std::error::Error>)` - If any error occurred during writing
     ///
-    /// # CSV Format
-    /// The CSV file will have the following columns:
+    /// # .ss Format
+    /// The .ss file will have the following columns:
     /// - row: Row index (0-based)
     /// - col: Column index (0-based)
     /// - value: The calculated cell value
@@ -107,7 +107,7 @@ impl Sheet {
         let num_cols = if num_rows > 0 { self.grid[0].len() } else { 0 };
         let mut wtr = csv::Writer::from_path(file_path)?;
 
-        // Write only non-empty cells to the CSV file
+        // Write only non-empty cells to the .ss file
         for row in 0..num_rows {
             for col in 0..num_cols {
                 // Skip cells with no flags set (empty cells)
@@ -123,7 +123,7 @@ impl Sheet {
                     data: cell.clone(),
                 };
 
-                // Serialize and write the cell to CSV
+                // Serialize and write the cell to .ss
                 wtr.serialize(csv_data)?;
             }
         }
@@ -135,15 +135,15 @@ impl Sheet {
 }
 
 #[test]
-fn test_write_csv() {
+fn test_write_ss() {
     let mut test_sheet = Sheet::new(6, 6);
     test_sheet.update_cell_data(1, 1, String::from("AVG(A2:D5)"));
     test_sheet.update_cell_data(2, 2, String::from("500"));
     test_sheet.update_cell_data(2, 1, String::from("B1+B5"));
     println!("{}", test_sheet.get_value(1, 1));
-    let res = test_sheet.write_file("./temp/temp.csv");
+    let res = test_sheet.write_file("./temp/temp.ss");
     match res {
-        Ok(_) => println!("CSV file written successfully."),
-        Err(e) => println!("Error writing CSV file: {}", e),
+        Ok(_) => println!("ss file written successfully."),
+        Err(e) => println!("Error writing ss file: {}", e),
     }
 }

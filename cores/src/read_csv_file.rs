@@ -1,6 +1,46 @@
+//! Spreadsheet CSV Import Module
+//!
+//! This module provides functionality to import spreadsheet data from CSV files.
+//! Unlike the .ss format which can restore formulas and dependencies, CSV import
+//! only loads cell values, treating all cells as constants without formulas.
+//! This is useful for importing data from other spreadsheet applications.
+
 use crate::parse::CommandFlag;
 use crate::{parse::CommandCall, sheet::*};
+
 impl Sheet {
+    /// Imports spreadsheet data from a CSV file
+    ///
+    /// This method reads a CSV file and populates the current spreadsheet with the values
+    /// from the file. It first resets all cells in the current sheet, then imports values
+    /// from the CSV. The method expects a specific CSV format with column headers in the
+    /// first row and row numbers in the first column.
+    ///
+    /// # Arguments
+    ///
+    /// * `filename` - The path to the CSV file to be imported
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - If the file was successfully read and parsed
+    /// * `Err(std::io::Error)` - If an I/O error occurred during file reading or parsing
+    ///
+    /// # CSV Format
+    ///
+    /// The expected CSV file format is:
+    /// ```text
+    /// ,A,B,C,...
+    /// 1,42,15,0,...
+    /// 2,0,7,84,...
+    /// ...
+    /// ```
+    ///
+    /// # Notes
+    ///
+    /// - The first row is treated as column headers and skipped
+    /// - The first column in each row is treated as the row number and skipped
+    /// - Empty cells in the CSV file remain as 0 in the sheet
+    /// - All imported cells are treated as constants (no formulas)
     pub fn read_csv_file(&mut self, filename: &str) -> Result<(), std::io::Error> {
         for i in 0..self.row {
             for j in 0..self.col {
