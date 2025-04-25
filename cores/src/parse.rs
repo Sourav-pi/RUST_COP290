@@ -103,7 +103,7 @@ pub fn parse_formula(input: &str) -> CommandCall {
     parse_expression(input, &mut cell);
     cell
 }
-pub fn is_valid_cell(input:&str) -> bool {
+pub fn is_valid_cell(input: &str) -> bool {
     let mut is_cell_ref = true;
     let mut has_letter = false;
     let mut has_digit = false;
@@ -142,7 +142,7 @@ pub fn parse_sleep(input: &str, container: &mut CommandCall) {
     if input.starts_with("SLEEP(") && input.ends_with(")") {
         // Extract the part between parentheses
         let sleep_time = &input[6..input.len() - 1].trim();
-        let is_cell_ref= is_valid_cell(sleep_time);
+        let is_cell_ref = is_valid_cell(sleep_time);
 
         if is_cell_ref {
             container.param1 = encode_cell(sleep_time.to_string());
@@ -445,10 +445,10 @@ pub fn convert_to_index(cell: String) -> (usize, usize) {
     for c in col_str.chars() {
         col = col * 26 + (c as usize - 'A' as usize + 1);
     }
-    let x=row_str.len();
+    let x = row_str.len();
     let row_str = row_str.trim_start_matches('0'); // Remove leading zeros
-    let y=row_str.len();
-    if x-y>0{
+    let y = row_str.len();
+    if x - y > 0 {
         return (0, 0);
     }
     // Parse row number

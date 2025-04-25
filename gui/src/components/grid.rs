@@ -1,6 +1,6 @@
 use super::row::Row;
 use crate::components::spreadsheet::*;
-use dioxus::prelude::*;
+use dioxus::{desktop::use_window, prelude::*};
 
 const GRID_STYLE: &str = "
     overflow: hidden;
@@ -19,7 +19,7 @@ const TABLE_STYLE: &str = "
 ";
 
 const NAVIGATION_CONTROLS_STYLE: &str = "
-    position: absolute;
+    position: fixed;
     bottom: 16px;
     right: 16px;
     display: flex;
@@ -65,11 +65,26 @@ pub fn Grid(props: GridProps) -> Element {
     let mut start_col_ctx = use_signal(|| 1);
     let mut selected_cell = use_context::<SelectedCellContext>();
 
-    let min_cell_width = 81; // Minimum width per cell in pixels
+    let window_width = use_window().inner_size().width;
+    let window_height = use_window().inner_size().height;
 
-    // Visible rows per page
-    let rows_per_page = 20;
-    let cols_per_page = 16;
+    // Calculate cell dimensions based on window size
+    let min_cell_width = if window_width > 1600 {
+        100
+    } else if window_width > 1200 {
+        90
+    } else {
+        81
+    };
+
+    // Calculate visible rows based on available height
+    // The 120px accounts for the header height, and 30px is an approximate row height
+    let available_height = window_height as i32 - 120;
+    let row_height = 35;
+    let rows_per_page = (available_height / row_height).clamp(10, 40) - 1;
+
+    // Calculate visible columns based on available width and cell width
+    let cols_per_page = ((window_width as i32) / (min_cell_width + 4)).clamp(8, 26) - 1;
 
     // Read context values once at the beginning of the component
     let start_row = start_row_ctx.cloned();
@@ -121,7 +136,7 @@ pub fn Grid(props: GridProps) -> Element {
 
     let mut move_down_help = move || {
         let current_row = start_row_ctx.cloned();
-        if current_row < max_start_row {
+        if current_row < max_start_row - 1 {
             start_row_ctx.set(current_row + 1);
         }
     };
@@ -135,7 +150,7 @@ pub fn Grid(props: GridProps) -> Element {
 
     let mut move_right_help = move || {
         let current_col = start_col_ctx.cloned();
-        if current_col < max_start_col {
+        if current_col < max_start_col - 1 {
             start_col_ctx.set(current_col + 1);
         }
     };
