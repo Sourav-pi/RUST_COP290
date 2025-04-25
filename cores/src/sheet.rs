@@ -660,6 +660,11 @@ impl Sheet {
 
         // Stage 1: Parse formula
         let mut command = parse_formula(&new_formula);
+        let (row1,col1) = convert_to_index_int (command.param1);
+        let (row2,col2) = convert_to_index_int (command.param2);
+        if row1 > self.row || col1 > self.col || row2 > self.row || col2 > self.col {
+            command.flag.set_error(1);
+        }
         if command.flag.error() == 0 {
             command.flag.set_is_any(1);
             // Stage 2: Save old command and set dependencies
@@ -1172,8 +1177,8 @@ mod tests {
         assert_eq!(result.error, Error::InvalidInput);
 
         // Invalid cell reference
-        // let result = test_sheet.update_cell_data(1, 3, String::from("Z99"));
-        // assert_eq!(result.error, Error::InvalidInput);
+        let result = test_sheet.update_cell_data(1, 3, String::from("Z99"));
+        assert_eq!(result.error, Error::InvalidInput);
     }
 
     #[test]
